@@ -1,0 +1,3 @@
+[submodule "insu_front"]
+	path = insu_front
+	url = https://github.com/in-sukim/insu_front.git
