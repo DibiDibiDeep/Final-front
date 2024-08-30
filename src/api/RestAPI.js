@@ -1,5 +1,5 @@
 export function Getapi(address){
-    const url = `http://localhost:8080${address}`
+    const url = `http://backend-container:8080${address}`
     
     return (
         fetch(url, {
