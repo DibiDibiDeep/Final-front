@@ -44,7 +44,7 @@
                     "/health"
                 ],
                 "interval": 30,
-                "timeout": 5,
+                "timeout": 500,
                 "retries": 3
             },
             "systemControls": []
