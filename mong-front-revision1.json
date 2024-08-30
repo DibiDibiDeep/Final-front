@@ -1,9 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-2:992382489739:task-definition/mongeul-dev-front:1",
+    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-2:992382489739:task-definition/mong-front:1",
     "containerDefinitions": [
         {
             "name": "frontend-container",
-            "image": "992382489739.dkr.ecr.ap-northeast-2.amazonaws.com/mongeul-mongeul/frontend:f6503919a7b46255d734d681a13ff53f5a1a4ad7",
+            "image": "992382489739.dkr.ecr.ap-northeast-2.amazonaws.com/mongeul-mongeul/frontend:aa1d3eee83edad5ccecfae0a57814e9ebc2f2648",
             "cpu": 0,
             "portMappings": [
                 {
@@ -30,7 +30,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/mongeul-dev-front",
+                    "awslogs-group": "/ecs/mong-front",
                     "mode": "non-blocking",
                     "awslogs-create-group": "true",
                     "max-buffer-size": "25m",
@@ -45,13 +45,13 @@
                 ],
                 "interval": 30,
                 "timeout": 5,
-                "retries": 3,
-                "startPeriod": 100
+                "retries": 3
             },
             "systemControls": []
         }
     ],
-    "family": "mongeul-dev-front",
+    "family": "mong-front",
+    "taskRoleArn": "arn:aws:iam::992382489739:role/ecsTaskExecutionRole",
     "executionRoleArn": "arn:aws:iam::992382489739:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
     "revision": 1,
@@ -59,19 +59,16 @@
     "status": "ACTIVE",
     "requiresAttributes": [
         {
-            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
-        },
-        {
             "name": "ecs.capability.execution-role-awslogs"
         },
         {
             "name": "com.amazonaws.ecs.capability.ecr-auth"
         },
         {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.28"
         },
         {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.28"
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
             "name": "ecs.capability.container-health-check"
@@ -87,6 +84,15 @@
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.24"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
         }
     ],
     "placementConstraints": [],
@@ -103,7 +109,7 @@
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
     },
-    "registeredAt": "2024-08-30T02:02:35.138Z",
+    "registeredAt": "2024-08-30T05:25:05.580Z",
     "registeredBy": "arn:aws:iam::992382489739:user/eunseong",
     "tags": []
 }
