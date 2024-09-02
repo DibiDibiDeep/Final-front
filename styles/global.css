@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #edc0bf;
+  background: linear-gradient(90deg, #edc0bf 0, #c4caef 58%);
+  color: #343a40;
+  font-family: 'Lato', sans-serif;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.702);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.container {
+  max-width: 73rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.article-container {
+  max-width: 40rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 68em) {
+  .container {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  html {
+    font-size: 94%;
+  }
+}
+
+@media (max-width: 68em) {
+  .article-container {
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
