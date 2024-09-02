@@ -133,11 +133,11 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onD
                     })}
                 </div>
             </div>
-            {selectedDate && (
+            {/* {selectedDate && (
                 <div className="mt-3 text-center text-gray-700 text-sm">
                     Selected Date: {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                 </div>
-            )}
+            )} */}
         </Card>
     );
 };
