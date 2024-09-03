@@ -32,7 +32,7 @@ const DiaryPage: React.FC<DiaryEntryProps> = ({ date, title, content, imageSrc }
               </div>
               <div className="p-4">
                 <p className="text-gray-700">
-                  The city of southern California, San Diego is located in San Diego County. It's located on San Diego Bay, on part of the Pacific Ocean near the Mexican border. San Diego is the second largest city in California and the seventh largest in the United States. It is also nicknamed as America's Finest City...
+                  The city of southern California, San Diego is located in San Diego County. Its located on San Diego Bay, on part of the Pacific Ocean near the Mexican border. San Diego is the second largest city in California and the seventh largest in the United States. It is also nicknamed as Americas Finest City...
                 </p>
               </div>
             </div>

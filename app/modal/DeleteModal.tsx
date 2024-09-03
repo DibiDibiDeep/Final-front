@@ -32,7 +32,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose }) => {
                                 </p>
                                 <p className="text-gray-600">
                                     If you delete the schedule <br />
-                                    you can't recover it.
+                                    you cant recover it.
                                 </p>
                             </ModalBody>
                             <ModalFooter className="justify-center">

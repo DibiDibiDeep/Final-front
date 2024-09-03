@@ -15,7 +15,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({ memo, onUpdate, onDelete, onClo
 
   const handleSave = async () => {
     try {
-      const response = await fetch('/memoUpdate', {
+      const response = await fetch('/api/memoUpdate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({ memo, onUpdate, onDelete, onClo
           content: editedContent,
         }),
       });
-
+      
       if (response.ok) {
         const updatedMemo = { ...memo, content: editedContent };
         onUpdate(updatedMemo);

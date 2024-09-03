@@ -1,0 +1,24 @@
+{
+  "name": "mongeulmongeul",
+  "short_name": "mongeul",
+  "description": "아이의 하루를 기록하세요.",
+  "theme_color": "#ffc211",
+  "background_color": "#614AD3",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/img/mg-logoback.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/mg-logoback.png",
+      "sizes": "192x1922",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

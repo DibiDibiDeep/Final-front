@@ -35,8 +35,6 @@ const DiaryList: React.FC<DiaryListProps> = ({ memos, onMemoSelect }) => {
           <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
         </div>
       </header>
-
-      <main className="flex-1 overflow-y-auto p-4">
       {filteredMemos.map((memo) => (
           <div key={memo.id} className="bg-white bg-opacity-50 rounded-lg shadow p-4 mb-4" onClick={() => onMemoSelect(memo)}>
             <div className="flex justify-between items-start">
@@ -50,7 +48,6 @@ const DiaryList: React.FC<DiaryListProps> = ({ memos, onMemoSelect }) => {
             </div>
           </div>
         ))}
-      </main>
     </div>
   );
 };
