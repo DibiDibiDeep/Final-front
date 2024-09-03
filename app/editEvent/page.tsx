@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
-import Calendar from '../Calendar/Calendar'
+import Calendar from '../calendar/Calendar'
 
 export default function EditPage() {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
