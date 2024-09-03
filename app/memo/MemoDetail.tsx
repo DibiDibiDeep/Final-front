@@ -15,16 +15,16 @@ const MemoDetail: React.FC<MemoDetailProps> = ({ memo, onUpdate, onDelete, onClo
 
   const handleSave = async () => {
     try {
-      const response = await fetch('/api/memos', {
+      const response = await fetch('/memoUpdate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           id: memo.id,
-          diary_id: 1, // Assuming a diary ID, replace with actual ID if needed
-          fairy_tale_id: null, // Assuming null or replace with actual ID if needed
-          user_id: 1, // Replace with the actual user ID
+          diary_id: 1,
+          fairy_tale_id: null,
+          user_id: 1,
           content: editedContent,
         }),
       });
