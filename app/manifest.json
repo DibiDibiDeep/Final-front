@@ -16,7 +16,7 @@
     },
     {
       "src": "/img/mg-logoback.png",
-      "sizes": "192x1922",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     }
