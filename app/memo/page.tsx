@@ -1,7 +1,9 @@
+import MemoApp from "./MemoApp";
+
 export default function Memo() {
     return (
         <>
-            <p>Memo Page</p>
+            <MemoApp />
         </>
     )
 }
