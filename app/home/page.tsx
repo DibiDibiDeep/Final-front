@@ -7,7 +7,6 @@ import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
 import DatePickerModal from '../modal/DatePickerModal';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import Calendar from '../calendar/Calendar';
 
 const dummyEvents = [

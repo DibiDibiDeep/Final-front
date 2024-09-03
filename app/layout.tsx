@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-gradient-to-r from-pink-200 to-blue-200 flex items-center justify-center p-4">
         {/* <Header/> */}
         <Providers>{children}</Providers>
-        <BottomContainer />
+        {/* <BottomContainer /> */}
       </body>
     </html>
   )
