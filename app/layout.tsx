@@ -19,10 +19,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gradient-to-r from-pink-200 to-blue-200 flex items-center justify-center p-4">
-        {/* <Header/> */}
-        <Providers>{children}</Providers>
-        {/* <BottomContainer /> */}
+      <body className="min-h-screen bg-gradient-to-r from-pink-200 to-blue-200 flex flex-col">
+        <div className="flex flex-col flex-grow items-center justify-center overflow-auto">
+          <Providers>
+            {children}
+          </Providers>
+        </div>
+        <BottomContainer />
       </body>
     </html>
   )
