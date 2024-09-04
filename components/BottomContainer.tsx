@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, ClipboardList, PlusCircle, X, BookHeart, User, Camera, Image, LucideIcon } from 'lucide-react';
+import { Home, ClipboardList, Plus, X, BookHeart, User, Camera, Image, LucideIcon } from 'lucide-react';
 import OptionButton from './OptionButton'; // Import the updated OptionButton component
 
 interface IconButtonProps {
@@ -13,11 +13,12 @@ interface IconButtonProps {
     color?: string;
 }
 
-const IconButton = React.memo(({ icon: Icon, onClick, style, size = 24, color }: IconButtonProps) => (
+const IconButton: React.FC<IconButtonProps> = React.memo(({ icon: Icon, onClick, style, size = 24, color }) => (
     <button className={style} onClick={onClick}>
         <Icon size={size} color={color} />
     </button>
 ));
+IconButton.displayName = 'IconButton';
 
 const BottomContainer: React.FC = () => {
     const router = useRouter();
@@ -66,7 +67,7 @@ const BottomContainer: React.FC = () => {
     }, []);
 
     const getButtonStyle = useCallback((buttonName: string) => {
-        if (buttonName === 'memo') {
+        if (buttonName === 'camera') {
             return `p-4 rounded-full ${showOptions ? 'bg-white' : 'bg-purple-600'} absolute -top-8 shadow-lg transition-colors duration-300`;
         }
         return selectedButton === buttonName
@@ -86,14 +87,14 @@ const BottomContainer: React.FC = () => {
                 <IconButton icon={ClipboardList} onClick={() => handleButtonClick('diary', '/diary')} style={getButtonStyle('diary')} />
                 <button
                     ref={plusButtonRef}
-                    className={getButtonStyle('memo')}
+                    className={getButtonStyle('camera')}
                     onClick={handlePlusButtonPress}
                     onMouseDown={handlePlusButtonPress}
                     onMouseUp={handlePlusButtonRelease}
                     onTouchStart={handlePlusButtonPress}
                     onTouchEnd={handlePlusButtonRelease}
                 >
-                    {showOptions ? <X size={32} color="#4A4A4A" /> : <PlusCircle size={32} color="white" />}
+                    {showOptions ? <X size={32} color="#4A4A4A" /> : <Plus size={32} color="white" />}
                 </button>
                 <div className={optionsClassName}>
                     <OptionButton icon={Camera} onClick={() => handleOptionClick('camera')} backgroundColor="#c83dff" iconType='camera' />
@@ -105,5 +106,7 @@ const BottomContainer: React.FC = () => {
         </div>
     );
 };
+
+BottomContainer.displayName = 'BottomContainer';
 
 export default React.memo(BottomContainer);

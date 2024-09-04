@@ -1,5 +1,5 @@
 import React from 'react';
-import { LucideIcon, Camera as CameraIcon, Image as ImageIcon } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 
 const isMobileDevice = () => {
     return typeof window !== 'undefined' && /Mobi|Android/i.test(window.navigator.userAgent);
@@ -18,20 +18,19 @@ const OptionButton = React.memo(({ icon: Icon, onClick, backgroundColor, iconTyp
             // 모바일: 기본 카메라 앱 실행
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // 스트림을 사용하여 비디오 요소에 출력 가능
+                console.log('Mobile camera stream:', stream);
                 onClick();
-                // stream이나 추가 코드 작성
             } catch (err) {
                 console.error("Error accessing mobile camera", err);
             }
         } else {
             // 웹: 웹캠 실행
-            onClick();
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // You can use the stream to display the webcam feed in a video element
-                // 추가로 화면에 비디오 요소 띄워서 카메라 촬영할 수 있게?
+                // 웹캠 스트림을 처리하는 로직
                 console.log('Webcam stream:', stream);
-                // stream이나 추가 코드 작성
+                onClick();
             } catch (err) {
                 console.error("Error accessing webcam", err);
             }
@@ -56,7 +55,6 @@ const OptionButton = React.memo(({ icon: Icon, onClick, backgroundColor, iconTyp
                     console.log('File type:', file.type);
                 }
                 onClick();
-                // 추가 코드 작성 가능
             }
         };
 
@@ -85,5 +83,7 @@ const OptionButton = React.memo(({ icon: Icon, onClick, backgroundColor, iconTyp
         </button>
     );
 });
+
+OptionButton.displayName = 'OptionButton';
 
 export default OptionButton;

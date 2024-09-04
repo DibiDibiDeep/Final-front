@@ -1,5 +1,5 @@
 ## Packages to be installed
-npm install next@latest react@latest react-dom@latest @nextui-org/react @heroicons/react lucide-react react-swipeable
+npm install next@latest react@latest react-dom@latest @nextui-org/react @heroicons/react lucide-react react-swipeable yarn next-pwa next-compose-plugins
 
 
 ## Getting Started
