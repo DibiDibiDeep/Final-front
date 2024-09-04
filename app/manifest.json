@@ -2,7 +2,7 @@
   "name": "mongeulmongeul",
   "short_name": "mongeul",
   "description": "아이의 하루를 기록하세요.",
-  "theme_color": "#ffc211",
+  "theme_color": "#ffffff",
   "background_color": "#614AD3",
   "display": "standalone",
   "scope": "/",

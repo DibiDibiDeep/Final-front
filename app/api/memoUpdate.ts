@@ -4,7 +4,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     try {
       const { id, diary_id, fairy_tale_id, user_id, content } = req.body;
-      
+
       // 여기에 데이터베이스 업데이트 로직을 구현하세요
       // 예: const updatedMemo = await updateMemoInDatabase(id, content);
 

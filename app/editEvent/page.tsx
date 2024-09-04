@@ -1,19 +1,38 @@
 'use client';
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
-import Calendar from '../calendar/Calendar'
+import Calendar from '../calendar/Calendar';
+import axios from 'axios';
 
 export default function EditPage() {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-    const handleDateSelect = (date: Date) => {
-        setSelectedDate(date)
-    }
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [eventName, setEventName] = useState<string>('');
+    const [eventLocation, setEventLocation] = useState<string>('');
+    const [eventTime, setEventTime] = useState<string>('');
     const router = useRouter();
-    const handleGoToMain = () => {
-        router.push('/home');
+
+    const handleDateSelect = (date: Date) => {
+        setSelectedDate(date);
+    };
+
+    const handleGoToMain = async () => {
+        const eventData = {
+            name: eventName,
+            date: selectedDate ? selectedDate.toISOString() : new Date().toISOString(), // ISO 8601 문자열로 변환
+            time: eventTime,
+            location: eventLocation,
+        };
+
+        try {
+            const response = await axios.post('/api/todo', eventData);
+            console.log(response.data.message);
+            router.push('/home');
+        } catch (error) {
+            console.error('Error sending event data:', error);
+        }
     };
 
     return (
@@ -46,7 +65,7 @@ export default function EditPage() {
                                 id="eventName"
                                 type="text"
                                 placeholder="Enter event name"
-                                onChange={(e) => console.log(e.target.value)}
+                                onChange={(e) => setEventName(e.target.value)}
                                 className='text-gray-700'
                             />
                         </div>
@@ -56,9 +75,9 @@ export default function EditPage() {
                             </label>
                             <Input
                                 id="eventDate"
-                                type="string"
+                                type="text"
                                 value={selectedDate ? selectedDate.toLocaleDateString() : new Date().toLocaleDateString()}
-                                onChange={(e) => console.log(e.target.value)}
+                                readOnly
                                 className='text-gray-700'
                             />
                         </div>
@@ -69,7 +88,7 @@ export default function EditPage() {
                             <Input
                                 id="eventTime"
                                 type="time"
-                                onChange={(e) => console.log(e.target.value)}
+                                onChange={(e) => setEventTime(e.target.value)}
                                 className='text-gray-700'
                             />
                         </div>
@@ -81,7 +100,7 @@ export default function EditPage() {
                                 id="eventLocation"
                                 type="text"
                                 placeholder="Enter location"
-                                onChange={(e) => console.log(e.target.value)}
+                                onChange={(e) => setEventLocation(e.target.value)}
                                 className='text-gray-700'
                             />
                         </div>
@@ -89,5 +108,5 @@ export default function EditPage() {
                 </EditContainer>
             </div>
         </div>
-    )
+    );
 }
