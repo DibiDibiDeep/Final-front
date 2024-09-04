@@ -36,12 +36,12 @@
     "lucide-react": "^0.438.0",
     "mysql2": "^3.11.0",
     "next": "^14.2.7",
-    "node-sass": "^9.0.0",
-    "sass-loader": "^16.0.1",
     "next-compose-plugins": "^2.2.1",
+    "node-sass": "^9.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-swipeable": "^7.0.1",
+    "sass-loader": "^16.0.1",
     "yarn": "^1.22.22"
   },
   "devDependencies": {

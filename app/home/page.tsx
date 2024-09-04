@@ -47,7 +47,7 @@ const dummyMemos: Memo[] = [
   {
     id: 1,
     date: '2024-09-01',
-    content:  "오늘은 동화 ‘스스로 할 수 있어요’를    \n읽어보았습니다. 동화를 들은 후 내가 할수     \n있는,일이 무엇인지 이야기해 보았습니다.     \n그리고 연계 활동으로 활동지를 통해 제공된    \n그림들을 보고 내가 할 수 있는 일들을 직접    \n골라 언어로 표현해보고, 선택한 할 수 있는     \n일들에 대해 이야기해 보았습니다.",
+    content: "오늘은 동화 ‘스스로 할 수 있어요’를    \n읽어보았습니다. 동화를 들은 후 내가 할수     \n있는,일이 무엇인지 이야기해 보았습니다.     \n그리고 연계 활동으로 활동지를 통해 제공된    \n그림들을 보고 내가 할 수 있는 일들을 직접    \n골라 언어로 표현해보고, 선택한 할 수 있는     \n일들에 대해 이야기해 보았습니다.",
   },
   {
     id: 2,
@@ -64,7 +64,6 @@ const dummyMemos: Memo[] = [
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [calendarOpacity, setCalendarOpacity] = useState(1);
   const [activeView, setActiveView] = useState<'todo' | 'memo'>('todo');
   const [memos, setMemos] = useState<Memo[]>(dummyMemos);
@@ -83,7 +82,7 @@ export default function Home() {
   useEffect(() => {
     saveMemos(memos);
   }, [memos]);
-  
+
   const handleAddSchedule = () => {
     router.push('/editEvent');
   };
@@ -137,7 +136,7 @@ export default function Home() {
     const selectedDateString = selectedDate.toLocaleDateString('ko-KR');
     return memoDate === selectedDateString;
   });
-  
+
   const topMargin = isExpanded ? 450 : 115;
 
   return (
@@ -174,14 +173,14 @@ export default function Home() {
       >
         <div className="w-full max-w-[76vw]">
           <div className="text-4xl text-black mb-[33px] flex space-x-4">
-            <button 
-              onClick={() => setActiveView('todo')} 
+            <button
+              onClick={() => setActiveView('todo')}
               className={activeView === 'todo' ? 'font-bold' : ''}
             >
               Todo
             </button>
-            <button 
-              onClick={() => setActiveView('memo')} 
+            <button
+              onClick={() => setActiveView('memo')}
               className={activeView === 'memo' ? 'font-bold' : ''}
             >
               Memo

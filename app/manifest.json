@@ -6,7 +6,8 @@
   "background_color": "#614AD3",
   "display": "standalone",
   "scope": "/",
-  "start_url": "/",
+  "destination": "/",
+  "start_url": "/loading",
   "icons": [
     {
       "src": "/img/mg-logoback.png",
