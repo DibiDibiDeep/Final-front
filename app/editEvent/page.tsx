@@ -37,7 +37,7 @@ export default function EditPage() {
                     <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
                 </div>
                 <EditContainer>
-                    <div className="flex flex-col space-y-5 pt-[26px]">
+                    <div className="flex flex-col space-y-5 pt-[5px]">
                         <div className="flex items-center space-x-4">
                             <label htmlFor="eventName" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Event Name

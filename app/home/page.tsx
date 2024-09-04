@@ -1,12 +1,12 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
-import DatePickerModal from '../modal/DatePickerModal';
 import Calendar from '../calendar/Calendar';
 
 const dummyEvents = [
@@ -38,65 +38,60 @@ const dummyEvents = [
 ];
 
 export default function Home() {
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [topMargin, setTopMargin] = useState(450); // 초기 상단 여백을 450px로 설정
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [calendarOpacity, setCalendarOpacity] = useState(1);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [calendarVisible, setCalendarVisible] = useState(true);
 
   const handleAddSchedule = () => {
     router.push('/editEvent');
   };
 
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
   const handleDateSelect = (date: Date) => setSelectedDate(date);
 
   useEffect(() => {
-    // topMargin이 변경될 때마다 Calendar의 opacity 조절
-    const opacity = (topMargin - 115) / (450 - 115);
-    setCalendarOpacity(opacity);
-  }, [topMargin]);
+    setCalendarVisible(isExpanded);
+  }, [isExpanded]);
 
   const handlers = useSwipeable({
-    onSwiping: (eventData) => {
-      const { deltaY } = eventData;
-      setTopMargin((prevMargin) => {
-        const newMargin = prevMargin - deltaY;
-        return Math.max(115, Math.min(450, newMargin)); // 최소 115px, 최대 450px
-      });
+    onSwipedUp: () => {
+      if (isExpanded) {
+        setIsExpanded(false);
+      }
+    },
+    onSwipedDown: () => {
+      if (!isExpanded) {
+        setIsExpanded(true);
+      }
     },
     trackMouse: true,
+    delta: 150, // 스와이프를 감지하기 위한 최소 거리
+    preventScrollOnSwipe: isExpanded, // 스와이프 중 스크롤 방지
   });
 
+  const topMargin = isExpanded ? 450 : 115;
+
   return (
-    <div className="h-screen flex flex-col relative min-h-[812px] min-w-[375px]">
-      <div className="fixed top-[37px] right-[23px] flex space-x-[13px] z-20">
+    <div className="h-screen flex flex-col relative">
+      <div className="fixed top-[37px] right-[23px] flex space-x-[13px] z-30">
         <button
           className="w-[45px] h-[45px] rounded-full overflow-hidden"
           onClick={handleAddSchedule}
         >
           <Image src="/img/button/addSchedule.png" alt='Add Schedule' width={45} height={45} className="w-full h-full object-cover" />
         </button>
-        <button
-          className="w-[45px] h-[45px] rounded-full overflow-hidden"
-          onClick={handleOpenModal}
-        >
-          <Image src="/img/button/changeDate.png" alt='Change Date' width={45} height={45} className="w-full h-full object-cover" />
-        </button>
       </div>
-      <div
-        className="fixed top-[110px] left-0 right-0 z-10 transition-opacity duration-300"
-        style={{ opacity: calendarOpacity }}
-      >
-        <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
-      </div>
+      {calendarVisible && (
+        <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
+          <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+        </div>
+      )}
       <MainContainer
+        className='pb-6'
         topMargin={topMargin}
-        {...handlers}
+        {...(isExpanded ? handlers : {})}
       >
-        <div ref={containerRef} className="w-full max-w-[76vw]">
+        <div className="w-full max-w-[76vw]">
           <p className="text-4xl text-black mb-[33px]">
             {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
@@ -111,11 +106,6 @@ export default function Home() {
           ))}
         </div>
       </MainContainer>
-      <DatePickerModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onDateSelect={handleDateSelect}
-      />
     </div>
   );
 }

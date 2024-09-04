@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "clean-cache": "rm -rf .next"
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -24,11 +25,14 @@
     "@syncfusion/ej2-react-schedule": "^26.2.10",
     "framer-motion": "^11.3.30",
     "heroicons": "^2.1.5",
+    "http-server": "^14.1.1",
     "lucide-react": "^0.438.0",
     "next": "^14.2.7",
+    "next-compose-plugins": "^2.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-swipeable": "^7.0.1"
+    "react-swipeable": "^7.0.1",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -36,6 +40,7 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.7",
+    "next-pwa": "^5.6.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.10",
     "typescript": "^5"
