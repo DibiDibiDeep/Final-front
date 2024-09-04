@@ -21,7 +21,7 @@ const MainContainer = forwardRef<HTMLDivElement, MainContainerProps>(
                 }}
                 {...rest}
             >
-                <div className="w-full h-full bg-white/20 backdrop-blur-xl rounded-t-[40px] shadow-lg overflow-hidden border-2 border-white">
+                <div className="w-full h-full bg-white/20 backdrop-blur-xl rounded-t-[40px] shadow-lg overflow-hidden border-2 border-white pb-20">
                     <div className="w-16 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
                     <div className="h-full overflow-auto">
                         <div className="py-6 flex flex-col items-center">
