@@ -1329,7 +1329,7 @@
     "@react-types/combobox" "3.11.1"
     "@react-types/shared" "3.23.1"
 
-"@nextui-org/avatar@2.0.32":
+"@nextui-org/avatar@^2.0.32", "@nextui-org/avatar@2.0.32":
   version "2.0.32"
   resolved "https://registry.npmjs.org/@nextui-org/avatar/-/avatar-2.0.32.tgz"
   integrity sha512-2dCpIKuGvbOVLJ6m2AkNhPqqamIin3FDqDLop2ILNhyAxgxPYitqE3JqsUA/hlZCzu79sZudruuubzHWzHqf0Q==
