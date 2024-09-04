@@ -7,7 +7,7 @@ import { Memo } from '@/types';
 import { saveMemos, loadMemos } from '../utils/storage';
 import { useRouter } from 'next/navigation';
 import DatePickerModal from '../modal/DatePickerModal';
-import MainContainer from '@/MainContainer';
+import MainContainer from '@/components/MainContainer';
 
 const MemoApp: React.FC = () => {
   const [memos, setMemos] = useState<Memo[]>([]);

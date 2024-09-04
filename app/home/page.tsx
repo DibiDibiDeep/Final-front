@@ -65,7 +65,6 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [topMargin, setTopMargin] = useState(450);
   const [calendarOpacity, setCalendarOpacity] = useState(1);
   const [activeView, setActiveView] = useState<'todo' | 'memo'>('todo');
   const [memos, setMemos] = useState<Memo[]>(dummyMemos);
