@@ -24,7 +24,7 @@ const DiaryList: React.FC<DiaryListProps> = ({ memos, onMemoSelect }) => {
   return (
     <div>
       <header className="p-4">
-        <div className="relative">
+        <div className="relative bottom-5">
           <input
             type="text"
             placeholder="검색"

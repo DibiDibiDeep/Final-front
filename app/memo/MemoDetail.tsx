@@ -41,7 +41,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({ memo, onUpdate, onDelete, onClo
   };
 
   return (
-    <div className="h-full flex flex-col bg-white p-4">
+    <div className="h-full flex flex-col p-4">
       <header className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">{memo.date}</h2>
         <button onClick={onClose} className="text-gray-600">닫기</button>
