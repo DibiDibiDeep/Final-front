@@ -1463,7 +1463,7 @@
     "@nextui-org/shared-utils" "2.0.7"
     "@nextui-org/system-rsc" "2.1.5"
 
-"@nextui-org/date-input@2.1.3":
+"@nextui-org/date-input@^2.1.3", "@nextui-org/date-input@2.1.3":
   version "2.1.3"
   resolved "https://registry.npmjs.org/@nextui-org/date-input/-/date-input-2.1.3.tgz"
   integrity sha512-Y6d+AVPnM7uYy7boSHrk+cW/pft1fKbpXh/ed5omTgFx6rKRZ/agQmP5erMcmNzpv3Bis4wCc89WNnBtCjEZMw==
@@ -1511,7 +1511,7 @@
     "@nextui-org/system-rsc" "2.1.5"
     "@react-types/shared" "3.23.1"
 
-"@nextui-org/dropdown@2.1.29":
+"@nextui-org/dropdown@^2.1.29", "@nextui-org/dropdown@2.1.29":
   version "2.1.29"
   resolved "https://registry.npmjs.org/@nextui-org/dropdown/-/dropdown-2.1.29.tgz"
   integrity sha512-ujHJVHzOcfwqNqlkt14t8YV3AAn03sME7gBxujQcwtDFGYMJeP9pvTU24L/FjBEb3Fd1XdhjwowU/sTuVTK4Yg==
@@ -1809,7 +1809,7 @@
     "@nextui-org/shared-utils" "2.0.7"
     "@nextui-org/use-data-scroll-overflow" "2.1.6"
 
-"@nextui-org/select@2.2.5":
+"@nextui-org/select@^2.2.5", "@nextui-org/select@2.2.5":
   version "2.2.5"
   resolved "https://registry.npmjs.org/@nextui-org/select/-/select-2.2.5.tgz"
   integrity sha512-Il1eigjSXOBgJ745nhn6TDPD1jj1avrnvk9WV/DCjOsFRwfstRnDzsS1aNpZKHqJgHhFRQZ1ivz8hA4x3Zgasg==

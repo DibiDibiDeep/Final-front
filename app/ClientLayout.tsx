@@ -10,12 +10,13 @@ export default function ClientLayout({
 }) {
     const pathname = usePathname();
 
-    // Determine if the current path is the login page or loading page
+    // Determine if the current path is the login page/loading page/initial setting page
     const isLoginPage = pathname === '/login';
     const isLoadingPage = pathname === '/'; // Assuming '/' is your loading page route
+    const isInitialSettingPage = pathname === '/initialSettings';
 
-    // Show BottomContainer only if not on login page and not on loading page
-    const showBottomContainer = !isLoginPage && !isLoadingPage;
+    // Show BottomContainer only if not on login page and not on loading page ans not on initial setting page
+    const showBottomContainer = !isLoginPage && !isLoadingPage && !isInitialSettingPage;
 
     return (
         <Providers>

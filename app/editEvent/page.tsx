@@ -7,11 +7,25 @@ import Input from '@/components/Input';
 import Calendar from '../calendar/Calendar';
 import axios from 'axios';
 
+interface EventData {
+    name: string;
+    date: string;
+    time: string;
+    location: string;
+}
+
+async function submitEventData(eventData: EventData) {
+    const response = await axios.post('/api/events', eventData);
+    return response.data;
+}
+
 export default function EditPage() {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [eventName, setEventName] = useState<string>('');
     const [eventLocation, setEventLocation] = useState<string>('');
     const [eventTime, setEventTime] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
     const handleDateSelect = (date: Date) => {
@@ -19,19 +33,25 @@ export default function EditPage() {
     };
 
     const handleGoToMain = async () => {
+        setIsLoading(true);
+        setError(null);
+
         const eventData = {
             name: eventName,
-            date: selectedDate ? selectedDate.toISOString() : new Date().toISOString(), // ISO 8601 문자열로 변환
+            date: selectedDate ? selectedDate.toISOString() : new Date().toISOString(), // 'YYYY-MM-DDTHH:MM:SSZ' 형식
             time: eventTime,
             location: eventLocation,
         };
 
         try {
-            const response = await axios.post('/api/todo', eventData);
-            console.log(response.data.message);
+            const response = await submitEventData(eventData);
+            console.log(response.message);
             router.push('/home');
         } catch (error) {
             console.error('Error sending event data:', error);
+            setError('이벤트 데이터 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -41,13 +61,14 @@ export default function EditPage() {
                 <button
                     className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
                     onClick={handleGoToMain}
+                    disabled={isLoading}
                 >
                     <Image
                         src="/img/button/confirm.png"
                         alt='Confirm'
                         width={50}
                         height={50}
-                        className="max-w-full max-h-full object-contain"
+                        className={`max-w-full max-h-full object-contain ${isLoading ? 'opacity-50' : ''}`}
                     />
                 </button>
             </div>
@@ -105,6 +126,7 @@ export default function EditPage() {
                             />
                         </div>
                     </div>
+                    {error && <p className="text-red-500 mt-4">{error}</p>}
                 </EditContainer>
             </div>
         </div>
