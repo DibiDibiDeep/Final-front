@@ -171,6 +171,7 @@ export default function Home() {
             >
               Memo
             </button>
+            <button onClick={addMemo} className="mt-4 px-4 py-2 rounded">+</button>
           </div>
           <p className="text-2xl text-black mb-[33px]">
             {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
@@ -205,7 +206,7 @@ export default function Home() {
               ) : (
                 <DiaryList memos={filteredMemos} onMemoSelect={setSelectedMemo} />
               )}
-              <button onClick={addMemo} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">메모 추가</button>
+              
             </>
           )}
         </div>

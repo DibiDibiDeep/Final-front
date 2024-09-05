@@ -1,10 +1,11 @@
 'use client'
 
 import { GoogleLogin } from "@react-oauth/google"
-import { useRouter } from 'next/navigation'; // useRouter import
+import { useRouter } from 'next/navigation'; 
+
 
 const GoogleAuthLogin = () => {
-    const router = useRouter(); // useRouter 사용
+    const router = useRouter(); 
 
     return (
         <>
