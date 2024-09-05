@@ -7,20 +7,12 @@ import Input from '@/components/Input';
 import Calendar from '../calendar/Calendar';
 import axios from 'axios';
 
-interface EventData {
-    title: string;
-    description: string,
-    date: string;
-    location: string;
-}
-
-async function submitEventData(eventData: EventData) {
-    const response = await axios.post('/api/events', eventData);
-    return response.data;
-}
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
 export default function EditPage() {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [selectedBabyId, setSelectedBabyId] = useState(null);
+    const [selectedPhotoId, setSelectedPhotoId] = useState(null);
     const [eventName, setEventName] = useState<string>('');
     const [eventDescription, setEventDescription] = useState<string>('');
     const [eventLocation, setEventLocation] = useState<string>('');
@@ -37,17 +29,22 @@ export default function EditPage() {
         setError(null);
 
         const eventData = {
+            user_id: 1, // 현재 로그인한 사용자의 ID
+            baby_id: selectedBabyId, // 선택된 아기의 ID (있다면)
+            calendar_photo_id: selectedPhotoId, // 선택된 사진의 ID (있다면)
             title: eventName,
             description: eventDescription,
-            // 한국 기준 'MM-dd' 형식으로 날짜 변환
-            date: selectedDate ? selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }) : new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }),
-            // ['YYYY-MM-DD' 형식] date: selectedDate?.toISOString().split('T')[0]
+            date: selectedDate
+                ? selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1)
+                : new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1),
             location: eventLocation,
         };
 
         try {
-            const response = await submitEventData(eventData);
-            console.log(response.message);
+            const response = await axios.post(`${BACKEND_API_URL}/api/calendars`, eventData, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            console.log(response.data);
             router.push('/home');
         } catch (error) {
             console.error('Error sending event data:', error);
@@ -56,7 +53,6 @@ export default function EditPage() {
             setIsLoading(false);
         }
     };
-
 
     return (
         <div>

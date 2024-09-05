@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@nextui-org/react";
 import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import DeleteModal from '../modal/DeleteModal';
+import Link from 'next/link';
 
 interface EventCardProps {
+  id: number;
   eventName: string;
   date: string;
   location: string;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ eventName, date, location }) => {
+const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleDeleteClick = () => {
@@ -33,13 +35,14 @@ const EventCard: React.FC<EventCardProps> = ({ eventName, date, location }) => {
           <DropdownMenu
             aria-label="Static Actions"
             selectionMode='single'>
-            <DropdownItem key="edit" href='/editEvent' className='text-gray-700'>Edit</DropdownItem>
+            <DropdownItem key="edit">
+              <Link href={`/editEvent?id=${id}`} className='text-gray-700'>Edit</Link>
+            </DropdownItem>
             <DropdownItem key="delete" className="text-danger" color="danger" onPress={handleDeleteClick}>
               Delete
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>
-
       </div>
       <div className="flex items-center mb-2">
         <CalendarIcon className="h-5 w-5 mr-2 text-gray-600" />

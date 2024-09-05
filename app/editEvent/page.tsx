@@ -1,6 +1,6 @@
 'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
@@ -8,62 +8,90 @@ import Calendar from '../calendar/Calendar';
 import axios from 'axios';
 
 interface EventData {
+    id?: number;
     title: string;
-    description: string,
+    description: string;
     date: string;
     location: string;
 }
 
-async function submitEventData(eventData: EventData) {
-    const response = await axios.post('/api/events', eventData);
-    return response.data;
-}
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
 export default function EditPage() {
+    const [eventData, setEventData] = useState<EventData>({
+        title: '',
+        description: '',
+        date: '',
+        location: ''
+    });
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [eventName, setEventName] = useState<string>('');
-    const [eventDescription, setEventDescription] = useState<string>('');
-    const [eventLocation, setEventLocation] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const eventId = searchParams ? searchParams.get('id') : null;
+
+    useEffect(() => {
+        if (eventId) {
+            fetchEventData(eventId);
+        } else {
+            // eventId가 없는 경우 홈으로 리다이렉트
+            router.push('/home');
+        }
+    }, [eventId, router]);
+
+    const fetchEventData = async (id: string) => {
+        try {
+            const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${id}`);
+            const fetchedEvent = response.data;
+            setEventData(fetchedEvent);
+            setSelectedDate(new Date(fetchedEvent.date));
+        } catch (error) {
+            console.error('Error fetching event data:', error);
+            setError('이벤트 데이터를 불러오는 데 실패했습니다.');
+        }
+    };
 
     const handleDateSelect = (date: Date) => {
         setSelectedDate(date);
+        setEventData(prev => ({ ...prev, date: date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }) }));
     };
 
-    const handleGoToMain = async () => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { id, value } = e.target;
+        setEventData(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handleUpdateEvent = async () => {
+        if (!eventId) {
+            setError('이벤트 ID가 없습니다.');
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
-        const eventData = {
-            title: eventName,
-            description: eventDescription,
-            // 한국 기준 'MM-dd' 형식으로 날짜 변환
-            date: selectedDate ? selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }) : new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }),
-            // ['YYYY-MM-DD' 형식] date: selectedDate?.toISOString().split('T')[0]
-            location: eventLocation,
-        };
-
         try {
-            const response = await submitEventData(eventData);
-            console.log(response.message);
+            await axios.put(`/api/events/${eventId}`, eventData);
             router.push('/home');
         } catch (error) {
-            console.error('Error sending event data:', error);
-            setError('이벤트 데이터 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            console.error('Error updating event data:', error);
+            setError('이벤트 데이터 수정 중 오류가 발생했습니다. 다시 시도해 주세요.');
         } finally {
             setIsLoading(false);
         }
     };
 
+    if (!eventId) {
+        return null; // 또는 로딩 인디케이터
+    }
 
     return (
         <div>
             <div className="fixed top-[37px] right-[23px]">
                 <button
                     className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
-                    onClick={handleGoToMain}
+                    onClick={handleUpdateEvent}
                     disabled={isLoading}
                 >
                     <Image
@@ -82,50 +110,53 @@ export default function EditPage() {
                 <EditContainer>
                     <div className="flex flex-col space-y-4 pt-[5px]">
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventName" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="title" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Event Name
                             </label>
                             <Input
-                                id="eventName"
+                                id="title"
                                 type="text"
                                 placeholder="Enter event name"
-                                onChange={(e) => setEventName(e.target.value)}
+                                value={eventData.title}
+                                onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="description" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Description
                             </label>
                             <Input
-                                id="eventDescription"
+                                id="description"
                                 type="textarea"
                                 placeholder="Enter event description"
-                                onChange={(e) => setEventDescription(e.target.value)}
+                                value={eventData.description}
+                                onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventDate" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="date" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Date
                             </label>
                             <Input
-                                id="eventDate"
+                                id="date"
                                 type="text"
-                                value={selectedDate ? selectedDate.toLocaleDateString() : new Date().toLocaleDateString()}
+                                value={eventData.date}
                                 readOnly
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventLocation" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="location" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Location
                             </label>
                             <Input
-                                id="eventLocation"
+                                id="location"
                                 type="text"
                                 placeholder="Enter location"
-                                onChange={(e) => setEventLocation(e.target.value)}
+                                value={eventData.location}
+                                onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
