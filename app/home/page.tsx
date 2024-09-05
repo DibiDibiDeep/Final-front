@@ -13,32 +13,40 @@ import MemoDetail from '../memo/MemoDetail';
 import { Memo } from '@/types';
 import { saveMemos, loadMemos } from '../utils/storage';
 
+// 이벤트 타입 정의
+type Event = {
+  id: number;
+  eventName: string;
+  date: string;
+  location: string;
+};
+
 // 더미 이벤트 데이터
-const dummyEvents = [
+const dummyEvents: Event[] = [
   {
     id: 1,
-    eventName: "Dinner",
-    date: "2024.08.30",
-    location: "240 Olympic-ro, Songpa-gu, Seoul"
+    eventName: "저녁 식사",
+    date: "2024-09-05",
+    location: "서울특별시 송파구 올림픽로 240"
   },
   {
     id: 2,
-    eventName: "Conference",
-    date: "2024.09.15",
-    location: "123 Digital-ro, Gangnam-gu, Seoul"
+    eventName: "컨퍼런스",
+    date: "2024-09-15",
+    location: "서울특별시 강남구 디지털로 123"
   },
   {
     id: 3,
-    eventName: "Birthday Party",
-    date: "2024.10.05",
-    location: "56 Itaewon-ro, Yongsan-gu, Seoul"
+    eventName: "생일 파티",
+    date: "2024-10-05",
+    location: "서울특별시 용산구 이태원로 56"
   },
   // 추가 더미 이벤트
   ...Array(3).fill(null).map((_, index) => ({
     id: 4 + index,
-    eventName: `Event ${4 + index}`,
-    date: "2024.11.01",
-    location: "Various locations in Seoul"
+    eventName: `이벤트 ${4 + index}`,
+    date: "2024-11-01",
+    location: "서울 여러 장소"
   }))
 ];
 
@@ -47,7 +55,7 @@ const dummyMemos: Memo[] = [
   {
     id: 1,
     date: '2024-09-01',
-    content: `오늘은 동화 ‘스스로 할 수 있어요’를 읽어보았습니다. 동화를 들은 후 내가 할수 있는, 일이 무엇인지 이야기해 보았습니다. 그리고 연계 활동으로 활동지를 통해 제공된 그림들을 보고 내가 할 수 있는 일들을 직접 골라 언어로 표현해보고, 선택한 할 수 있는 일들에 대해 이야기해 보았습니다.`,
+    content: `오늘은 동화 '스스로 할 수 있어요'를 읽어보았습니다. 동화를 들은 후 내가 할수 있는, 일이 무엇인지 이야기해 보았습니다. 그리고 연계 활동으로 활동지를 통해 제공된 그림들을 보고 내가 할 수 있는 일들을 직접 골라 언어로 표현해보고, 선택한 할 수 있는 일들에 대해 이야기해 보았습니다.`,
   },
   {
     id: 2,
@@ -71,7 +79,7 @@ export default function Home() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [calendarVisible, setCalendarVisible] = useState(true);
 
-  // 메모 클릭시 변경 부분
+  // 메모 불러오기
   useEffect(() => {
     const storedMemos = loadMemos();
     if (storedMemos.length > 0) {
@@ -79,6 +87,7 @@ export default function Home() {
     }
   }, []);
 
+  // 메모 저장하기
   useEffect(() => {
     saveMemos(memos);
   }, [memos]);
@@ -93,6 +102,13 @@ export default function Home() {
     setCalendarVisible(isExpanded);
   }, [isExpanded]);
 
+  // 가끔 Todo랑 Memo 선택하는 버튼이 안 나오는 버그가 발생
+  useEffect(() => {
+    if (!activeView) {
+      setActiveView('todo');
+    }
+  }, [activeView]);
+
   const handlers = useSwipeable({
     onSwipedUp: () => {
       if (isExpanded) {
@@ -104,12 +120,12 @@ export default function Home() {
         setIsExpanded(true);
       }
     },
-    trackMouse: true,
-    delta: 150, // 스와이프를 감지하기 위한 최소 거리
-    preventScrollOnSwipe: isExpanded, // 스와이프 중 스크롤 방지
+    trackMouse: true, // 마우스 드래그 동작이 다른 인터페이스(예: 클릭 및 드래그로 요소를 이동하는 기능)와 충돌할 가능성이 있을 때 제거 필요
+    delta: 150,
+    preventScrollOnSwipe: isExpanded,
   });
 
-  // 메모 추가,수정,삭제 부분
+  // 메모 추가
   const addMemo = () => {
     const newMemo: Memo = {
       id: Date.now(),
@@ -120,21 +136,29 @@ export default function Home() {
     setSelectedMemo(newMemo);
   };
 
+  // 메모 업데이트
   const updateMemo = (updatedMemo: Memo) => {
     setMemos(memos.map(memo => memo.id === updatedMemo.id ? updatedMemo : memo));
     setSelectedMemo(null);
   };
 
+  // 메모 삭제
   const deleteMemo = (id: number) => {
     setMemos(memos.filter(memo => memo.id !== id));
     setSelectedMemo(null);
   };
 
-  // 선택된 날짜에 맞는 메모 필터링
+  // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
     const memoDate = new Date(memo.date).toLocaleDateString('ko-KR');
     const selectedDateString = selectedDate.toLocaleDateString('ko-KR');
     return memoDate === selectedDateString;
+  });
+
+  // 선택된 날짜에 해당하는 이벤트 필터링
+  const filteredEvents = dummyEvents.filter(event => {
+    const eventDate = new Date(event.date);
+    return eventDate.toDateString() === selectedDate.toDateString();
   });
 
   const topMargin = isExpanded ? 450 : 115;
@@ -146,7 +170,7 @@ export default function Home() {
           className="w-[45px] h-[45px] rounded-full overflow-hidden"
           onClick={handleAddSchedule}
         >
-          <Image src="/img/button/addSchedule.png" alt='Add Schedule' width={45} height={45} className="w-full h-full object-cover" />
+          <Image src="/img/button/addSchedule.png" alt='일정 추가' width={45} height={45} className="w-full h-full object-cover" />
         </button>
       </div>
       {calendarVisible && (
@@ -179,15 +203,19 @@ export default function Home() {
           </p>
           {activeView === 'todo' && (
             <>
-              {dummyEvents.map((event) => (
-                <DetailedContainer key={event.id} className="mb-[33px]">
-                  <EventCard
-                    eventName={event.eventName}
-                    date={event.date}
-                    location={event.location}
-                  />
-                </DetailedContainer>
-              ))}
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((event) => (
+                  <DetailedContainer key={event.id} className="mb-[33px]">
+                    <EventCard
+                      eventName={event.eventName}
+                      date={event.date}
+                      location={event.location}
+                    />
+                  </DetailedContainer>
+                ))
+              ) : (
+                <p className='text-gray-500'>이 날짜에 해당하는 일정이 없습니다.</p>
+              )}
             </>
           )}
           {activeView === 'memo' && (
@@ -202,7 +230,7 @@ export default function Home() {
               ) : (
                 <DiaryList memos={filteredMemos} onMemoSelect={setSelectedMemo} />
               )}
-              <button onClick={addMemo} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Add Memo</button>
+              <button onClick={addMemo} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">메모 추가</button>
             </>
           )}
         </div>
