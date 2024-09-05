@@ -1,60 +1,40 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import EditContainer from '@/components/EditContainer';
-import Input from '@/components/Input';
-import Calendar from '../calendar/Calendar';
-import axios from 'axios';
 
-interface EventData {
-    id?: number;
-    title: string;
-    description: string;
-    date: string;
-    location: string;
-}
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
+import Image from 'next/image';
+import Calendar from '@/app/calendar/Calendar';
+import EditContainer from '@/components/EditContainer';
+import { Input } from '@nextui-org/react';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
-export default function EditPage() {
-    const [eventData, setEventData] = useState<EventData>({
-        title: '',
-        description: '',
-        date: '',
-        location: ''
-    });
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+export default function EditEvent({ params }: { params: { id: string } }) {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const eventId = searchParams ? searchParams.get('id') : null;
+    const [eventData, setEventData] = useState({ title: '', description: '', date: '', location: '' });
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        if (eventId) {
-            fetchEventData(eventId);
-        } else {
-            // eventId가 없는 경우 홈으로 리다이렉트
-            router.push('/home');
-        }
-    }, [eventId, router]);
+        const fetchEvent = async () => {
+            try {
+                const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${params.id}`);
+                setEventData(response.data);
+                setSelectedDate(new Date(response.data.date));
+            } catch (error) {
+                console.error('Failed to fetch event:', error);
+                setError('Failed to load event data');
+            }
+        };
 
-    const fetchEventData = async (id: string) => {
-        try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${id}`);
-            const fetchedEvent = response.data;
-            setEventData(fetchedEvent);
-            setSelectedDate(new Date(fetchedEvent.date));
-        } catch (error) {
-            console.error('Error fetching event data:', error);
-            setError('이벤트 데이터를 불러오는 데 실패했습니다.');
-        }
-    };
+        fetchEvent();
+    }, [params.id]);
 
     const handleDateSelect = (date: Date) => {
         setSelectedDate(date);
-        setEventData(prev => ({ ...prev, date: date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }) }));
+        setEventData(prev => ({ ...prev, date: date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) }));
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,28 +43,18 @@ export default function EditPage() {
     };
 
     const handleUpdateEvent = async () => {
-        if (!eventId) {
-            setError('이벤트 ID가 없습니다.');
-            return;
-        }
-
         setIsLoading(true);
-        setError(null);
-
+        setError('');
         try {
-            await axios.put(`/api/events/${eventId}`, eventData);
+            await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, eventData);
             router.push('/home');
         } catch (error) {
-            console.error('Error updating event data:', error);
-            setError('이벤트 데이터 수정 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            console.error('Failed to update event:', error);
+            setError('Failed to update event');
         } finally {
             setIsLoading(false);
         }
     };
-
-    if (!eventId) {
-        return null; // 또는 로딩 인디케이터
-    }
 
     return (
         <div>
@@ -128,7 +98,7 @@ export default function EditPage() {
                             </label>
                             <Input
                                 id="description"
-                                type="textarea"
+                                type="text"
                                 placeholder="Enter event description"
                                 value={eventData.description}
                                 onChange={handleInputChange}
