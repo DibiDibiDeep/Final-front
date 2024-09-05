@@ -55,13 +55,17 @@ export default function Home() {
           params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) },
           headers: { 'Content-Type': 'application/json' }
         });
+        console.log('Backend response:', response.data);
         // 백엔드에서 받아온 데이터를 Event 타입에 맞게 변환
-        const fetchedEvents: Event[] = response.data.map((event: any) => ({
-          id: event.id,
-          eventName: event.title,  // 백엔드에서 받아온 title
-          date: event.date,
-          location: event.location
-        }));
+        const fetchedEvents: Event[] = response.data.map((event: any) => {
+          // console.log('Event ID:', event.calendarId); // id 값을 로그로 출력
+          return {
+            id: event.calendarId, // 백엔드에서 받아온 calendar_id
+            eventName: event.title,  // 백엔드에서 받아온 title
+            date: event.date,
+            location: event.location
+          };
+        });
         setEvents(fetchedEvents);
       } catch (error) {
         console.error('Failed to fetch events:', error);

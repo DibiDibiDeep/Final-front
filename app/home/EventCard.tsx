@@ -1,8 +1,10 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button } from "@nextui-org/react";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import DeleteModal from '../modal/DeleteModal';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface EventCardProps {
   id: number;
@@ -13,6 +15,7 @@ interface EventCardProps {
 
 const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const router = useRouter();
 
   const handleDeleteClick = () => {
     setIsDeleteModalOpen(true);
@@ -20,6 +23,10 @@ const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location }) 
 
   const handleCloseModal = () => {
     setIsDeleteModalOpen(false);
+  }
+
+  const handleEditClick = () => {
+    router.push(`/editEvent/${id}`);
   }
 
   return (
@@ -35,8 +42,8 @@ const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location }) 
           <DropdownMenu
             aria-label="Static Actions"
             selectionMode='single'>
-            <DropdownItem key="edit">
-              <Link href={`/editEvent?id=${id}`} className='text-gray-700'>Edit</Link>
+            <DropdownItem key="edit" className="text-gray-700" onPress={handleEditClick}>
+              Edit
             </DropdownItem>
             <DropdownItem key="delete" className="text-danger" color="danger" onPress={handleDeleteClick}>
               Delete
