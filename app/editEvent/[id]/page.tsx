@@ -6,7 +6,7 @@ import axios from 'axios';
 import Image from 'next/image';
 import Calendar from '@/app/Calendar/Calendar';
 import EditContainer from '@/components/EditContainer';
-import { Input } from '@nextui-org/react';
+import Input from '@/components/Input';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
@@ -21,8 +21,12 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         const fetchEvent = async () => {
             try {
                 const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${params.id}`);
-                setEventData(response.data);
-                setSelectedDate(new Date(response.data.date));
+                const fetchedDate = parseDate(response.data.date); // Parse date from MM-DD to Date
+                setEventData({
+                    ...response.data,
+                    date: formatDate(fetchedDate)
+                });
+                setSelectedDate(fetchedDate);
             } catch (error) {
                 console.error('Failed to fetch event:', error);
                 setError('Failed to load event data');
@@ -32,9 +36,21 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         fetchEvent();
     }, [params.id]);
 
+    const parseDate = (dateStr: string) => {
+        const [month, day] = dateStr.split('-').map(Number);
+        const year = new Date().getFullYear(); // Use current year or adjust as needed
+        return new Date(year, month - 1, day);
+    };
+
+    const formatDate = (date: Date) => {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${month}.${day}`;
+    };
+
     const handleDateSelect = (date: Date) => {
         setSelectedDate(date);
-        setEventData(prev => ({ ...prev, date: date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) }));
+        setEventData(prev => ({ ...prev, date: formatDate(date) }));
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +62,11 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         setIsLoading(true);
         setError('');
         try {
-            await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, eventData);
+            const formattedDate = eventData.date.replace('.', '-'); // Convert MM.DD to MM-DD
+            await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, {
+                ...eventData,
+                date: formattedDate
+            });
             router.push('/home');
         } catch (error) {
             console.error('Failed to update event:', error);

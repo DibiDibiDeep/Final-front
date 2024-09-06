@@ -13,16 +13,6 @@ const ModalTestPage: React.FC = () => {
 
     return (
         <div>
-            <button onClick={handleOpenModal}>Open Modal</button>
-            <DeleteModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}></DeleteModal>
-            {/* {selectedDate && <p>Selected Date: {selectedDate.toLocaleDateString()}</p>}
-            <DatePickerModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                onDateSelect={handleDateSelect}
-            /> */}
         </div>
     );
 };
