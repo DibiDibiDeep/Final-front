@@ -48,34 +48,28 @@ export default function Home() {
     saveMemos(memos);
   }, [memos]);
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await axios.get(`${BACKEND_API_URL}/api/calendars`, {
-          params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) },
-          headers: { 'Content-Type': 'application/json' }
-        });
-        console.log('Backend response:', response.data);
-        // 백엔드에서 받아온 데이터를 Event 타입에 맞게 변환
-        const fetchedEvents: Event[] = response.data.map((event: any) => {
-          // console.log('Event ID:', event.calendarId); // id 값을 로그로 출력
-          return {
-            id: event.calendarId, // 백엔드에서 받아온 calendar_id
-            eventName: event.title,  // 백엔드에서 받아온 title
-            date: event.date,
-            location: event.location
-          };
-        });
-        setEvents(fetchedEvents);
-      } catch (error) {
-        console.error('Failed to fetch events:', error);
-        // 에러 처리 로직 추가 (예: 사용자에게 알림)
-      }
-    };
+  const fetchEvents = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_API_URL}/api/calendars`, {
+        params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) },
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('Backend response:', response.data);
+      const fetchedEvents: Event[] = response.data.map((event: any) => ({
+        id: event.calendarId,
+        eventName: event.title,
+        date: event.date,
+        location: event.location
+      }));
+      setEvents(fetchedEvents); // 상태 업데이트
+    } catch (error) {
+      console.error('Failed to fetch events:', error);
+    }
+  };
 
+  useEffect(() => {
     fetchEvents();
   }, [selectedDate]);
-
 
   const handleAddSchedule = () => {
     router.push('/addEvent');
@@ -139,6 +133,10 @@ export default function Home() {
     return memoDate === selectedDateString;
   });
 
+  const handleEventDeleted = () => { // 5
+    fetchEvents();
+  };
+
   const topMargin = isExpanded ? 450 : 115;
 
   return (
@@ -190,6 +188,7 @@ export default function Home() {
                       eventName={event.eventName}
                       date={event.date}
                       location={event.location}
+                      onEventDeleted={handleEventDeleted}
                     />
                   </DetailedContainer>
                 ))
@@ -210,7 +209,6 @@ export default function Home() {
               ) : (
                 <DiaryList memos={filteredMemos} onMemoSelect={setSelectedMemo} />
               )}
-
             </>
           )}
         </div>

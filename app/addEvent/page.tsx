@@ -9,10 +9,12 @@ import axios from 'axios';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
-export default function EditPage() {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [selectedBabyId, setSelectedBabyId] = useState(null);
-    const [selectedPhotoId, setSelectedPhotoId] = useState(null);
+export default function AddPage() {
+    // 오늘 날짜를 MM.DD 형식으로 변환
+    const initialDate = new Date();
+    const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+    const [selectedBabyId, setSelectedBabyId] = useState<number | null>(null);
+    const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
     const [eventName, setEventName] = useState<string>('');
     const [eventDescription, setEventDescription] = useState<string>('');
     const [eventLocation, setEventLocation] = useState<string>('');
@@ -22,6 +24,14 @@ export default function EditPage() {
 
     const handleDateSelect = (date: Date) => {
         setSelectedDate(date);
+    };
+
+    const formatDateForDisplay = (date: Date) => {
+        return `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const formatDateForBackend = (date: Date) => {
+        return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     };
 
     const handleGoToMain = async () => {
@@ -34,9 +44,7 @@ export default function EditPage() {
             calendar_photo_id: selectedPhotoId, // 선택된 사진의 ID (있다면)
             title: eventName,
             description: eventDescription,
-            date: selectedDate
-                ? selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1)
-                : new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1),
+            date: formatDateForBackend(selectedDate), // Convert date to MM-DD format for backend
             location: eventLocation,
         };
 
@@ -90,12 +98,12 @@ export default function EditPage() {
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="eventDescription" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Description
                             </label>
                             <Input
                                 id="eventDescription"
-                                type="textarea"
+                                type="text"
                                 placeholder="Enter event description"
                                 onChange={(e) => setEventDescription(e.target.value)}
                                 className='text-gray-700'
@@ -108,7 +116,7 @@ export default function EditPage() {
                             <Input
                                 id="eventDate"
                                 type="text"
-                                value={selectedDate ? selectedDate.toLocaleDateString() : new Date().toLocaleDateString()}
+                                value={formatDateForDisplay(selectedDate)} // Format date for display
                                 readOnly
                                 className='text-gray-700'
                             />
