@@ -9,6 +9,7 @@ COPY package.json package-lock.json .
 
 # 의존성 설치
 RUN npm install
+RUN apk add --no-cache npm
 
 # 소스 파일 복사
 COPY . .
