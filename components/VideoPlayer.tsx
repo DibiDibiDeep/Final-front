@@ -21,7 +21,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ onStartClick }) => {
         if (videoRef.current) {
             videoRef.current.currentTime = 0;
             videoRef.current.play().catch(console.error);
-            router.push('/home');
+            router.push('/login');
             setIsEnded(false);
             setShowButton(false);
         }
