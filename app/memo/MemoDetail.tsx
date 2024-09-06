@@ -1,60 +1,61 @@
-'use client'
+'use client';
 
 import React, { useState } from 'react';
-import { Memo } from '@/types';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import DeleteModal from '../modal/DeleteModal';
+import { useRouter } from 'next/navigation';
 
 interface MemoDetailProps {
-  memo: Memo;
-  onUpdate: (updatedMemo: Memo) => void;
-  onDelete: (id: number) => void;
-  onClose: () => void;
+  memoId: number;
+  createdAt: string;
+  content: string;
 }
 
-const MemoDetail: React.FC<MemoDetailProps> = ({ memo, onUpdate, onDelete, onClose }) => {
-  const [editedContent, setEditedContent] = useState(memo.content);
+const MemoDetail: React.FC<MemoDetailProps> = ({ memoId, createdAt, content }) => {
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const router = useRouter();
 
-  const handleSave = async () => {
-    try {
-      const response = await fetch('/api/memoUpdate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: memo.id,
-          diary_id: 1,
-          fairy_tale_id: null,
-          user_id: 1,
-          content: editedContent,
-        }),
-      });
-      
-      if (response.ok) {
-        const updatedMemo = { ...memo, content: editedContent };
-        onUpdate(updatedMemo);
-      } else {
-        console.error('Failed to save memo');
-      }
-    } catch (error) {
-      console.error('Error saving memo:', error);
-    }
-  };
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  }
+
+  const handleEditClick = () => {
+    router.push(`/editMemo/${memoId}`);
+  }
+
+  const handleCloseModal = () => {
+    setIsDeleteModalOpen(false);
+  }
 
   return (
-    <div className="h-full flex flex-col p-4">
-      <header className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">{memo.date}</h2>
-        <button onClick={onClose} className="text-gray-600">닫기</button>
-      </header>
-      <textarea
-        value={editedContent}
-        onChange={(e) => setEditedContent(e.target.value)}
-        className="flex-1 w-full p-2 border rounded resize-none focus:outline-none focus:ring-2 focus:ring-purple-300"
-      />
-      <div className="flex justify-end space-x-2 mt-4">
-        <button onClick={() => onDelete(memo.id)} className="px-4 py-2 bg-red-500 text-white rounded">삭제</button>
-        <button onClick={handleSave} className="px-4 py-2 bg-purple-600 text-white rounded">저장</button>
+    <div className="w-full px-4 py-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-700">{content}</span>
+        <div className="flex items-center">
+          <span className="text-xs text-gray-500 mr-2">
+            {new Date(createdAt).toLocaleDateString()}
+          </span>
+          <Dropdown>
+            <DropdownTrigger>
+              <button>
+                <EllipsisVerticalIcon className="h-6 w-6 text-gray-500" />
+              </button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="Static Actions"
+              selectionMode='single'>
+              <DropdownItem key="edit" className="text-gray-700" onPress={handleEditClick}>
+                Edit
+              </DropdownItem>
+              <DropdownItem key="delete" className="text-danger" color="danger" onPress={handleDeleteClick}>
+                Delete
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        </div>
       </div>
+      <DeleteModal isOpen={isDeleteModalOpen} onClose={handleCloseModal} />
     </div>
   );
 };

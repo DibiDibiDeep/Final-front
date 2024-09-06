@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, useDisclosure, ModalFooter } from "@nextui-org/react";
-import Calendar from '../calendar/Calendar';
+import Calendar from '../Calendar/Calendar';
 
 interface DatePickerModalProps {
     isOpen: boolean;

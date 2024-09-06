@@ -12,7 +12,7 @@ const GoogleAuthLogin = () => {
             <GoogleLogin
                 onSuccess={(credentialResponse) => {
                     console.log(credentialResponse);
-                    router.push('/home');
+                    router.push('/initialSettings');
                 }}
                 onError={() => {
                     console.log("Login 실패");
