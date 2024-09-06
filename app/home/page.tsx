@@ -7,7 +7,7 @@ import { useSwipeable } from 'react-swipeable';
 import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
-import Calendar from '../Calendar/Calendar';
+import Calendar from '../calendar/Calendar';
 import MemoDetail from '../memo/MemoDetail';
 import axios from 'axios';
 import { Search } from 'lucide-react';
@@ -76,11 +76,10 @@ export default function Home() {
   }, [selectedDate]);
 
 
-  useEffect(() => {
   const fetchEvents = async () => {
     try {
       const response = await axios.get(`${BACKEND_API_URL}/api/calendars`, {
-        params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) },
+        params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) }, // 백으로 보내는 date
         headers: { 'Content-Type': 'application/json' }
       });
       console.log('Backend response:', response.data);
@@ -146,23 +145,23 @@ export default function Home() {
   // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
     const memoDate = new Date(memo.createdAt);
-    const isSameDate = 
+    const isSameDate =
       memoDate.getFullYear() === selectedDate.getFullYear() &&
       memoDate.getMonth() === selectedDate.getMonth() &&
       memoDate.getDate() === selectedDate.getDate();
-    
+
     const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     console.log(`Memo ${memo.memoId}: Date match: ${isSameDate}, Search match: ${matchesSearch}`);
-    
+
     return isSameDate && (searchTerm === '' || matchesSearch);
   });
-  
+
   console.log('Selected Date:', selectedDate);
   console.log('Filtered Memos:', filteredMemos);
 
   // 선택된 날짜에 해당하는 이벤트 필터링
-  const filteredEvents = events.filter(event => 
+  const filteredEvents = events.filter(event =>
     event.eventName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
