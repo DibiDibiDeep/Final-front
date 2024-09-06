@@ -7,12 +7,10 @@ import { useSwipeable } from 'react-swipeable';
 import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
-import Calendar from '../calendar/Calendar';
-import DiaryList from '../diary/DiaryList';
+import Calendar from '../Calendar/Calendar';
 import MemoDetail from '../memo/MemoDetail';
-import { Memo } from '@/types';
-import { saveMemos, loadMemos } from '../utils/storage';
 import axios from 'axios';
+import { Search } from 'lucide-react';
 
 // 이벤트 타입 정의
 type Event = {
@@ -22,31 +20,60 @@ type Event = {
   location: string;
 };
 
+type Memo = {
+  memoId: number;
+  createdAt: string;
+  content: string;
+}
+
+const formatDate = (date: Date) => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${month}-${day}`;
+};
+
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const router = useRouter();
-  const [calendarOpacity, setCalendarOpacity] = useState(1);
   const [activeView, setActiveView] = useState<'todo' | 'memo'>('todo');
   const [memos, setMemos] = useState<Memo[]>([]);
   const [selectedMemo, setSelectedMemo] = useState<Memo | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [calendarVisible, setCalendarVisible] = useState(true);
   const [events, setEvents] = useState<Event[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // 메모 불러오기
   useEffect(() => {
-    const storedMemos = loadMemos();
-    if (storedMemos.length > 0) {
-      setMemos(storedMemos);
-    }
-  }, []);
-
-  // 메모 저장하기
-  useEffect(() => {
-    saveMemos(memos);
-  }, [memos]);
+    const fetchMemos = async () => {
+      try {
+        const formattedDate = formatDate(selectedDate);
+        console.log('Fetching memos for date:', formattedDate);
+        const response = await axios.get(`${BACKEND_API_URL}/api/memos/date/${formattedDate}`, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('Backend response for Memos:', response.data);
+        if (Array.isArray(response.data)) {
+          const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
+            memoId: memo.memoId,
+            createdAt: memo.createdAt,
+            content: memo.content
+          }));
+          setMemos(fetchedMemos);
+          console.log('Fetched memos:', fetchedMemos);
+        } else {
+          console.error('Unexpected response format for memos:', response.data);
+          setMemos([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch memos:', error);
+        setMemos([]);
+      }
+    };
+    fetchMemos();
+  }, [selectedDate]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -55,7 +82,7 @@ export default function Home() {
           params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) },
           headers: { 'Content-Type': 'application/json' }
         });
-        console.log('Backend response:', response.data);
+        console.log('Backend response: ', response.data);
         // 백엔드에서 받아온 데이터를 Event 타입에 맞게 변환
         const fetchedEvents: Event[] = response.data.map((event: any) => {
           // console.log('Event ID:', event.calendarId); // id 값을 로그로 출력
@@ -112,38 +139,53 @@ export default function Home() {
   // 메모 추가
   const addMemo = () => {
     const newMemo: Memo = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString('ko-KR'),
+      memoId: Date.now(),
+      createdAt: new Date().toLocaleDateString('ko-KR'),
       content: '새 메모',
     };
     setMemos([newMemo, ...memos]);
     setSelectedMemo(newMemo);
   };
 
-  // 메모 업데이트
-  const updateMemo = (updatedMemo: Memo) => {
-    setMemos(memos.map(memo => memo.id === updatedMemo.id ? updatedMemo : memo));
-    setSelectedMemo(null);
-  };
-
-  // 메모 삭제
-  const deleteMemo = (id: number) => {
-    setMemos(memos.filter(memo => memo.id !== id));
-    setSelectedMemo(null);
-  };
-
   // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
-    const memoDate = new Date(memo.date).toLocaleDateString('ko-KR');
-    const selectedDateString = selectedDate.toLocaleDateString('ko-KR');
-    return memoDate === selectedDateString;
+    const memoDate = new Date(memo.createdAt);
+    const isSameDate = 
+      memoDate.getFullYear() === selectedDate.getFullYear() &&
+      memoDate.getMonth() === selectedDate.getMonth() &&
+      memoDate.getDate() === selectedDate.getDate();
+    
+    const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    console.log(`Memo ${memo.memoId}: Date match: ${isSameDate}, Search match: ${matchesSearch}`);
+    
+    return isSameDate && (searchTerm === '' || matchesSearch);
   });
+  
+  console.log('Selected Date:', selectedDate);
+  console.log('Filtered Memos:', filteredMemos);
+
+  // 선택된 날짜에 해당하는 이벤트 필터링
+  const filteredEvents = events.filter(event => 
+    event.eventName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    event.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const topMargin = isExpanded ? 450 : 115;
 
   return (
     <div className="h-screen flex flex-col relative">
-      <div className="fixed top-[37px] right-[23px] flex space-x-[13px] z-30">
+      <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="검색"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-[240px] p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300"
+          />
+          <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
+        </div>
         <button
           className="w-[45px] h-[45px] rounded-full overflow-hidden"
           onClick={handleAddSchedule}
@@ -175,15 +217,14 @@ export default function Home() {
             >
               Memo
             </button>
-            <button onClick={addMemo} className="mt-2 px-4 py-2 rounded">+</button>
           </div>
           <p className="text-2xl text-black mb-[33px]">
             {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
           {activeView === 'todo' && (
             <>
-              {events.length > 0 ? (
-                events.map((event) => (
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((event) => (
                   <DetailedContainer key={event.id} className="mb-[33px]">
                     <EventCard
                       id={event.id}
@@ -200,17 +241,20 @@ export default function Home() {
           )}
           {activeView === 'memo' && (
             <>
-              {selectedMemo ? (
-                <MemoDetail
-                  memo={selectedMemo}
-                  onUpdate={updateMemo}
-                  onDelete={deleteMemo}
-                  onClose={() => setSelectedMemo(null)}
-                />
+              {console.log('Filtered Memos:', filteredMemos)}
+              {filteredMemos.length > 0 ? (
+                filteredMemos.map((memo) => (
+                  <DetailedContainer key={memo.memoId} className="mb-[33px]">
+                    <MemoDetail
+                      memoId={memo.memoId}
+                      createdAt={memo.createdAt}
+                      content={memo.content}
+                    />
+                  </DetailedContainer>
+                ))
               ) : (
-                <DiaryList memos={filteredMemos} onMemoSelect={setSelectedMemo} />
+                <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
               )}
-
             </>
           )}
         </div>
