@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, ClipboardList, Plus, BookHeart, User, LucideIcon } from 'lucide-react';
@@ -25,7 +23,7 @@ IconButton.displayName = 'IconButton';
 
 const BottomContainer: React.FC = () => {
     const router = useRouter();
-    const [selectedButton, setSelectedButton] = useState('home');
+    const [selectedButton, setSelectedButton] = useState<string>('home');
 
     const handleButtonClick = useCallback((buttonName: string, path: string) => {
         setSelectedButton(buttonName);
@@ -45,16 +43,23 @@ const BottomContainer: React.FC = () => {
                 }
             });
 
-            console.log('Image uploaded successfully:', response.data);
+            console.log('이미지 업로드 성공:', response.data);
 
-            // Get the image URL
             const imageUrl = await getImageUrl(response.data.key);
-            console.log('Image URL:', imageUrl);
+            console.log('이미지 URL:', imageUrl);
 
-            // Process the image
-            await processImage({ imageUrl, userId, babyId });
+            const result = await processImage({ imageUrl, userId, babyId });
+            console.log("결과 : ", result);
+
+            // 결과를 로컬 스토리지에 저장
+            localStorage.setItem('calendarData', JSON.stringify(result));
+
+            // 결과 페이지로 이동
+            router.push('/calendarResult');
         } catch (error) {
-            console.error('Error uploading or processing image:', error);
+            console.error('이미지 업로드 또는 처리 중 오류:', error);
+            localStorage.setItem('calendarError', '이미지 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            router.push('/calendarResult');
         }
     };
 
@@ -63,16 +68,17 @@ const BottomContainer: React.FC = () => {
         input.type = 'file';
         input.accept = 'image/*';
         input.style.display = 'none';
-        input.onchange = async (event) => {
-            const files = (event.target as HTMLInputElement).files;
+        input.onchange = async (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            const files = target.files;
             if (files && files.length > 0) {
                 const file = files[0];
-                console.log('Selected file:', file.name);
-                console.log('File size:', file.size);
-                console.log('File type:', file.type);
+                console.log('선택된 파일:', file.name);
+                console.log('파일 크기:', file.size);
+                console.log('파일 타입:', file.type);
 
-                const userId = 1; // Example value, replace with actual user ID in real implementation
-                const babyId = 2; // Example value, replace with actual baby ID in real implementation
+                const userId = 1; // 더미 값
+                const babyId = 2; // 더미 값
 
                 await uploadImage(file, userId, babyId);
             }
@@ -80,9 +86,9 @@ const BottomContainer: React.FC = () => {
         document.body.appendChild(input);
         input.click();
         document.body.removeChild(input);
-    }, []);
+    }, [router]);
 
-    const getButtonStyle = useCallback((buttonName: string) => {
+    const getButtonStyle = useCallback((buttonName: string): string => {
         if (buttonName === 'plus') {
             return `p-4 rounded-full bg-purple-600 absolute -top-8 shadow-lg`;
         }
@@ -92,25 +98,22 @@ const BottomContainer: React.FC = () => {
     }, [selectedButton]);
 
     return (
-        <>
-            <div className="fixed bottom-0 left-0 right-0 w-full h-[100px] bg-white bg-opacity-40 backdrop-blur-md border-t-2 border-white shadow-md rounded-[40px] z-30">
-                <div className="w-full h-full flex items-center justify-around px-4 relative">
-                    <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
-                    <IconButton icon={ClipboardList} onClick={() => handleButtonClick('diary', '/diary')} style={getButtonStyle('diary')} />
-                    <IconButton
-                        icon={Plus}
-                        onClick={handlePlusButtonClick}
-                        style={getButtonStyle('plus')}
-                        size={32}
-                        color="white"
-                    />
-                    <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />
-                    <IconButton icon={User} onClick={() => handleButtonClick('profile', '/profile')} style={getButtonStyle('profile')} />
-                </div>
+        <div className="fixed bottom-0 left-0 right-0 w-full h-[100px] bg-white bg-opacity-40 backdrop-blur-md border-t-2 border-white shadow-md rounded-[40px] z-30">
+            <div className="w-full h-full flex items-center justify-around px-4 relative">
+                <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
+                <IconButton icon={ClipboardList} onClick={() => handleButtonClick('diary', '/diary')} style={getButtonStyle('diary')} />
+                <IconButton
+                    icon={Plus}
+                    onClick={handlePlusButtonClick}
+                    style={getButtonStyle('plus')}
+                    size={32}
+                    color="white"
+                />
+                <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />
+                <IconButton icon={User} onClick={() => handleButtonClick('profile', '/profile')} style={getButtonStyle('profile')} />
             </div>
-        </>
+        </div>
     );
 };
 
-BottomContainer.displayName = 'BottomContainer';
 export default React.memo(BottomContainer);
