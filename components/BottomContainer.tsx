@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Home, ClipboardList, Plus, BookHeart, User, LucideIcon } from 'lucide-react';
 import axios from 'axios';
 import { getImageUrl } from '@/utils/getImageUrl';
+import { processImage } from '@/utils/processImage';
 
 interface IconButtonProps {
     icon: LucideIcon;
@@ -46,11 +47,14 @@ const BottomContainer: React.FC = () => {
 
             console.log('Image uploaded successfully:', response.data);
 
-            // 업로드 성공 후 이미지 URL 가져오기 (테스트)
-            // const imageUrl = await getImageUrl(response.data.key);
-            // console.log(imageUrl);
+            // Get the image URL
+            const imageUrl = await getImageUrl(response.data.key);
+            console.log('Image URL:', imageUrl);
+
+            // Process the image
+            await processImage({ imageUrl, userId, babyId });
         } catch (error) {
-            console.error('Error uploading image:', error);
+            console.error('Error uploading or processing image:', error);
         }
     };
 
@@ -67,8 +71,8 @@ const BottomContainer: React.FC = () => {
                 console.log('File size:', file.size);
                 console.log('File type:', file.type);
 
-                const userId = 1; // 예시 값, 실제 구현시 적절한 값으로 대체해야 합니다.
-                const babyId = 2; // 예시 값, 실제 구현시 적절한 값으로 대체해야 합니다.
+                const userId = 1; // Example value, replace with actual user ID in real implementation
+                const babyId = 2; // Example value, replace with actual baby ID in real implementation
 
                 await uploadImage(file, userId, babyId);
             }
