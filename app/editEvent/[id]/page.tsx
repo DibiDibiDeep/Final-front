@@ -12,8 +12,8 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 
 interface EventData {
     title: string;
-    start_time: string;
-    end_time: string;
+    startTime: string;
+    endTime: string;
     location: string;
 }
 
@@ -21,8 +21,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     const router = useRouter();
     const [eventData, setEventData] = useState<EventData>({
         title: '',
-        start_time: '',
-        end_time: '',
+        startTime: '',
+        endTime: '',
         location: '',
     });
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -33,8 +33,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         const fetchEvent = async () => {
             try {
                 const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${params.id}`);
-                const startTime = new Date(response.data.start_time);
-                const endTime = new Date(response.data.end_time);
+                const startTime = new Date(response.data.startTime);
+                const endTime = new Date(response.data.endTime);
                 setEventData({
                     ...response.data,
                     start_time: formatDateTimeForInput(startTime),
@@ -79,8 +79,6 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         try {
             const updatedEventData = {
                 ...eventData,
-                start_time: formatDateTimeForMySQL(eventData.start_time),
-                end_time: formatDateTimeForMySQL(eventData.end_time)
             };
             await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, updatedEventData);
             router.push('/home');
@@ -148,25 +146,25 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="start_time" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="startTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 시작 시간
                             </label>
                             <Input
-                                id="start_time"
+                                id="startTime"
                                 type="datetime-local"
-                                value={eventData.start_time}
+                                value={eventData.startTime}
                                 onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="end_time" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                            <label htmlFor="endTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 종료 시간
                             </label>
                             <Input
-                                id="end_time"
+                                id="endTime"
                                 type="datetime-local"
-                                value={eventData.end_time}
+                                value={eventData.endTime}
                                 onChange={handleInputChange}
                                 className='text-gray-700'
                             />
