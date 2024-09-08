@@ -15,7 +15,7 @@ import { Search } from 'lucide-react';
 // 이벤트 타입 정의
 type Event = {
   id: number;
-  eventName: string;
+  title: string;
   date: string;
   location: string;
 };
@@ -79,13 +79,13 @@ export default function Home() {
   const fetchEvents = async () => {
     try {
       const response = await axios.get(`${BACKEND_API_URL}/api/calendars`, {
-        params: { date: selectedDate.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace('. ', '-').slice(0, -1) }, // 백으로 보내는 date
+        params: { date: selectedDate.toISOString() }, // 백으로 보내는 date // 여기 수정 필요
         headers: { 'Content-Type': 'application/json' }
       });
       console.log('Backend response:', response.data);
       const fetchedEvents: Event[] = response.data.map((event: any) => ({
         id: event.calendarId,
-        eventName: event.title,
+        title: event.title,
         date: event.date,
         location: event.location
       }));
@@ -162,7 +162,7 @@ export default function Home() {
 
   // 선택된 날짜에 해당하는 이벤트 필터링
   const filteredEvents = events.filter(event =>
-    event.eventName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -227,7 +227,7 @@ export default function Home() {
                   <DetailedContainer key={event.id} className="mb-[33px]">
                     <EventCard
                       id={event.id}
-                      eventName={event.eventName}
+                      title={event.title}
                       date={event.date}
                       location={event.location}
                       onEventDeleted={handleEventDeleted}

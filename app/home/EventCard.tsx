@@ -10,13 +10,13 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 
 interface EventCardProps {
   id: number;
-  eventName: string;
+  title: string;
   date: string; // date is expected in MM-DD format
   location: string;
   onEventDeleted: () => void;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location, onEventDeleted }) => {
+const EventCard: React.FC<EventCardProps> = ({ id, title, date, location, onEventDeleted }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
 
@@ -52,7 +52,7 @@ const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location, on
   return (
     <div className="w-full px-4 py-2">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold text-black">{eventName}</h2>
+        <h2 className="text-xl font-semibold text-black">{title}</h2>
         <Dropdown>
           <DropdownTrigger>
             <button>

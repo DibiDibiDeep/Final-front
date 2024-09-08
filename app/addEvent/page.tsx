@@ -1,56 +1,106 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
 import Calendar from '../calendar/Calendar';
 import axios from 'axios';
+import { debounce } from 'lodash';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
 export default function AddPage() {
-    const initialDate = new Date();
-    const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
-    const [selectedBabyId, setSelectedBabyId] = useState<number | null>(null);
-    const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [userId, setUserId] = useState<number>(1);
+    const [babyId, setBabyId] = useState<number | null>(1);
     const [title, setTitle] = useState<string>('');
     const [startTime, setStartTime] = useState<string>('');
     const [endTime, setEndTime] = useState<string>('');
-    const [description, setDescription] = useState<string>('');
     const [location, setLocation] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    const handleDateSelect = (date: Date) => {
-        setSelectedDate(date);
+    useEffect(() => {
+        updateDateTimes(new Date());
+    }, []);
+
+    useEffect(() => {
+        if (isLoading) {
+            handleSubmitData();
+        }
+    }, [isLoading]);
+
+    const getFormattedDateTime = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`; // YYYY-MM-DDTHH:mm
     };
 
-    // 시간 형식을 MySQL TIME 타입에 맞게 변환하는 함수
-    const convertToMySQLTime = (time: string): string => {
-        return time ? `${time}:00` : ''; // 시간이 제공되지 않은 경우 빈 문자열이 전송 → 백에서 빈 문자열을 NULL로 처리하거나, 기본값을 설정하는 등의 설정 필요 (프론트에서 기본값 설정되어있어 문제 없을 듯)
+    const updateDateTimes = (date: Date) => {
+        const now = new Date();
+        date.setHours(now.getHours(), now.getMinutes(), 0, 0);
+        setStartTime(getFormattedDateTime(date));
+        setEndTime(getFormattedDateTime(new Date(date.getTime() + 60 * 60 * 1000))); // 기본적으로 1시간 후로 설정
+    };
+
+    const handleDateSelect = (date: Date) => {
+        setSelectedDate(date);
+        updateDateTimes(date);
+    };
+
+    const updateEndTime = (startDateTime: string, currentEndDateTime: string): string => {
+        const start = new Date(startDateTime);
+        const end = new Date(currentEndDateTime);
+        const diff = end.getTime() - new Date(startTime).getTime(); // 기존 시작 시간과 종료 시간의 차이
+        const newEnd = new Date(start.getTime() + diff);
+        return getFormattedDateTime(newEnd);
+    };
+
+    const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newStartDateTime = e.target.value;
+        setStartTime(newStartDateTime);
+        setSelectedDate(new Date(newStartDateTime));
+        setEndTime(updateEndTime(newStartDateTime, endTime));
+        console.log("startTime : " + newStartDateTime);
+    };
+
+    const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newDateTime = e.target.value;
+        setEndTime(newDateTime);
+        console.log("endTime : " + newDateTime);
     };
 
     const handleGoToMain = () => {
         router.push('/home');
     }
 
-    const handleSubmit = async () => {
-        setIsLoading(true);
+    const handleSubmit = (e: React.MouseEvent) => {
+        e.preventDefault(); // 이벤트 전파 방지
+        if (!isLoading) {
+            setIsLoading(true);
+        }
+    };
+
+    const debouncedSubmit = debounce(handleSubmit, 300); // 일정 시간 내 중복 클릭 방지 (중복 제출 방지)
+
+    const handleSubmitData = async () => {
         setError(null);
 
         const eventData = {
-            user_id: 1, // 현재 로그인한 사용자의 ID
-            baby_id: selectedBabyId,
-            calendar_photo_id: selectedPhotoId,
+            userId,
+            babyId,
             title,
-            description,
-            date: selectedDate,
-            start_time: convertToMySQLTime(startTime),
-            end_time: convertToMySQLTime(endTime),
+            startTime,
+            endTime,
             location,
         };
+
+        console.log("eventData", eventData);
 
         try {
             const response = await axios.post(`${BACKEND_API_URL}/api/calendars`, eventData, {
@@ -85,8 +135,8 @@ export default function AddPage() {
             </div>
             <div className="fixed top-[37px] right-[23px]">
                 <button
-                    className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
-                    onClick={handleSubmit}
+                    className={`w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={debouncedSubmit}
                     disabled={isLoading}
                 >
                     <Image
@@ -94,7 +144,7 @@ export default function AddPage() {
                         alt='Confirm'
                         width={50}
                         height={50}
-                        className={`max-w-full max-h-full object-contain ${isLoading ? 'opacity-50' : ''}`}
+                        className="max-w-full max-h-full object-contain"
                     />
                 </button>
             </div>
@@ -117,25 +167,14 @@ export default function AddPage() {
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="date" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                날짜
-                            </label>
-                            <Input
-                                id="date"
-                                type="text"
-                                value={selectedDate.toLocaleDateString("ko-KR")}
-                                readOnly
-                                className='text-gray-700'
-                            />
-                        </div>
-                        <div className="flex items-center space-x-4">
                             <label htmlFor="startTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 시작 시간
                             </label>
                             <Input
                                 id="startTime"
-                                type="time"
-                                onChange={(e) => setStartTime(e.target.value)}
+                                type="datetime-local"
+                                value={startTime}
+                                onChange={handleStartTimeChange}
                                 className='text-gray-700'
                             />
                         </div>
@@ -145,8 +184,9 @@ export default function AddPage() {
                             </label>
                             <Input
                                 id="endTime"
-                                type="time"
-                                onChange={(e) => setEndTime(e.target.value)}
+                                type="datetime-local"
+                                value={endTime}
+                                onChange={handleEndTimeChange}
                                 className='text-gray-700'
                             />
                         </div>

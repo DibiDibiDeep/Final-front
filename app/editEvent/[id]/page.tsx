@@ -10,9 +10,21 @@ import Input from '@/components/Input';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
+interface EventData {
+    title: string;
+    start_time: string;
+    end_time: string;
+    location: string;
+}
+
 export default function EditEvent({ params }: { params: { id: string } }) {
     const router = useRouter();
-    const [eventData, setEventData] = useState({ title: '', description: '', date: '', location: '' });
+    const [eventData, setEventData] = useState<EventData>({
+        title: '',
+        start_time: '',
+        end_time: '',
+        location: '',
+    });
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -21,12 +33,14 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         const fetchEvent = async () => {
             try {
                 const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${params.id}`);
-                const fetchedDate = parseDate(response.data.date); // Parse date from MM-DD to Date
+                const startTime = new Date(response.data.start_time);
+                const endTime = new Date(response.data.end_time);
                 setEventData({
                     ...response.data,
-                    date: formatDate(fetchedDate)
+                    start_time: formatDateTimeForInput(startTime),
+                    end_time: formatDateTimeForInput(endTime)
                 });
-                setSelectedDate(fetchedDate);
+                setSelectedDate(startTime);
             } catch (error) {
                 console.error('Failed to fetch event:', error);
                 setError('Failed to load event data');
@@ -36,24 +50,25 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         fetchEvent();
     }, [params.id]);
 
-    const parseDate = (dateStr: string) => {
-        const [month, day] = dateStr.split('-').map(Number);
-        const year = new Date().getFullYear(); // Use current year or adjust as needed
-        return new Date(year, month - 1, day);
+    const formatDateTimeForInput = (date: Date) => {
+        return date.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
     };
 
-    const formatDate = (date: Date) => {
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${month}.${day}`;
+    const formatDateTimeForMySQL = (dateTimeString: string) => {
+        const date = new Date(dateTimeString);
+        return date.toISOString().slice(0, 19).replace('T', ' ');
     };
 
     const handleDateSelect = (date: Date) => {
         setSelectedDate(date);
-        setEventData(prev => ({ ...prev, date: formatDate(date) }));
+        setEventData(prev => ({
+            ...prev,
+            start_time: formatDateTimeForInput(date),
+            end_time: formatDateTimeForInput(new Date(date.getTime() + 60 * 60 * 1000)) // Default to 1 hour duration
+        }));
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setEventData(prev => ({ ...prev, [id]: value }));
     };
@@ -62,11 +77,12 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         setIsLoading(true);
         setError('');
         try {
-            const formattedDate = eventData.date.replace('.', '-'); // Convert MM.DD to MM-DD
-            await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, {
+            const updatedEventData = {
                 ...eventData,
-                date: formattedDate
-            });
+                start_time: formatDateTimeForMySQL(eventData.start_time),
+                end_time: formatDateTimeForMySQL(eventData.end_time)
+            };
+            await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, updatedEventData);
             router.push('/home');
         } catch (error) {
             console.error('Failed to update event:', error);
@@ -125,34 +141,33 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                             <Input
                                 id="title"
                                 type="text"
-                                placeholder="Enter event name"
+                                placeholder="이벤트 제목을 입력해주세요."
                                 value={eventData.title}
                                 onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="description" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                Description
+                            <label htmlFor="start_time" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                시작 시간
                             </label>
                             <Input
-                                id="description"
-                                type="text"
-                                placeholder="Enter event description"
-                                value={eventData.description}
+                                id="start_time"
+                                type="datetime-local"
+                                value={eventData.start_time}
                                 onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="date" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                날짜
+                            <label htmlFor="end_time" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                종료 시간
                             </label>
                             <Input
-                                id="date"
-                                type="text"
-                                value={eventData.date}
-                                readOnly
+                                id="end_time"
+                                type="datetime-local"
+                                value={eventData.end_time}
+                                onChange={handleInputChange}
                                 className='text-gray-700'
                             />
                         </div>
@@ -163,7 +178,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                             <Input
                                 id="location"
                                 type="text"
-                                placeholder="Enter location"
+                                placeholder="위치를 입력해주세요."
                                 value={eventData.location}
                                 onChange={handleInputChange}
                                 className='text-gray-700'

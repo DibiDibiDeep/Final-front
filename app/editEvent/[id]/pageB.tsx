@@ -99,12 +99,12 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                 </div>
                 <EditContainer>
                     <div className="flex flex-col space-y-4 pt-[5px]">
-                        <div className="flex items-center space-x-4">ㅌ
-                            <label htmlFor="eventName" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                        <div className="flex items-center space-x-4">
+                            <label htmlFor="title" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
                                 Event Name
                             </label>
                             <Input
-                                id="eventName"
+                                id="title"
                                 type="text"
                                 placeholder="Enter event name"
                                 value={eventData.title}
