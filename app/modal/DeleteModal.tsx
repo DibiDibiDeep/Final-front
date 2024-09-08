@@ -34,19 +34,18 @@ const DeleteModal: React.FC<DeleteModalProps> = ({ isOpen, onClose, onDelete }) 
                             <ModalHeader className="flex flex-col gap-1" />
                             <ModalBody className="flex flex-col items-center text-center">
                                 <p className="text-black">
-                                    Are you sure you want to delete this schedule?
+                                    이 일정을 삭제하시겠습니까?
                                 </p>
                                 <p className="text-gray-600">
-                                    If you delete the schedule <br />
-                                    you can't recover it.
+                                    일정을 삭제하면 복구할 수 없습니다.
                                 </p>
                             </ModalBody>
                             <ModalFooter className="justify-center">
                                 <Button className='text-gray-700' variant="light" onPress={onClose}>
-                                    Close
+                                    취소
                                 </Button>
                                 <Button color="primary" onPress={handleDelete}>
-                                    Delete
+                                    삭제
                                 </Button>
                             </ModalFooter>
                         </>

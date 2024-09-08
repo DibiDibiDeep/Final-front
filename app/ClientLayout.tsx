@@ -15,9 +15,10 @@ export default function ClientLayout({
     const isLoadingPage = pathname === '/'; // Assuming '/' is your loading page route
     const isInitialSettingPage = pathname === '/initialSettings';
     const isAddEventPage = pathname === '/addEvent';
+    const isEditEventPage = pathname?.startsWith('/editEvent/');
 
     // Show BottomContainer only if not on login page and not on loading page ans not on initial setting page
-    const showBottomContainer = !isLoginPage && !isLoadingPage && !isInitialSettingPage;
+    const showBottomContainer = !isLoginPage && !isLoadingPage && !isInitialSettingPage && !isAddEventPage && !isEditEventPage;
 
     return (
         <Providers>

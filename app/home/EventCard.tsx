@@ -63,10 +63,10 @@ const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location, on
             aria-label="Static Actions"
             selectionMode='single'>
             <DropdownItem key="edit" className="text-gray-700" onPress={handleEditClick}>
-              Edit
+              수정
             </DropdownItem>
             <DropdownItem key="delete" className="text-danger" color="danger" onPress={handleDeleteClick}>
-              Delete
+              삭제
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>

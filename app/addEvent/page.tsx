@@ -10,14 +10,15 @@ import axios from 'axios';
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
 export default function AddPage() {
-    // 오늘 날짜를 MM.DD 형식으로 변환
     const initialDate = new Date();
     const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
     const [selectedBabyId, setSelectedBabyId] = useState<number | null>(null);
     const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null);
-    const [eventName, setEventName] = useState<string>('');
-    const [eventDescription, setEventDescription] = useState<string>('');
-    const [eventLocation, setEventLocation] = useState<string>('');
+    const [title, setTitle] = useState<string>('');
+    const [startTime, setStartTime] = useState<string>('');
+    const [endTime, setEndTime] = useState<string>('');
+    const [description, setDescription] = useState<string>('');
+    const [location, setLocation] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
@@ -26,26 +27,29 @@ export default function AddPage() {
         setSelectedDate(date);
     };
 
-    const formatDateForDisplay = (date: Date) => {
-        return `${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    // 시간 형식을 MySQL TIME 타입에 맞게 변환하는 함수
+    const convertToMySQLTime = (time: string): string => {
+        return time ? `${time}:00` : ''; // 시간이 제공되지 않은 경우 빈 문자열이 전송 → 백에서 빈 문자열을 NULL로 처리하거나, 기본값을 설정하는 등의 설정 필요 (프론트에서 기본값 설정되어있어 문제 없을 듯)
     };
 
-    const formatDateForBackend = (date: Date) => {
-        return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    };
+    const handleGoToMain = () => {
+        router.push('/home');
+    }
 
-    const handleGoToMain = async () => {
+    const handleSubmit = async () => {
         setIsLoading(true);
         setError(null);
 
         const eventData = {
             user_id: 1, // 현재 로그인한 사용자의 ID
-            baby_id: selectedBabyId, // 선택된 아기의 ID (있다면)
-            calendar_photo_id: selectedPhotoId, // 선택된 사진의 ID (있다면)
-            title: eventName,
-            description: eventDescription,
-            date: formatDateForBackend(selectedDate), // Convert date to MM-DD format for backend
-            location: eventLocation,
+            baby_id: selectedBabyId,
+            calendar_photo_id: selectedPhotoId,
+            title,
+            description,
+            date: selectedDate,
+            start_time: convertToMySQLTime(startTime),
+            end_time: convertToMySQLTime(endTime),
+            location,
         };
 
         try {
@@ -64,10 +68,25 @@ export default function AddPage() {
 
     return (
         <div>
-            <div className="fixed top-[37px] right-[23px]">
+            <div className="fixed top-[37px] left-[23px]">
                 <button
                     className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
                     onClick={handleGoToMain}
+                    disabled={isLoading}
+                >
+                    <Image
+                        src="/img/button/back.png"
+                        alt='Back'
+                        width={50}
+                        height={50}
+                        className={`max-w-full max-h-full object-contain ${isLoading ? 'opacity-50' : ''}`}
+                    />
+                </button>
+            </div>
+            <div className="fixed top-[37px] right-[23px]">
+                <button
+                    className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
+                    onClick={handleSubmit}
                     disabled={isLoading}
                 >
                     <Image
@@ -84,52 +103,62 @@ export default function AddPage() {
                     <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
                 </div>
                 <EditContainer>
-                    <div className="flex flex-col space-y-4 pt-[5px]">
+                    <div className="flex flex-col space-y-4 pt-[5px] justify-center">
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventName" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                Event Name
+                            <label htmlFor="title" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                제목
                             </label>
                             <Input
-                                id="eventName"
+                                id="title"
                                 type="text"
-                                placeholder="Enter event name"
-                                onChange={(e) => setEventName(e.target.value)}
+                                placeholder="이벤트 제목을 입력해주세요."
+                                onChange={(e) => setTitle(e.target.value)}
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventDescription" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                Description
+                            <label htmlFor="date" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                날짜
                             </label>
                             <Input
-                                id="eventDescription"
+                                id="date"
                                 type="text"
-                                placeholder="Enter event description"
-                                onChange={(e) => setEventDescription(e.target.value)}
-                                className='text-gray-700'
-                            />
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="eventDate" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                Date
-                            </label>
-                            <Input
-                                id="eventDate"
-                                type="text"
-                                value={formatDateForDisplay(selectedDate)} // Format date for display
+                                value={selectedDate.toLocaleDateString("ko-KR")}
                                 readOnly
                                 className='text-gray-700'
                             />
                         </div>
                         <div className="flex items-center space-x-4">
-                            <label htmlFor="eventLocation" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                Location
+                            <label htmlFor="startTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                시작 시간
                             </label>
                             <Input
-                                id="eventLocation"
+                                id="startTime"
+                                type="time"
+                                onChange={(e) => setStartTime(e.target.value)}
+                                className='text-gray-700'
+                            />
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <label htmlFor="endTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                종료 시간
+                            </label>
+                            <Input
+                                id="endTime"
+                                type="time"
+                                onChange={(e) => setEndTime(e.target.value)}
+                                className='text-gray-700'
+                            />
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <label htmlFor="location" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                위치
+                            </label>
+                            <Input
+                                id="location"
                                 type="text"
-                                placeholder="Enter location"
-                                onChange={(e) => setEventLocation(e.target.value)}
+                                placeholder="위치를 입력해주세요."
+                                onChange={(e) => setLocation(e.target.value)}
                                 className='text-gray-700'
                             />
                         </div>

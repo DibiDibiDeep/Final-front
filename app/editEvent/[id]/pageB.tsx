@@ -76,27 +76,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         }
     };
 
-    const handleGoToMain = () => {
-        router.push('/home');
-    }
-
     return (
         <div>
-            <div className="fixed top-[37px] left-[23px]">
-                <button
-                    className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
-                    onClick={handleGoToMain}
-                    disabled={isLoading}
-                >
-                    <Image
-                        src="/img/button/back.png"
-                        alt='Back'
-                        width={50}
-                        height={50}
-                        className={`max-w-full max-h-full object-contain ${isLoading ? 'opacity-50' : ''}`}
-                    />
-                </button>
-            </div>
             <div className="fixed top-[37px] right-[23px]">
                 <button
                     className="w-[50px] h-[50px] rounded-full overflow-hidden flex items-center justify-center"
@@ -118,12 +99,12 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                 </div>
                 <EditContainer>
                     <div className="flex flex-col space-y-4 pt-[5px]">
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="title" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                제목
+                        <div className="flex items-center space-x-4">ㅌ
+                            <label htmlFor="eventName" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                                Event Name
                             </label>
                             <Input
-                                id="title"
+                                id="eventName"
                                 type="text"
                                 placeholder="Enter event name"
                                 value={eventData.title}
@@ -146,7 +127,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                         </div>
                         <div className="flex items-center space-x-4">
                             <label htmlFor="date" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                날짜
+                                Date
                             </label>
                             <Input
                                 id="date"
@@ -158,7 +139,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                         </div>
                         <div className="flex items-center space-x-4">
                             <label htmlFor="location" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
-                                위치
+                                Location
                             </label>
                             <Input
                                 id="location"

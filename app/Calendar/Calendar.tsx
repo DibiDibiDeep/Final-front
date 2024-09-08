@@ -4,7 +4,7 @@ import { Card } from "@nextui-org/card";
 import { Button } from "@nextui-org/button";
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
-const daysOfWeek: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const daysOfWeek: string[] = ['일', '월', '화', '수', '목', '금', '토'];
 
 interface CalendarButtonProps {
     day: number | null;
@@ -96,7 +96,7 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onD
     }, [currentDate, onDateSelect]);
 
     const formattedCurrentDate = useMemo(() =>
-        currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+        currentDate.toLocaleString('ko-KR', { month: 'long', year: 'numeric' }),
         [currentDate]);
 
     return (

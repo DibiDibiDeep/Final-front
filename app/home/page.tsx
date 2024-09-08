@@ -208,13 +208,13 @@ export default function Home() {
               onClick={() => setActiveView('todo')}
               className={activeView === 'todo' ? 'font-bold' : ''}
             >
-              Todo
+              일정
             </button>
             <button
               onClick={() => setActiveView('memo')}
               className={activeView === 'memo' ? 'font-bold' : ''}
             >
-              Memo
+              메모
             </button>
           </div>
           <p className="text-2xl text-black mb-[33px]">
