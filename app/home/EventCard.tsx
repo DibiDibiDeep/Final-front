@@ -10,13 +10,15 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 
 interface EventCardProps {
   id: number;
-  eventName: string;
-  date: string; // date is expected in MM-DD format
+  title: string;
+  startTime: string;
+  endTime: string;
   location: string;
   onEventDeleted: () => void;
+  selectedDate: Date; // 현재 선택된 날짜 정보
 }
 
-const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location, onEventDeleted }) => {
+const EventCard: React.FC<EventCardProps> = ({ id, title, startTime, endTime, location, onEventDeleted, selectedDate }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
 
@@ -37,43 +39,60 @@ const EventCard: React.FC<EventCardProps> = ({ id, eventName, date, location, on
       await axios.delete(`${BACKEND_API_URL}/api/calendars/${id}`, {
         headers: { 'Content-Type': 'application/json' }
       });
-      onEventDeleted(); // Refresh the event list after deletion
+      onEventDeleted();
     } catch (error) {
       console.error('Error deleting event:', error);
-      // Optionally, show an error message to the user
     }
   }
 
-  const formatDateForDisplay = (date: string) => {
-    const [month, day] = date.split('-');
-    return `${month}.${day}`;
+  const formatDateTimeForDisplay = (dateTime: string) => {
+    const date = new Date(dateTime);
+    const eventDate = new Date(dateTime);
+    eventDate.setHours(0, 0, 0, 0);
+    const selected = new Date(selectedDate);
+    selected.setHours(0, 0, 0, 0);
+
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? '오후' : '오전';
+    const formattedHours = hours % 12 || 12;
+    const formattedMinutes = String(minutes).padStart(2, '0');
+
+    if (eventDate.getTime() === selected.getTime()) {
+      return `${ampm} ${formattedHours}:${formattedMinutes}`;
+    } else {
+      return `${month}.${day} ${ampm} ${formattedHours}:${formattedMinutes}`;
+    }
   };
 
   return (
     <div className="w-full px-4 py-2">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold text-black">{eventName}</h2>
+        <h2 className="text-xl font-semibold text-black">{title}</h2>
         <Dropdown>
           <DropdownTrigger>
             <button>
               <EllipsisVerticalIcon className="h-6 w-6 text-gray-500" />
             </button>
           </DropdownTrigger>
-          <DropdownMenu
-            aria-label="Static Actions"
-            selectionMode='single'>
+          <DropdownMenu aria-label="Static Actions" selectionMode='single'>
             <DropdownItem key="edit" className="text-gray-700" onPress={handleEditClick}>
-              Edit
+              수정
             </DropdownItem>
             <DropdownItem key="delete" className="text-danger" color="danger" onPress={handleDeleteClick}>
-              Delete
+              삭제
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>
       </div>
       <div className="flex items-center mb-2">
         <CalendarIcon className="h-5 w-5 mr-2 text-gray-600" />
-        <span className="text-sm text-gray-700">{formatDateForDisplay(date)}</span>
+        <span className="text-sm text-gray-700">
+          {`${formatDateTimeForDisplay(startTime)} ~ ${formatDateTimeForDisplay(endTime)}`}
+        </span>
       </div>
       <div className="flex items-center">
         <MapPinIcon className="h-5 w-5 mr-2 text-gray-600" />
