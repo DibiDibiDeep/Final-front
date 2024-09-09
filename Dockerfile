@@ -2,10 +2,10 @@
 FROM node:18-alpine
 
 # 작업 디렉토리 설정
-WORKDIR app
+WORKDIR /app
 
 # package.json과 package-lock.json 복사
-COPY package.json package-lock.json .
+COPY package*.json ./
 
 # 의존성 설치
 RUN npm install
@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 3000
 
 # 개발 모드로 실행
-CMD [npm, run, dev]
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
