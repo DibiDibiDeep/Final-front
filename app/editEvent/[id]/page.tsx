@@ -37,8 +37,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                 const endTime = new Date(response.data.endTime);
                 setEventData({
                     ...response.data,
-                    start_time: formatDateTimeForInput(startTime),
-                    end_time: formatDateTimeForInput(endTime)
+                    startTime: formatDateTimeForInput(startTime),
+                    endTime: formatDateTimeForInput(endTime)
                 });
                 setSelectedDate(startTime);
             } catch (error) {
@@ -63,8 +63,8 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         setSelectedDate(date);
         setEventData(prev => ({
             ...prev,
-            start_time: formatDateTimeForInput(date),
-            end_time: formatDateTimeForInput(new Date(date.getTime() + 60 * 60 * 1000)) // Default to 1 hour duration
+            startTime: formatDateTimeForInput(date),
+            endTime: formatDateTimeForInput(new Date(date.getTime() + 60 * 60 * 1000)) // Default to 1 hour duration
         }));
     };
 
