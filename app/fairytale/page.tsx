@@ -88,7 +88,7 @@ const FairyTaleGenerator: React.FC = () => {
             >
                 {loading ? '동화 생성 및 저장 중...' : '지수의 하루로 동화 만들기'}
             </button>
-            {/* {error && <p className="text-red-500 mt-2 text-center">{error}</p>} */}
+            {error && <p className="text-red-500 mt-2 text-center">{error}</p>}
             {storageResult && <p className="text-green-500 mt-2 text-center">{storageResult}</p>}
             {fairyTale && (
                 <div className="mt-6">
