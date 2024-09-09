@@ -7,7 +7,7 @@ import { useSwipeable } from 'react-swipeable';
 import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
-import Calendar from '../calendar/Calendar';
+import Calendar from '../Calendar/Calendar';
 import MemoDetail from '../memo/MemoDetail';
 import axios from 'axios';
 import { Search } from 'lucide-react';
