@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, ClipboardList, Plus, BookHeart, User, LucideIcon } from 'lucide-react';
+import { Home, ClipboardList, Scan, BookHeart, User, LucideIcon } from 'lucide-react';
 import axios from 'axios';
 import { getImageUrl } from '@/utils/getImageUrl';
 import { processImage } from '@/utils/processImage';
@@ -63,7 +63,7 @@ const BottomContainer: React.FC = () => {
         }
     };
 
-    const handlePlusButtonClick = useCallback(() => {
+    const handleScanButtonClick = useCallback(() => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
@@ -89,7 +89,7 @@ const BottomContainer: React.FC = () => {
     }, [router]);
 
     const getButtonStyle = useCallback((buttonName: string): string => {
-        if (buttonName === 'plus') {
+        if (buttonName === 'scan') {
             return `p-4 rounded-full bg-purple-600 absolute -top-8 shadow-lg`;
         }
         return selectedButton === buttonName
@@ -103,9 +103,9 @@ const BottomContainer: React.FC = () => {
                 <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
                 <IconButton icon={ClipboardList} onClick={() => handleButtonClick('diary', '/diary')} style={getButtonStyle('diary')} />
                 <IconButton
-                    icon={Plus}
-                    onClick={handlePlusButtonClick}
-                    style={getButtonStyle('plus')}
+                    icon={Scan}
+                    onClick={handleScanButtonClick}
+                    style={getButtonStyle('scan')}
                     size={32}
                     color="white"
                 />
