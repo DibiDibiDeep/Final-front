@@ -8,11 +8,21 @@ import { useRouter } from 'next/navigation';
 
 interface MemoDetailProps {
   memoId: number;
-  createdAt: string;
+  date: string;
   content: string;
+  userId: number;
+  todayId: number | null;
+  fairyTaleId: number | null;
 }
 
-const MemoDetail: React.FC<MemoDetailProps> = ({ memoId, createdAt, content }) => {
+const MemoDetail: React.FC<MemoDetailProps> = ({ 
+  memoId, 
+  date, 
+  content, 
+  userId, 
+  todayId, 
+  fairyTaleId 
+}) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
 
@@ -34,7 +44,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({ memoId, createdAt, content }) =
         <span className="text-sm text-gray-700">{content}</span>
         <div className="flex items-center">
           <span className="text-xs text-gray-500 mr-2">
-            {new Date(createdAt).toLocaleDateString()}
+            {new Date(date).toLocaleString()} {/* Changed from toLocaleDateString to toLocaleString for more precise time */}
           </span>
           <Dropdown>
             <DropdownTrigger>
@@ -54,6 +64,11 @@ const MemoDetail: React.FC<MemoDetailProps> = ({ memoId, createdAt, content }) =
             </DropdownMenu>
           </Dropdown>
         </div>
+      </div>
+      {/* Optionally display additional information */}
+      <div className="text-xs text-gray-500 mt-1">
+        {todayId && <span className="mr-2">Today ID: {todayId}</span>}
+        {fairyTaleId && <span>Fairy Tale ID: {fairyTaleId}</span>}
       </div>
       <DeleteModal isOpen={isDeleteModalOpen} onClose={handleCloseModal} />
     </div>

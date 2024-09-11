@@ -21,17 +21,20 @@ type Event = {
   location: string;
 };
 
+// 메모 타입 정의
 type Memo = {
   memoId: number;
-  createdAt: string;
+  userId: number;
+  todayId: number | null;
+  fairyTaleId: number | null;
+  date: string;
   content: string;
-}
-
-const formatDate = (date: Date) => {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${month}-${day}`;
 };
+
+const formatDateForBackend = (date: Date) => {
+  return date.toISOString(); // LocalDateTime은 ISO 문자열로 변환
+};
+
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
@@ -46,35 +49,38 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 메모 불러오기
-  useEffect(() => {
-    const fetchMemos = async () => {
-      try {
-        const formattedDate = formatDate(selectedDate);
-        console.log('Fetching memos for date:', formattedDate);
-        const response = await axios.get(`${BACKEND_API_URL}/api/memos/date/${formattedDate}`, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        console.log('Backend response for Memos:', response.data);
-        if (Array.isArray(response.data)) {
-          const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
-            memoId: memo.memoId,
-            createdAt: memo.createdAt,
-            content: memo.content
-          }));
-          setMemos(fetchedMemos);
-          console.log('Fetched memos:', fetchedMemos);
-        } else {
-          console.error('Unexpected response format for memos:', response.data);
+    // 메모 불러오기
+    useEffect(() => {
+      const fetchMemos = async () => {
+        try {
+          const formattedDate = formatDateForBackend(selectedDate);
+          console.log('Fetching memos for date:', formattedDate);
+          const response = await axios.get(`${BACKEND_API_URL}/api/memos/date/${formattedDate}`, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          console.log('Backend response for Memos:', response.data);
+          if (Array.isArray(response.data)) {
+            const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
+              memoId: memo.memoId,
+              userId: memo.userId,
+              todayId: memo.todayId,
+              fairyTaleId: memo.fairyTaleId,
+              date: memo.date,
+              content: memo.content
+            }));
+            setMemos(fetchedMemos);
+            console.log('Fetched memos:', fetchedMemos);
+          } else {
+            console.error('Unexpected response format for memos:', response.data);
+            setMemos([]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch memos:', error);
           setMemos([]);
         }
-      } catch (error) {
-        console.error('Failed to fetch memos:', error);
-        setMemos([]);
-      }
-    };
-    fetchMemos();
-  }, [selectedDate]);
+      };
+      fetchMemos();
+    }, [selectedDate]);
 
   const fetchEvents = async () => {
     try {
@@ -133,19 +139,19 @@ export default function Home() {
   });
 
   // 메모 추가
-  const addMemo = () => {
-    const newMemo: Memo = {
-      memoId: Date.now(),
-      createdAt: new Date().toLocaleDateString('ko-KR'),
-      content: '새 메모',
-    };
-    setMemos([newMemo, ...memos]);
-    setSelectedMemo(newMemo);
-  };
+  // const addMemo = () => {
+  //   const newMemo: Memo = {
+  //     memoId: Date.now(),
+  //     createdAt: new Date().toLocaleDateString('ko-KR'),
+  //     content: '새 메모',
+  //   };
+  //   setMemos([newMemo, ...memos]);
+  //   setSelectedMemo(newMemo);
+  // };
 
   // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
-    const memoDate = new Date(memo.createdAt);
+    const memoDate = new Date(memo.date);
     const isSameDate =
       memoDate.getFullYear() === selectedDate.getFullYear() &&
       memoDate.getMonth() === selectedDate.getMonth() &&
@@ -258,20 +264,23 @@ export default function Home() {
           )}
           {activeView === 'memo' && (
             <>
-              {console.log('Filtered Memos:', filteredMemos)}
-              {filteredMemos.length > 0 ? (
-                filteredMemos.map((memo) => (
-                  <DetailedContainer key={memo.memoId} className="mb-[33px]">
-                    <MemoDetail
-                      memoId={memo.memoId}
-                      createdAt={memo.createdAt}
-                      content={memo.content}
-                    />
-                  </DetailedContainer>
-                ))
-              ) : (
-                <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
-              )}
+               {console.log('Filtered Memos:', filteredMemos)}
+          {filteredMemos.length > 0 ? (
+            filteredMemos.map((memo) => (
+              <DetailedContainer key={memo.memoId} className="mb-[33px]">
+                <MemoDetail
+                  memoId={memo.memoId}
+                  date={memo.date} // 'date'를 'createdAt'으로 사용
+                  content={memo.content}
+                  userId={memo.userId}
+                  todayId={memo.todayId}
+                  fairyTaleId={memo.fairyTaleId}
+                />
+              </DetailedContainer>
+            ))
+          ) : (
+            <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
+          )}
             </>
           )}
         </div>
