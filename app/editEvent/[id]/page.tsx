@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Image from 'next/image';
-import Calendar from '@/app/Calendar/Calendar';
+import Calendar from '@/app/calendarapp/Calendar';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
 
