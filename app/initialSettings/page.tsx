@@ -6,28 +6,38 @@ import AvatarWithUpload from './AvatarWithUpload';
 import Input from '@/components/Input';
 import Image from 'next/image';
 import Select from '@/components/Select';
+import { useRouter } from 'next/navigation';
+
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
 interface BabyInfo {
+    userId: number;
     babyName: string;
-    birth: string | undefined;
+    birth: string;
     gender: string;
 }
 
 async function submitBabyInfo(babyInfo: BabyInfo) {
-    const response = await axios.post('/api/initialSettings', babyInfo);
+    const response = await axios.post(`${BACKEND_API_URL}/api/babyinfo`, babyInfo, {
+        headers: { 'Content-Type': 'application/json' }
+    });
     return response.data;
 }
 
 const InitialSettings: React.FC = () => {
+    const [userId, setUserId] = useState<number>(1);
     const [babyName, setBabyName] = useState<string>('');
-    const [birth, setBirth] = useState<Date | null>(null);
-    const [gender, setGender] = useState<string>('');
+    const [birth, setBirth] = useState<string>(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]; // "YYYY-MM-DD" 형식
+    });
+    const [gender, setGender] = useState<string>('남자'); // 초기값을 '남자'로 설정
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const handleBirthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const dateValue = e.target.value;
-        setBirth(dateValue ? new Date(dateValue) : null);
+        setBirth(e.target.value);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,15 +47,21 @@ const InitialSettings: React.FC = () => {
 
         try {
             const response = await submitBabyInfo({
+                userId,
                 babyName,
-                birth: birth?.toISOString().split('T')[0], // 'YYYY-MM-DD' 형식으로 변환
+                birth,
                 gender
             });
 
             console.log('Server response:', response);
-            // 여기에 성공 처리 로직을 추가하세요 (예: 성공 메시지 표시, 다음 페이지로 이동 등)
+
+            router.push('/home');
         } catch (err) {
-            setError('정보 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            if (axios.isAxiosError(err) && err.response) {
+                setError(`Error: ${err.response.data.message || 'Unknown error occurred'}`);
+            } else {
+                setError('정보 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            }
             console.error('Error submitting baby info:', err);
         } finally {
             setIsLoading(false);
@@ -68,6 +84,7 @@ const InitialSettings: React.FC = () => {
                                 placeholder="아이 이름"
                                 onChange={(e) => setBabyName(e.target.value)}
                                 className='text-gray-700 flex-grow'
+                                required
                             />
                         </div>
                         <div className="w-full flex items-center space-x-2 sm:space-x-4">
@@ -77,6 +94,7 @@ const InitialSettings: React.FC = () => {
                             <Input
                                 id="birth"
                                 type="date"
+                                value={birth}
                                 onChange={handleBirthChange}
                                 className='text-gray-700 flex-grow'
                             />
@@ -87,11 +105,12 @@ const InitialSettings: React.FC = () => {
                             </label>
                             <Select
                                 id="gender"
+                                value={gender}
                                 onChange={(e) => setGender(e.target.value)}
                                 className='text-gray-700 flex-grow'
                                 options={[
-                                    { value: 'male', label: '남자' },
-                                    { value: 'female', label: '여자' },
+                                    { value: '남자', label: '남자' },
+                                    { value: '여자', label: '여자' },
                                 ]}
                             />
                         </div>

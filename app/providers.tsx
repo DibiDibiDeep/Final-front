@@ -10,12 +10,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (!clientId) {
         throw new Error('Google OAuth Client ID is missing');
     }
-    
+
     return (
         <GoogleOAuthProvider clientId={clientId}>
-        <NextUIProvider>
-            {children}
-        </NextUIProvider>
+            <NextUIProvider>
+                {children}
+            </NextUIProvider>
         </GoogleOAuthProvider>
     )
 }

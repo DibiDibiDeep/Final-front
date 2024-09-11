@@ -1,7 +1,9 @@
+import StoryCardGrid from "./StoryCardGrid"
+
 export default function Story() {
     return (
-        <>
-            <p>Story Page</p>
-        </>
+        <div>
+            <StoryCardGrid />
+        </div>
     )
 }

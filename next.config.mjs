@@ -3,6 +3,14 @@ import withPWA from 'next-pwa';
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
+    async rewrites() {
+        return [
+            {
+                source: '/api/generate_fairytale',
+                destination: 'http://localhost:8000/generate_fairytale',
+            },
+        ];
+    },
 };
 
 const pwaConfig = {
@@ -12,4 +20,7 @@ const pwaConfig = {
     skipWaiting: true,
 };
 
-export default withPWA(pwaConfig)(nextConfig);
+export default withPWA(pwaConfig)({
+    ...nextConfig,
+    // 추가 설정이 필요한 경우 여기에 작성
+});

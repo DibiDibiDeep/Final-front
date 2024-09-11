@@ -109,7 +109,7 @@ const BottomContainer: React.FC = () => {
                     size={32}
                     color="white"
                 />
-                <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />
+                <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/fairytale')} style={getButtonStyle('story')} />
                 <IconButton icon={User} onClick={() => handleButtonClick('profile', '/profile')} style={getButtonStyle('profile')} />
             </div>
         </div>

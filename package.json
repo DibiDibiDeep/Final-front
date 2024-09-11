@@ -39,7 +39,7 @@
     "each-async": "^2.0.0",
     "file-loader": "^6.2.0",
     "font-awesome": "^4.7.0",
-    "framer-motion": "^11.3.30",
+    "framer-motion": "^11.5.4",
     "heroicons": "^2.1.5",
     "http-server": "^14.1.1",
     "indent-string": "^5.0.0",
