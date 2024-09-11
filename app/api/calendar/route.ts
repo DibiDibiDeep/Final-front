@@ -6,7 +6,7 @@ const s3 = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-        secretAccessKey: process.env.AWS_SECRET_KEY as string,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
     },
 });
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         }
 
         const key = `${Date.now()}-${file.name}`; // 유니크한 키 생성
-
+        
         await s3.send(
             new PutObjectCommand({
                 Bucket: bucketName,

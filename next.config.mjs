@@ -9,6 +9,10 @@ const nextConfig = {
                 source: '/api/generate_fairytale',
                 destination: 'http://localhost:8000/generate_fairytale',
             },
+            {
+                source: '/api/:path*',
+                destination: 'http://localhost:8080/api/:path*',
+              },
         ];
     },
 };

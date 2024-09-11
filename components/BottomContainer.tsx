@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, ClipboardList, Scan, BookHeart, User, LucideIcon } from 'lucide-react';
 import axios from 'axios';
@@ -24,20 +24,34 @@ IconButton.displayName = 'IconButton';
 const BottomContainer: React.FC = () => {
     const router = useRouter();
     const [selectedButton, setSelectedButton] = useState<string>('home');
+    const [userId, setUserId] = useState<number | null>(null);
+    const [babyId, setBabyId] = useState<number | null>(null);
 
     const handleButtonClick = useCallback((buttonName: string, path: string) => {
         setSelectedButton(buttonName);
         router.push(path);
     }, [router]);
 
+    useEffect(() => {
+        console.log('BottomContainer 마운트됨');
+        setUserId(1);
+        setBabyId(2);
+        console.log('임시 ID 설정됨:', { userId: 1, babyId: 1 });
+    }, []);
+
     const uploadImage = async (file: File, userId: number, babyId: number) => {
         const formData = new FormData();
-        formData.append('image', file);
-        formData.append('user_id', userId.toString());
-        formData.append('baby_id', babyId.toString());
+        formData.append('file', file);
+        formData.append('userId', userId.toString());
+        formData.append('babyId', babyId.toString());
+
+        // 현재 날짜를 ISO 8601 형식의 문자열로 변환
+        const currentDate = new Date().toISOString();
+        formData.append('date', currentDate);
 
         try {
-            const response = await axios.post('/api/calendar', formData, {
+            console.log('Sending request with formData:', Object.fromEntries(formData));
+            const response = await axios.post('/api/calendar-photos', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -45,7 +59,8 @@ const BottomContainer: React.FC = () => {
 
             console.log('이미지 업로드 성공:', response.data);
 
-            const imageUrl = await getImageUrl(response.data.key);
+            // 백엔드에서 반환한 filePath를 사용
+            const imageUrl = response.data.filePath;
             console.log('이미지 URL:', imageUrl);
 
             const result = await processImage({ imageUrl, userId, babyId });
@@ -58,7 +73,11 @@ const BottomContainer: React.FC = () => {
             router.push('/calendarResult');
         } catch (error) {
             console.error('이미지 업로드 또는 처리 중 오류:', error);
-            localStorage.setItem('calendarError', '이미지 처리 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            let errorMessage = '이미지 처리 중 오류가 발생했습니다. 다시 시도해 주세요.';
+            if (axios.isAxiosError(error) && error.response) {
+                errorMessage = `서버 오류: ${error.response.status} - ${error.response.data.message || error.message}`;
+            }
+            localStorage.setItem('calendarError', errorMessage);
             router.push('/calendarResult');
         }
     };
@@ -78,7 +97,7 @@ const BottomContainer: React.FC = () => {
                 console.log('파일 타입:', file.type);
 
                 const userId = 1; // 더미 값
-                const babyId = 2; // 더미 값
+                const babyId = 1; // 더미 값
 
                 await uploadImage(file, userId, babyId);
             }
