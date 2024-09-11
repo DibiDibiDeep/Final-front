@@ -10,7 +10,9 @@ import EventCard from "./EventCard";
 import Calendar from '../calendarapp/Calendar';
 import MemoDetail from '../memo/MemoDetail';
 import axios from 'axios';
-import { Search } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
+import { Button } from "@nextui-org/react";
+import CreateMemoModal from '../modal/CreateModal';
 
 // 이벤트 타입 정의
 type Event = {
@@ -26,15 +28,22 @@ type Memo = {
   memoId: number;
   userId: number;
   todayId: number | null;
-  fairyTaleId: number | null;
-  date: string;
+  bookId: number | null;
+  date: string; // DATETIME 형식의 문자열
   content: string;
 };
 
 const formatDateForBackend = (date: Date) => {
-  return date.toISOString(); // LocalDateTime은 ISO 문자열로 변환
+  // 로컬 시간대를 고려하여 YYYY-MM-DD 형식으로 변환
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
+const formatDateTimeForDisplay = (date: Date): string => {
+  return date.toISOString().slice(0, 19).replace('Z', '');
+};
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
@@ -48,6 +57,7 @@ export default function Home() {
   const [calendarVisible, setCalendarVisible] = useState(true);
   const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
 
     // 메모 불러오기
     useEffect(() => {
@@ -64,12 +74,11 @@ export default function Home() {
               memoId: memo.memoId,
               userId: memo.userId,
               todayId: memo.todayId,
-              fairyTaleId: memo.fairyTaleId,
+              bookId: memo.bookId,
               date: memo.date,
               content: memo.content
             }));
             setMemos(fetchedMemos);
-            console.log('Fetched memos:', fetchedMemos);
           } else {
             console.error('Unexpected response format for memos:', response.data);
             setMemos([]);
@@ -139,15 +148,33 @@ export default function Home() {
   });
 
   // 메모 추가
-  // const addMemo = () => {
-  //   const newMemo: Memo = {
-  //     memoId: Date.now(),
-  //     createdAt: new Date().toLocaleDateString('ko-KR'),
-  //     content: '새 메모',
-  //   };
-  //   setMemos([newMemo, ...memos]);
-  //   setSelectedMemo(newMemo);
-  // };
+  const handleCreateMemo = async (content: string) => {
+    try {
+      const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
+        userId: 3, // 실제 사용자 ID로 대체해야 함
+        date: formatDateTimeForDisplay(new Date()),
+        content: content,
+        todayId: null,
+        bookId: null
+      });
+      const newMemo: Memo = response.data;
+      setMemos(prevMemos => [newMemo, ...prevMemos]);
+      setIsCreateMemoModalOpen(false);
+    } catch (error) {
+      console.error('Failed to create memo:', error);
+      // 에러 처리 로직 (예: 사용자에게 알림)
+    }
+  };
+
+  const handleMemoDeleted = (deletedMemoId: number) => {
+    setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
+  };
+
+  const handleMemoUpdated = (updatedMemo: Memo) => {
+    setMemos(prevMemos => prevMemos.map(memo => 
+      memo.memoId === updatedMemo.memoId ? updatedMemo : memo
+    ));
+  };
 
   // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
@@ -238,6 +265,16 @@ export default function Home() {
               메모
             </button>
           </div>
+          {activeView === 'memo' && (
+              <Button
+                variant="light"
+                size="sm"
+                startContent={<Plus size={24} />}
+                onPress={() => setIsCreateMemoModalOpen(true)}
+            >
+              메모 추가
+              </Button>
+            )}
           <p className="text-2xl text-black mb-[33px]">
             {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
@@ -265,16 +302,18 @@ export default function Home() {
           {activeView === 'memo' && (
             <>
                {console.log('Filtered Memos:', filteredMemos)}
-          {filteredMemos.length > 0 ? (
-            filteredMemos.map((memo) => (
+               {filteredMemos.length > 0 ? (
+                filteredMemos.map((memo) => (
               <DetailedContainer key={memo.memoId} className="mb-[33px]">
                 <MemoDetail
                   memoId={memo.memoId}
-                  date={memo.date} // 'date'를 'createdAt'으로 사용
-                  content={memo.content}
                   userId={memo.userId}
                   todayId={memo.todayId}
-                  fairyTaleId={memo.fairyTaleId}
+                  bookId={memo.bookId}
+                  date={memo.date}
+                  content={memo.content}
+                  onMemoDeleted={handleMemoDeleted}
+                  onMemoUpdated={handleMemoUpdated}
                 />
               </DetailedContainer>
             ))
@@ -285,6 +324,11 @@ export default function Home() {
           )}
         </div>
       </MainContainer>
+      <CreateMemoModal
+        isOpen={isCreateMemoModalOpen}
+        onClose={() => setIsCreateMemoModalOpen(false)}
+        onCreateMemo={handleCreateMemo}
+      />
     </div>
   );
 }
