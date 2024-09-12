@@ -51,7 +51,13 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     }, [params.id]);
 
     const formatDateTimeForInput = (date: Date) => {
-        return date.toISOString().slice(0, 16); // Format as YYYY-MM-DDTHH:mm
+        // 한국 시간을 포맷팅 (YYYY-MM-DDTHH:mm)으로 변환
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     const formatDateTimeForMySQL = (dateTimeString: string) => {
@@ -59,19 +65,42 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         return date.toISOString().slice(0, 19).replace('T', ' ');
     };
 
+    const toKoreanTime = (date: Date) => {
+        const utc = date.getTime() + date.getTimezoneOffset() * 60 * 1000;
+        const koreanOffset = 9 * 60 * 60 * 1000; // 한국 UTC+9 시간대
+        return new Date(utc + koreanOffset);
+    };
+
     const handleDateSelect = (date: Date) => {
-        setSelectedDate(date);
+        const adjustedDate = toKoreanTime(date); // 선택한 날짜를 한국 시간으로 변환
+
+        setSelectedDate(adjustedDate);
         setEventData(prev => ({
             ...prev,
-            startTime: formatDateTimeForInput(date),
-            endTime: formatDateTimeForInput(new Date(date.getTime() + 60 * 60 * 1000)) // Default to 1 hour duration
+            startTime: formatDateTimeForInput(adjustedDate),
+            endTime: formatDateTimeForInput(new Date(adjustedDate.getTime() + 60 * 60 * 1000)) // 기본 1시간 설정
         }));
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
-        setEventData(prev => ({ ...prev, [id]: value }));
+
+        if (id === 'startTime') {
+            // 입력된 startTime을 UTC에서 KST로 변환
+            const newStartTime = toKoreanTime(new Date(value));
+            // newStartTime보다 한 시간 뒤로 endTime 설정
+            const newEndTime = new Date(newStartTime.getTime() + 60 * 60 * 1000); // 1시간 후
+
+            setEventData(prev => ({
+                ...prev,
+                startTime: formatDateTimeForInput(newStartTime), // 시작 시간 한국 시간으로 설정
+                endTime: formatDateTimeForInput(newEndTime),    // 종료 시간 한국 시간 기준 1시간 뒤로 설정
+            }));
+        } else {
+            setEventData(prev => ({ ...prev, [id]: value }));
+        }
     };
+
 
     const handleUpdateEvent = async () => {
         setIsLoading(true);
