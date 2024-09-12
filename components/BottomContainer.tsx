@@ -5,6 +5,8 @@ import axios from 'axios';
 import { getImageUrl } from '@/utils/getImageUrl';
 import { processImage } from '@/utils/processImage';
 
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+
 interface IconButtonProps {
     icon: LucideIcon;
     onClick: () => void;
@@ -53,7 +55,7 @@ const BottomContainer: React.FC = () => {
 
         try {
             console.log('Sending request with formData:', Object.fromEntries(formData));
-            const response = await axios.post('/api/calendar-photos', formData, {
+            const response = await axios.post(`${BACKEND_API_URL}/api/calendar-photos`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
