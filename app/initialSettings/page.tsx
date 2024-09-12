@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CommonContainer from '@/components/CommonContainer';
 import AvatarWithUpload from './AvatarWithUpload';
@@ -18,23 +18,33 @@ interface BabyInfo {
 }
 
 async function submitBabyInfo(babyInfo: BabyInfo) {
-    const response = await axios.post(`${BACKEND_API_URL}/api/babyinfo`, babyInfo, {
+    const response = await axios.post(`${BACKEND_API_URL}/api/baby`, babyInfo, {
         headers: { 'Content-Type': 'application/json' }
     });
     return response.data;
 }
 
 const InitialSettings: React.FC = () => {
-    const [userId, setUserId] = useState<number>(1);
+    const [userId, setUserId] = useState<number | null>(null);
     const [babyName, setBabyName] = useState<string>('');
     const [birth, setBirth] = useState<string>(() => {
         const today = new Date();
-        return today.toISOString().split('T')[0]; // "YYYY-MM-DD" 형식
+        return today.toISOString().split('T')[0]; // "YYYY-MM-DD" format
     });
-    const [gender, setGender] = useState<string>('남자'); // 초기값을 '남자'로 설정
+    const [gender, setGender] = useState<string>('남자');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        // Retrieve userId from localStorage
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+            setUserId(parseInt(storedUserId, 10));
+        } else {
+            setError('User ID not found. Please log in again.');
+        }
+    }, []);
 
     const handleBirthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setBirth(e.target.value);
@@ -42,25 +52,29 @@ const InitialSettings: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!userId) {
+            setError('User ID is missing. Please log in again.');
+            return;
+        }
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await submitBabyInfo({
+            const babyInfo: BabyInfo = {
                 userId,
                 babyName,
-                birth,
+                birth: new Date(birth).toISOString(), // Convert to ISO format
                 gender
-            });
+            };
 
+            const response = await submitBabyInfo(babyInfo);
             console.log('Server response:', response);
-
             router.push('/home');
         } catch (err) {
             if (axios.isAxiosError(err) && err.response) {
                 setError(`Error: ${err.response.data.message || 'Unknown error occurred'}`);
             } else {
-                setError('정보 제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+                setError('An error occurred while submitting the information. Please try again.');
             }
             console.error('Error submitting baby info:', err);
         } finally {
@@ -82,6 +96,7 @@ const InitialSettings: React.FC = () => {
                                 id="name"
                                 type="text"
                                 placeholder="아이 이름"
+                                value={babyName}
                                 onChange={(e) => setBabyName(e.target.value)}
                                 className='text-gray-700 flex-grow'
                                 required
@@ -97,6 +112,7 @@ const InitialSettings: React.FC = () => {
                                 value={birth}
                                 onChange={handleBirthChange}
                                 className='text-gray-700 flex-grow'
+                                required
                             />
                         </div>
                         <div className="w-full flex items-center space-x-2 sm:space-x-4">
@@ -118,14 +134,14 @@ const InitialSettings: React.FC = () => {
                         <button
                             type="submit"
                             className="pt-12 sm:pt-16 md:pt-20"
-                            disabled={isLoading}
+                            disabled={isLoading || !userId}
                         >
                             <Image
                                 src="/img/button/confirm_circle.png"
                                 alt='Confirm'
                                 width={70}
                                 height={70}
-                                className={`max-w-full max-h-full object-contain ${isLoading ? 'opacity-50' : ''}`}
+                                className={`max-w-full max-h-full object-contain ${isLoading || !userId ? 'opacity-50' : ''}`}
                             />
                         </button>
                     </form>

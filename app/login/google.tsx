@@ -1,11 +1,10 @@
 'use client'
 
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google"
-import { useRouter } from 'next/navigation'; 
-
+import { useRouter } from 'next/navigation';
 
 const GoogleAuthLogin = () => {
-    const router = useRouter(); 
+    const router = useRouter();
 
     const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
         try {
@@ -19,35 +18,48 @@ const GoogleAuthLogin = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('Login successful:', data);
-                
-                // Store the JWT token
-                localStorage.setItem('token', data.token);
-                
-                // Store user data if needed
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                // Redirect based on the response code
-                if (data.code === 201) {
-                    router.push('/initialSettings');
+                console.log('Full server response:', data);
+
+                if (data && typeof data === 'object') {
+                    console.log('Checking data structure...');
+                    console.log('hasBaby:', data.hasBaby);
+                    console.log('user:', data.user);
+                    console.log('token:', data.token);
+
+                    if (data.user && typeof data.user === 'object' && 'userId' in data.user && data.token) {
+                        console.log('Data structure is valid');
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        localStorage.setItem('userId', data.user.userId.toString());
+
+                        if (data.hasBaby === true) {
+                            console.log('hasBaby is true, redirecting to /home');
+                            router.push('/home');
+                        } else {
+                            console.log('hasBaby is false, redirecting to /initialSettings');
+                            router.push('/initialSettings');
+                        }
+                    } else {
+                        console.error('Invalid user data structure');
+                    }
                 } else {
-                    router.push('/home'); // or wherever you want to redirect existing users
+                    console.error('Unexpected data structure. Full data:', data);
                 }
             } else {
-                console.error('Login failed:', await response.text());
+                const errorText = await response.text();
+                console.error('Login failed. Status:', response.status, 'Response:', errorText);
             }
         } catch (error) {
             console.error('Error during login:', error);
         }
     };
 
-
     return (
         <>
             <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={() => {
-                    console.log("Login 실패");
+                onError={(error: unknown) => {
+                    console.error("Google Login failed:", error);
                 }}
                 width={300}
                 useOneTap

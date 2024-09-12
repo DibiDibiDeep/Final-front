@@ -33,19 +33,21 @@ const BottomContainer: React.FC = () => {
     }, [router]);
 
     useEffect(() => {
-        console.log('BottomContainer 마운트됨');
-        setUserId(1);
-        setBabyId(2);
-        console.log('임시 ID 설정됨:', { userId: 1, babyId: 1 });
-    }, []);
+        // localStorage에서 userId를 가져오기
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(parseInt(storedUserId, 10));
+          setBabyId(2);
+        }
+      }, []);
 
-    const uploadImage = async (file: File, userId: number, babyId: number) => {
+      const uploadImage = async (file: File, userId: number, babyId: number) => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('userId', userId.toString());
         formData.append('babyId', babyId.toString());
 
-        // 현재 날짜를 ISO 8601 형식의 문자열로 변환
+        // ISO 8601 형식으로 현재 날짜 및 시간 추가
         const currentDate = new Date().toISOString();
         formData.append('date', currentDate);
 
@@ -56,6 +58,7 @@ const BottomContainer: React.FC = () => {
                     'Content-Type': 'multipart/form-data'
                 }
             });
+
 
             console.log('이미지 업로드 성공:', response.data);
 

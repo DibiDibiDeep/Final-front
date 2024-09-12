@@ -58,14 +58,25 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    // localStorage에서 userId를 가져오기
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      setUserId(parseInt(storedUserId, 10));
+    }
+  }, []);
 
     // 메모 불러오기
     useEffect(() => {
       const fetchMemos = async () => {
+        if (!userId) return;
+  
         try {
           const formattedDate = formatDateForBackend(selectedDate);
-          console.log('Fetching memos for date:', formattedDate);
-          const response = await axios.get(`${BACKEND_API_URL}/api/memos/date/${formattedDate}`, {
+          console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
+          const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
             headers: { 'Content-Type': 'application/json' }
           });
           console.log('Backend response for Memos:', response.data);
@@ -89,7 +100,7 @@ export default function Home() {
         }
       };
       fetchMemos();
-    }, [selectedDate]);
+    }, [selectedDate, userId]);
 
   const fetchEvents = async () => {
     try {
@@ -113,7 +124,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchEvents();
-  }, []); // selectedDate 의존성 제거
+  }, [userId]); // selectedDate 의존성 제거
 
   const handleAddSchedule = () => {
     router.push('/addEvent');
@@ -149,9 +160,14 @@ export default function Home() {
 
   // 메모 추가
   const handleCreateMemo = async (content: string) => {
+    if (!userId) {
+      console.error('User ID is not available');
+      return;
+    }
+
     try {
       const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
-        userId: 3, // 실제 사용자 ID로 대체해야 함
+        userId: userId,
         date: formatDateTimeForDisplay(new Date()),
         content: content,
         todayId: null,
@@ -162,10 +178,9 @@ export default function Home() {
       setIsCreateMemoModalOpen(false);
     } catch (error) {
       console.error('Failed to create memo:', error);
-      // 에러 처리 로직 (예: 사용자에게 알림)
     }
   };
-
+  
   const handleMemoDeleted = (deletedMemoId: number) => {
     setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
   };
@@ -185,8 +200,6 @@ export default function Home() {
       memoDate.getDate() === selectedDate.getDate();
 
     const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
-
-    console.log(`Memo ${memo.memoId}: Date match: ${isSameDate}, Search match: ${matchesSearch}`);
 
     return isSameDate && (searchTerm === '' || matchesSearch);
   });
