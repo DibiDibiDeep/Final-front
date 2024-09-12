@@ -1,10 +1,12 @@
-'use client';
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar } from '@nextui-org/react';
 import axios from 'axios';
 
-const AvatarWithUpload: React.FC = () => {
+interface AvatarWithUploadProps {
+  onImageUpload: (imageSrc: string) => void;
+}
+
+const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageUpload }) => {
     const [avatarSrc, setAvatarSrc] = useState<string>("/img/mg-logoback.png");
 
     const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,26 +19,33 @@ const AvatarWithUpload: React.FC = () => {
 
             const reader = new FileReader();
             reader.onload = () => {
-                setAvatarSrc(reader.result as string);
+                const newAvatarSrc = reader.result as string;
+                setAvatarSrc(newAvatarSrc);
+                onImageUpload(newAvatarSrc);  // 상위 컴포넌트에 새 이미지 URL 전달
             };
             reader.readAsDataURL(file);
 
             // Upload to server
             try {
+                const babyResponse = await axios.post('http://localhost:8080/api/baby', {
+                });
+
+                const newBabyId = babyResponse.data.babyId;
+
                 const formData = new FormData();
                 formData.append("file", file);
-                formData.append("babyId", "1"); // Replace with actual babyId
+                formData.append("babyId", newBabyId.toString());
 
-                const response = await axios.post('http://localhost:8080/api/baby-photos', formData, {
+                const photoResponse = await axios.post('http://localhost:8080/api/baby-photos', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
                 });
 
-                console.log('Photo uploaded successfully:', response.data);
+                console.log('Baby created and photo uploaded successfully:', photoResponse.data);
             } catch (error) {
-                console.error('Error uploading photo:', error);
-                alert('Failed to upload photo. Please try again.');
+                console.error('Error creating baby or uploading photo:', error);
+                alert('Failed to create baby or upload photo. Please try again.');
             }
         }
     };

@@ -59,6 +59,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
+  const [babyPhoto, setBabyPhoto] = useState<string>("/img/mg-logoback.png");
 
   useEffect(() => {
     // localStorage에서 userId를 가져오기
@@ -67,6 +68,30 @@ export default function Home() {
       setUserId(parseInt(storedUserId, 10));
     }
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchBabyPhoto(userId);
+    }
+  }, [userId]);
+
+  // 사용자의 baby photo 가져오기
+  const fetchBabyPhoto = async (userId: number) => {
+    try {
+      // 사용자 ID를 기반으로 베이비 ID 가져오기
+      const userResponse = await axios.get(`${BACKEND_API_URL}/api/users/${userId}`);
+      const babyId = userResponse.data.babyId; // 사용자 정보에 babyId가 포함되어 있다고 가정합니다.
+
+      if (babyId) {
+        const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`);
+        if (photoResponse.data && photoResponse.data.length > 0) {
+          setBabyPhoto(photoResponse.data[0].photoUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch baby photo:', error);
+    }
+  };
 
     // 메모 불러오기
     useEffect(() => {
@@ -194,18 +219,17 @@ export default function Home() {
   // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
     const memoDate = new Date(memo.date);
-    const isSameDate =
-      memoDate.getFullYear() === selectedDate.getFullYear() &&
-      memoDate.getMonth() === selectedDate.getMonth() &&
-      memoDate.getDate() === selectedDate.getDate();
+    const selectedDateStart = new Date(selectedDate);
+    selectedDateStart.setHours(0, 0, 0, 0);
+    const selectedDateEnd = new Date(selectedDate);
+    selectedDateEnd.setHours(23, 59, 59, 999);
+
+    const isSameDate = memoDate >= selectedDateStart && memoDate <= selectedDateEnd;
 
     const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
 
     return isSameDate && (searchTerm === '' || matchesSearch);
   });
-
-  console.log('Selected Date:', selectedDate);
-  console.log('Filtered Memos:', filteredMemos);
 
   // 이벤트 기간이 선택된 날짜와 겹치고 검색어가 있는 경우 검색어가 이벤트 제목이나 위치에 포함되는 이벤트 필터링
   const filteredEvents = events.filter(event => {
@@ -236,15 +260,26 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col relative">
       <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="검색"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-[240px] p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300"
-          />
-          <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
+          <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
+            <Image 
+              src={babyPhoto} 
+              alt="Baby Photo" 
+              width={45} 
+              height={45} 
+              className="w-full h-full object-cover"
+            />
+          </div>
+        <div className="flex justify-center items-center">
+          <div className="relative w-full max-w-md">
+            <input
+              type="text"
+              placeholder="검색"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="-full p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
+            />
+            <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
+          </div>
         </div>
         <button
           className="w-[45px] h-[45px] rounded-full overflow-hidden"
@@ -278,19 +313,19 @@ export default function Home() {
               메모
             </button>
           </div>
-          {activeView === 'memo' && (
-              <Button
-                variant="light"
-                size="sm"
-                startContent={<Plus size={24} />}
-                onPress={() => setIsCreateMemoModalOpen(true)}
-            >
-              메모 추가
-              </Button>
-            )}
           <p className="text-2xl text-black mb-[33px]">
             {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
+          {activeView === 'memo' && (
+            <div className="mb-[20px] p-4 flex justify-center items-center">
+              <button
+                onClick={() => setIsCreateMemoModalOpen(true)}
+                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
+              >
+                <Plus size={24} className="text-purple-600" />
+              </button>
+            </div>
+          )}
           {activeView === 'todo' && (
             <>
               {filteredEvents.length > 0 ? (
@@ -308,7 +343,9 @@ export default function Home() {
                   </DetailedContainer>
                 ))
               ) : (
-                <p className='text-gray-500'>이 날짜에 해당하는 일정이 없습니다.</p>
+                <div className="flex justify-center items-center">
+            <p className='text-gray-500'>이 날짜에 해당하는 일정이 없습니다.</p>
+          </div>
               )}
             </>
           )}
@@ -331,7 +368,9 @@ export default function Home() {
               </DetailedContainer>
             ))
           ) : (
+            <div className="flex justify-center items-center">
             <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
+          </div>
           )}
             </>
           )}

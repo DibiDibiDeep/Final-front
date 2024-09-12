@@ -1,18 +1,19 @@
 'use client';
 import { useState } from 'react'
-import Main from './home/page'
+import { useRouter } from 'next/navigation'
 import Loading from '../components/Loading'
 
 export default function Home() {
   const [showMain, setShowMain] = useState(false)
+  const router = useRouter()
 
   const handleStartClick = () => {
-    setShowMain(true)
+    router.push('/login')
   }
 
   return (
     <main>
-      {showMain ? <Main /> : <Loading onStartClick={handleStartClick} />}
+      <Loading onStartClick={handleStartClick} />
     </main>
   )
 }

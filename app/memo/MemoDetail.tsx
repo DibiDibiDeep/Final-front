@@ -66,10 +66,15 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
 
   const handleEdit = async () => {
     try {
-      const response = await axios.put(`${BACKEND_API_URL}/api/memos/${memoId}`, {
-        content: editedContent,
-        date: formatDateTimeForBackend(new Date()) // 수정 시 현재 시간으로 업데이트
-      });
+      const updatedMemoData = {
+        userId: userId,
+        todayId: todayId,
+        bookId: bookId,
+        date: new Date().toISOString(),
+        content: editedContent
+      };
+
+      const response = await axios.put(`${BACKEND_API_URL}/api/memos/${memoId}`, updatedMemoData);
       const updatedMemo: Memo = response.data;
       onMemoUpdated(updatedMemo);
       onCloseEditModal();

@@ -7,6 +7,10 @@ import { processImage } from '@/utils/processImage';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
+const formatDateTimeForDisplay = (date: Date): string => {
+  return date.toISOString().slice(0, 19).replace('Z', '');
+};
+
 interface IconButtonProps {
     icon: LucideIcon;
     onClick: () => void;
@@ -26,22 +30,11 @@ IconButton.displayName = 'IconButton';
 const BottomContainer: React.FC = () => {
     const router = useRouter();
     const [selectedButton, setSelectedButton] = useState<string>('home');
-    const [userId, setUserId] = useState<number | null>(null);
-    const [babyId, setBabyId] = useState<number | null>(null);
 
     const handleButtonClick = useCallback((buttonName: string, path: string) => {
         setSelectedButton(buttonName);
         router.push(path);
     }, [router]);
-
-    useEffect(() => {
-        // localStorage에서 userId를 가져오기
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-          setUserId(parseInt(storedUserId, 10));
-          setBabyId(2);
-        }
-      }, []);
 
       const uploadImage = async (file: File, userId: number, babyId: number) => {
         const formData = new FormData();
@@ -60,30 +53,29 @@ const BottomContainer: React.FC = () => {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-
-
-            console.log('이미지 업로드 성공:', response.data);
-
-            // 백엔드에서 반환한 filePath를 사용
-            const imageUrl = response.data.filePath;
-            console.log('이미지 URL:', imageUrl);
-
-            const result = await processImage({ imageUrl, userId, babyId });
-            console.log("결과 : ", result);
-
-            // 결과를 로컬 스토리지에 저장
-            localStorage.setItem('calendarData', JSON.stringify(result));
-
-            // 결과 페이지로 이동
-            router.push('/calendarResult');
-        } catch (error) {
-            console.error('이미지 업로드 또는 처리 중 오류:', error);
-            let errorMessage = '이미지 처리 중 오류가 발생했습니다. 다시 시도해 주세요.';
-            if (axios.isAxiosError(error) && error.response) {
-                errorMessage = `서버 오류: ${error.response.status} - ${error.response.data.message || error.message}`;
+    
+            console.log('서버 응답:', response);
+    
+            if (response.data && response.data.filePath) {
+                console.log('이미지 업로드 성공:', response.data);
+                const imageUrl = response.data.filePath;
+                console.log('이미지 URL:', imageUrl);
+                return imageUrl;
+            } else {
+                console.error('서버 응답에 filePath가 없습니다:', response.data);
+                throw new Error('Invalid server response');
             }
-            localStorage.setItem('calendarError', errorMessage);
-            router.push('/calendarResult');
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('Axios 에러:', error.response?.data || error.message);
+                if (error.response) {
+                    console.error('에러 상태:', error.response.status);
+                    console.error('에러 데이터:', error.response.data);
+                }
+            } else {
+                console.error('알 수 없는 에러:', error);
+            }
+            throw error; // 에러를 상위로 전파
         }
     };
 

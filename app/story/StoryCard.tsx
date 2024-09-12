@@ -1,8 +1,9 @@
-// 클라이언트 컴포넌트 → 각 책의 정보를 카드 형태로 표시 / 클릭 시 상세 페이지로 이동
 'use client';
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import Image from 'next/image';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
@@ -13,6 +14,8 @@ interface StoryCardProps {
 }
 
 export default function StoryCard({ id, title, coverPath }: StoryCardProps) {
+    const [imageSrc, setImageSrc] = useState<string>(coverPath);
+    const [hasError, setHasError] = useState<boolean>(false);
     const router = useRouter();
 
     const handleClick = async () => {
@@ -22,18 +25,31 @@ export default function StoryCard({ id, title, coverPath }: StoryCardProps) {
             router.push(`/story/${id}`);
         } catch (error) {
             console.error('Failed to fetch story data:', error);
-            // 에러 처리
+            // Error handling
         }
+    };
+
+    const handleImageError = () => {
+        setHasError(true);
+        setImageSrc('/img/storyThumbnail/fallback.jpg'); // Path to fallback image
     };
 
     return (
         <div
             onClick={handleClick}
-            className="bg-white/70 rounded-xl shadow-md overflow-hidden transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:bg-white cursor-pointer"
+            className="bg-white/70 rounded-xl shadow-md overflow-hidden transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:bg-white cursor-pointer"
         >
-            <img src={coverPath} alt={title} className="w-full h-40 object-cover" />
+            <div className="relative w-full h-40">
+                <Image
+                    src={imageSrc}
+                    alt={title}
+                    onError={handleImageError}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                />
+            </div>
             <div className="p-3">
-                <h3 className="font-bold text-gray-700 mb-1 truncate">{title}</h3>
+                <h3 className="font-bold text-gray-700 mb-1 truncate text-base sm:text-lg md:text-xl">{title}</h3>
             </div>
         </div>
     );
