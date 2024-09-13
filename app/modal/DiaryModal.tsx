@@ -22,10 +22,10 @@ const CreateDiaryModal: React.FC<CreateDiaryModalProps> = ({ isOpen, onClose, on
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <ModalContent>
-                <ModalHeader className="flex flex-col gap-1 text-gray-700">일기장 입력</ModalHeader>
+                <ModalHeader className="flex flex-col gap-1 text-gray-700">알림장 입력</ModalHeader>
                 <ModalBody>
                     <Textarea
-                        placeholder="일기장 내용을 입력하세요"
+                        placeholder="알림장 내용을 입력하세요"
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         rows={4}
