@@ -25,8 +25,8 @@ export interface CalendarResult {
 export async function processImage({ imageUrl, userId, babyId }: ProcessImageParams): Promise<CalendarResult> {
     try {
         const response = await axios.post('http://localhost:8000/process_image', {
-            user_id: userId.toString(),
-            baby_id: babyId.toString(),
+            user_id: userId,
+            baby_id: babyId,
             image_path: imageUrl,
         });
 

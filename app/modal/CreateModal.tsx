@@ -22,7 +22,7 @@ const CreateMemoModal: React.FC<CreateMemoModalProps> = ({ isOpen, onClose, onCr
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalContent>
-        <ModalHeader className="flex flex-col gap-1">메모 추가</ModalHeader>
+        <ModalHeader className="flex flex-col gap-1 text-gray-700">메모 추가</ModalHeader>
         <ModalBody>
           <Textarea
             placeholder="메모 내용을 입력하세요"

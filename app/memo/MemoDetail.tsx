@@ -99,11 +99,11 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
               </button>
             </DropdownTrigger>
             <DropdownMenu aria-label="Static Actions">
-              <DropdownItem key="edit" onPress={onOpenEditModal}>
-                Edit
+              <DropdownItem key="edit" className="text-gray-700" onPress={onOpenEditModal}>
+                수정
               </DropdownItem>
               <DropdownItem key="delete" className="text-danger" color="danger" onPress={onOpenDeleteModal}>
-                Delete
+                삭제
               </DropdownItem>
             </DropdownMenu>
           </Dropdown>
@@ -114,14 +114,14 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
         {todayId && <span className="mr-2">Today ID: {todayId}</span>}
         {bookId && <span>Book ID: {bookId}</span>}
       </div>
-      <DeleteModal 
+      <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={onCloseDeleteModal}
         onDelete={handleDelete}
       />
       <Modal isOpen={isEditModalOpen} onClose={onCloseEditModal}>
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">메모 수정</ModalHeader>
+          <ModalHeader className="flex flex-col gap-1 text-gray-700">메모 수정</ModalHeader>
           <ModalBody>
             <Textarea
               value={editedContent}

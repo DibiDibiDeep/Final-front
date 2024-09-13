@@ -93,39 +93,39 @@ export default function Home() {
     }
   };
 
-    // 메모 불러오기
-    useEffect(() => {
-      const fetchMemos = async () => {
-        if (!userId) return;
-  
-        try {
-          const formattedDate = formatDateForBackend(selectedDate);
-          console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
-          const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
-            headers: { 'Content-Type': 'application/json' }
-          });
-          console.log('Backend response for Memos:', response.data);
-          if (Array.isArray(response.data)) {
-            const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
-              memoId: memo.memoId,
-              userId: memo.userId,
-              todayId: memo.todayId,
-              bookId: memo.bookId,
-              date: memo.date,
-              content: memo.content
-            }));
-            setMemos(fetchedMemos);
-          } else {
-            console.error('Unexpected response format for memos:', response.data);
-            setMemos([]);
-          }
-        } catch (error) {
-          console.error('Failed to fetch memos:', error);
+  // 메모 불러오기
+  useEffect(() => {
+    const fetchMemos = async () => {
+      if (!userId) return;
+
+      try {
+        const formattedDate = formatDateForBackend(selectedDate);
+        console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
+        const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('Backend response for Memos:', response.data);
+        if (Array.isArray(response.data)) {
+          const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
+            memoId: memo.memoId,
+            userId: memo.userId,
+            todayId: memo.todayId,
+            bookId: memo.bookId,
+            date: memo.date,
+            content: memo.content
+          }));
+          setMemos(fetchedMemos);
+        } else {
+          console.error('Unexpected response format for memos:', response.data);
           setMemos([]);
         }
-      };
-      fetchMemos();
-    }, [selectedDate, userId]);
+      } catch (error) {
+        console.error('Failed to fetch memos:', error);
+        setMemos([]);
+      }
+    };
+    fetchMemos();
+  }, [selectedDate, userId]);
 
   const fetchEvents = async () => {
     try {
@@ -205,13 +205,13 @@ export default function Home() {
       console.error('Failed to create memo:', error);
     }
   };
-  
+
   const handleMemoDeleted = (deletedMemoId: number) => {
     setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
   };
 
   const handleMemoUpdated = (updatedMemo: Memo) => {
-    setMemos(prevMemos => prevMemos.map(memo => 
+    setMemos(prevMemos => prevMemos.map(memo =>
       memo.memoId === updatedMemo.memoId ? updatedMemo : memo
     ));
   };
@@ -260,15 +260,15 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col relative">
       <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
-          <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
-            <Image 
-              src={babyPhoto} 
-              alt="Baby Photo" 
-              width={45} 
-              height={45} 
-              className="w-full h-full object-cover"
-            />
-          </div>
+        <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
+          <Image
+            src={babyPhoto}
+            alt="Baby Photo"
+            width={45}
+            height={45}
+            className="w-full h-full object-cover"
+          />
+        </div>
         <div className="flex justify-center items-center">
           <div className="relative w-full max-w-md">
             <input
@@ -276,7 +276,7 @@ export default function Home() {
               placeholder="검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="-full p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
+              className="w-56 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
           </div>
@@ -344,34 +344,34 @@ export default function Home() {
                 ))
               ) : (
                 <div className="flex justify-center items-center">
-            <p className='text-gray-500'>이 날짜에 해당하는 일정이 없습니다.</p>
-          </div>
+                  <p className='text-gray-500'>이 날짜에 해당하는 일정이 없습니다.</p>
+                </div>
               )}
             </>
           )}
           {activeView === 'memo' && (
             <>
-               {console.log('Filtered Memos:', filteredMemos)}
-               {filteredMemos.length > 0 ? (
+              {console.log('Filtered Memos:', filteredMemos)}
+              {filteredMemos.length > 0 ? (
                 filteredMemos.map((memo) => (
-              <DetailedContainer key={memo.memoId} className="mb-[33px]">
-                <MemoDetail
-                  memoId={memo.memoId}
-                  userId={memo.userId}
-                  todayId={memo.todayId}
-                  bookId={memo.bookId}
-                  date={memo.date}
-                  content={memo.content}
-                  onMemoDeleted={handleMemoDeleted}
-                  onMemoUpdated={handleMemoUpdated}
-                />
-              </DetailedContainer>
-            ))
-          ) : (
-            <div className="flex justify-center items-center">
-            <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
-          </div>
-          )}
+                  <DetailedContainer key={memo.memoId} className="mb-[33px]">
+                    <MemoDetail
+                      memoId={memo.memoId}
+                      userId={memo.userId}
+                      todayId={memo.todayId}
+                      bookId={memo.bookId}
+                      date={memo.date}
+                      content={memo.content}
+                      onMemoDeleted={handleMemoDeleted}
+                      onMemoUpdated={handleMemoUpdated}
+                    />
+                  </DetailedContainer>
+                ))
+              ) : (
+                <div className="flex justify-center items-center">
+                  <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
+                </div>
+              )}
             </>
           )}
         </div>

@@ -13,6 +13,8 @@ interface StoryCardProps {
     coverPath: string;
 }
 
+
+
 export default function StoryCard({ id, title, coverPath }: StoryCardProps) {
     const [imageSrc, setImageSrc] = useState<string>(coverPath);
     const [hasError, setHasError] = useState<boolean>(false);

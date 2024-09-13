@@ -15,24 +15,25 @@ interface FairyTale {
     baby_id: string;
 }
 
-export async function POST(request: Request) {
-    const fairyTale: FairyTale = await request.json();
-
-    const connection = await mysql.createConnection({
+async function getConnection() {
+    return await mysql.createConnection({
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
     });
+}
+
+export async function POST(request: Request) {
+    const fairyTale: FairyTale = await request.json();
+    const connection = await getConnection();
 
     try {
         await connection.beginTransaction();
-
         const [bookResult] = await connection.execute(
             'INSERT INTO Book (user_id, title, cover_path, start_date, end_date, generated_date) VALUES (?, ?, ?, NOW(), NOW(), NOW())',
             [fairyTale.user_id, fairyTale.title, fairyTale.title_img_path]
         );
-
         const bookId = (bookResult as mysql.OkPacket).insertId;
 
         for (let i = 0; i < fairyTale.pages.length; i++) {
@@ -49,6 +50,24 @@ export async function POST(request: Request) {
         await connection.rollback();
         console.error('Error storing fairy tale:', error);
         return NextResponse.json({ message: 'Error storing fairy tale' }, { status: 500 });
+    } finally {
+        await connection.end();
+    }
+}
+
+export async function GET(request: Request) {
+    const connection = await getConnection();
+
+    try {
+        // 모든 동화 목록 조회
+        const [booksResult] = await connection.execute(
+            'SELECT book_id, title, cover_path, generated_date FROM Book ORDER BY generated_date DESC'
+        );
+
+        return NextResponse.json(booksResult);
+    } catch (error) {
+        console.error('Error fetching fairy tales:', error);
+        return NextResponse.json({ message: 'Error fetching fairy tales' }, { status: 500 });
     } finally {
         await connection.end();
     }

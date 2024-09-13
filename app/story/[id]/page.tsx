@@ -1,7 +1,8 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Image } from '@nextui-org/react';
+// import { Image } from '@nextui-org/react';
+import Image from 'next/image';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
@@ -32,6 +33,7 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
                 } else {
                     const response = await axios.get(`${BACKEND_API_URL}/api/books/${id}`);
                     setStoryData(response.data);
+                    console.log(response.data.imagePath);
                     localStorage.setItem(`storyPages_${id}`, JSON.stringify(response.data));
                 }
             } catch (error) {
@@ -51,20 +53,19 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">{storyData.title}</h1>
+            <h1 className="text-2xl font-bold mb-6">{storyData.title}</h1>
             {storyData.pages?.map((page) => (
-                <div key={page.pageId} className="mb-8 p-4 bg-white rounded-lg shadow">
+                <div key={page.pageId} className="mb-8 p-4 bg-white rounded-lg shadow text-gray-700">
                     <h2 className="text-xl font-semibold mb-2">Page {page.pageNum}</h2>
-                    <p className="mb-4">{page.text}</p>
+                    <p className="mb-4 text-gray-700">{page.text}</p>
                     <Image
                         src={page.imagePath}
                         alt={`Illustration for page ${page.pageNum}`}
+                        width={500}
+                        height={500}
                         className="mb-4 w-full h-auto"
+                        unoptimized={true}
                     />
-                    <div className="bg-gray-100 p-2 rounded">
-                        <h3 className="text-sm font-semibold mb-1">Illustration Prompt:</h3>
-                        <p className="text-sm italic">{page.illustPrompt}</p>
-                    </div>
                 </div>
             ))}
         </div>
