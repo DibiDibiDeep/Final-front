@@ -60,16 +60,16 @@ const BottomContainer: React.FC = () => {
                 console.log('이미지 업로드 성공:', response.data);
                 const imageUrl = response.data.filePath;
                 console.log('이미지 URL:', imageUrl);
-                return imageUrl;
+                // return imageUrl;
 
-                // const result = await processImage({ imageUrl, userId, babyId });
-                // console.log("결과 : ", result);
+                const result = await processImage({ imageUrl, userId, babyId });
+                console.log("결과 : ", result);
 
-                // // 결과를 로컬 스토리지에 저장
-                // localStorage.setItem('calendarData', JSON.stringify(result));
+                // 결과를 로컬 스토리지에 저장
+                localStorage.setItem('calendarData', JSON.stringify(result));
 
-                // // 결과 페이지로 이동
-                // router.push('/calendarResult');
+                // 결과 페이지로 이동
+                router.push('/calendarResult');
             } else {
                 console.error('서버 응답에 filePath가 없습니다:', response.data);
                 throw new Error('Invalid server response');
