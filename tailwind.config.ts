@@ -12,6 +12,7 @@ const config: Config = {
     extend: {
       colors: {
         primary: "#883EE1",
+        'primary-dark': "#6B31B3", // 새로 추가한 어두운 버전의 primary 색상
         secondary: "#A16DDE",
       },
       backgroundImage: {
@@ -27,11 +28,11 @@ const config: Config = {
       },
     },
     screens: {
-      'sm': '640px', // => @media (min-width: 640px) { ... }
-      'md': '768px', // => @media (min-width: 768px) { ... }
-      'lg': '1024px',  // => @media (min-width: 1024px) { ... }
-      'xl': '1280px', // => @media (min-width: 1280px) { ... }
-      '2xl': '1536px', // => @media (min-width: 1536px) { ... }
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
     }
   },
   plugins: [nextui()],
