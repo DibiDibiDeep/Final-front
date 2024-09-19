@@ -42,7 +42,6 @@ interface Baby {
 }
 
 const formatDateForBackend = (date: Date) => {
-  // 로컬 시간대를 고려하여 YYYY-MM-DD 형식으로 변환
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -72,7 +71,6 @@ export default function Home() {
   const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
 
   useEffect(() => {
-    // localStorage에서 userId를 가져오기
     const storedUserId = localStorage.getItem('userId');
     if (storedUserId) {
       setUserId(parseInt(storedUserId, 10));
@@ -100,75 +98,43 @@ export default function Home() {
         }));
 
         setBabies(fetchedBabies);
-        setSelectedBaby(fetchedBabies[0]);
-        setBabyPhoto(fetchedBabies[0].photoUrl);
 
-        localStorage.setItem('babiesInfo', JSON.stringify(fetchedBabies));
+        // localStorage에서 저장된 선택된 아이 정보 확인
+        const storedSelectedBaby = localStorage.getItem('selectedBaby');
+        if (storedSelectedBaby) {
+          const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
+          const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
+          if (foundBaby) {
+            setSelectedBaby(foundBaby);
+            setBabyPhoto(foundBaby.photoUrl);
+          } else {
+            // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
+            setSelectedBaby(fetchedBabies[0]);
+            setBabyPhoto(fetchedBabies[0].photoUrl);
+            localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+          }
+        } else {
+          // 저장된 선택 정보가 없으면 첫 번째 아이 선택
+          setSelectedBaby(fetchedBabies[0]);
+          setBabyPhoto(fetchedBabies[0].photoUrl);
+          localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+        }
       } else {
         console.log("No baby information found for this user.");
-        localStorage.removeItem('babiesInfo');
+        localStorage.removeItem('selectedBaby');
       }
     } catch (error) {
       console.error('Failed to fetch baby information:', error);
-      localStorage.removeItem('babiesInfo');
+      localStorage.removeItem('selectedBaby');
     }
   };
 
   const handleBabySelect = (baby: Baby) => {
     setSelectedBaby(baby);
     setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
-    console.log(baby);
+    localStorage.setItem('selectedBaby', JSON.stringify(baby));
   };
 
-  // useEffect(() => {
-  //   if (userId) {
-  //     fetchBabyPhoto(userId);
-  //   }
-  // }, [userId]);
-
-  // const fetchBabyPhoto = async (userId: number) => {
-  //   try {
-  //     // 사용자 ID를 기반으로 베이비 정보 가져오기
-  //     const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
-  //     if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-  //       const babies = userResponse.data.map(baby => ({
-  //         userId: baby.userId,
-  //         babyId: baby.babyId
-  //       }));
-
-  //       console.log("Babies information:", babies);
-
-  //       // babies 배열을 로컬 스토리지에 저장
-  //       localStorage.setItem('babiesInfo', JSON.stringify(babies));
-  //       // 각 아기의 사진 정보 가져오기
-  //       for (const baby of babies) {
-  //         if (baby.babyId) {
-  //           console.log("Fetching photo for babyId:", baby.babyId);
-  //           const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
-
-  //           const firstData = photoResponse.data[0];
-  //           console.log(firstData);
-  //           if (photoResponse.data[0]) {
-  //             setBabyPhoto(firstData.filePath);
-  //             localStorage.setItem('babyPhotoUrl', firstData.filePath);
-  //           }
-  //         }
-  //       }
-  //     } else {
-  //       console.log("No baby information found for this user.");
-  //       // 아기 정보가 없을 경우 로컬 스토리지의 기존 데이터를 삭제
-  //       localStorage.removeItem('babiesInfo');
-  //       localStorage.removeItem('babyPhotoUrl');
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch baby information:', error);
-  //     // 에러 발생 시 로컬 스토리지의 기존 데이터를 삭제
-  //     localStorage.removeItem('babiesInfo');
-  //     localStorage.removeItem('babyPhotoUrl');
-  //   }
-  // };
-
-  // 메모 불러오기
   useEffect(() => {
     const fetchMemos = async () => {
       if (!userId) return;
@@ -205,7 +171,6 @@ export default function Home() {
   const fetchEvents = async () => {
     if (!userId) return;
     try {
-      // 해당 유저의 모든 이벤트를 가져오도록 변경
       const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -225,7 +190,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchEvents();
-  }, [userId]); // selectedDate 의존성 제거
+  }, [userId]);
 
   const handleAddSchedule = () => {
     router.push('/addEvent');
@@ -259,7 +224,6 @@ export default function Home() {
     preventScrollOnSwipe: isExpanded,
   });
 
-  // 메모 추가
   const handleCreateMemo = async (content: string) => {
     if (!userId) {
       console.error('User ID is not available');
@@ -292,7 +256,6 @@ export default function Home() {
     ));
   };
 
-  // 선택된 날짜에 해당하는 메모 필터링
   const filteredMemos = memos.filter(memo => {
     const memoDate = new Date(memo.date);
     const selectedDateStart = new Date(selectedDate);
@@ -307,7 +270,6 @@ export default function Home() {
     return isSameDate && (searchTerm === '' || matchesSearch);
   });
 
-  // 이벤트 기간이 선택된 날짜와 겹치고 검색어가 있는 경우 검색어가 이벤트 제목이나 위치에 포함되는 이벤트 필터링
   const filteredEvents = events.filter(event => {
     const eventStart = new Date(event.startTime);
     const eventEnd = new Date(event.endTime);
@@ -316,10 +278,7 @@ export default function Home() {
     const selectedDateEnd = new Date(selectedDate);
     selectedDateEnd.setHours(23, 59, 59, 999);
 
-    // 이벤트가 선택된 날짜와 겹치는지 확인
     const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
-    // Sun Sep 08 2024 22:49:00 GMT+0900 (대한민국 표준시) <= Mon Sep 09 2024 23:59:59 GMT+0900 (대한민국 표준시) &&
-    // Tue Sep 10 2024 23:49:00 GMT+0900 (대한민국 표준시) >= Mon Sep 09 2024 00:00:00 GMT+0900 (대한민국 표준시) 
 
     return isOverlapping &&
       (searchTerm === '' ||
@@ -339,13 +298,13 @@ export default function Home() {
         <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
           <Dropdown>
             <DropdownTrigger>
-              <button className="focus:outline-none focus:ring-0">
+              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
                 <Image
-                  src={babyPhoto || "/img/mg-logoback.png"}
+                  src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
                   alt="Baby Photo"
                   width={45}
                   height={45}
-                  className="object-cover"
+                  className="rounded-full object-cover object-center"
                 />
               </button>
             </DropdownTrigger>
@@ -358,7 +317,7 @@ export default function Home() {
                       alt={`Baby ${baby.babyId}`}
                       width={30}
                       height={30}
-                      className="rounded-full mr-2 object-cover"
+                      className="rounded-full mr-2 object-cover w-8 h-8"
                     />
                     <span className="text-gray-700">{baby.babyName}</span>
                   </div>
