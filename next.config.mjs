@@ -12,8 +12,11 @@ const nextConfig = {
             {
                 source: '/api/:path*',
                 destination: 'http://localhost:8080/api/:path*',
-              },
+            },
         ];
+    },
+    images: {
+        domains: ['tinyurl.com'], // 여기에 추가된 이미지 호스트 도메인
     },
 };
 
