@@ -13,6 +13,7 @@ import axios from 'axios';
 import { Search, Plus } from 'lucide-react';
 import { Button } from "@nextui-org/react";
 import CreateMemoModal from '../modal/CreateModal';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 
 // 이벤트 타입 정의
 type Event = {
@@ -32,6 +33,13 @@ type Memo = {
   date: string; // DATETIME 형식의 문자열
   content: string;
 };
+
+interface Baby {
+  userId: number;
+  babyId: number;
+  babyName: string;
+  photoUrl?: string;
+}
 
 const formatDateForBackend = (date: Date) => {
   // 로컬 시간대를 고려하여 YYYY-MM-DD 형식으로 변환
@@ -59,7 +67,9 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
-  const [babyPhoto, setBabyPhoto] = useState<string>("/img/mg-logoback.png");
+  const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
+  const [babies, setBabies] = useState<Baby[]>([]);
+  const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
 
   useEffect(() => {
     // localStorage에서 userId를 가져오기
@@ -71,75 +81,92 @@ export default function Home() {
 
   useEffect(() => {
     if (userId) {
-      fetchBabyPhoto(userId);
+      fetchBabiesInfo(userId);
     }
   }, [userId]);
 
-  // // 사용자의 baby photo 가져오기
-  // const fetchBabyPhoto = async (userId: number) => {
-  //   try {
-  //     // 사용자 ID를 기반으로 베이비 ID 가져오기
-  //     const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
-
-  //     if (userResponse.data && userResponse.data.length > 0) {
-  //       const baby = userResponse.data[0]; // 첫 번째 아기 정보 사용
-  //       console.log("userId", baby.userId, ", babyId", baby.babyId);
-
-  //       if (baby.babyId) {
-  //         const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
-  //         if (photoResponse.data && photoResponse.data.length > 0) {
-  //           setBabyPhoto(photoResponse.data[0].photoUrl);
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch baby photo:', error);
-  //   }
-  //   // console.log(babyPhoto);
-  // };
-
-  const fetchBabyPhoto = async (userId: number) => {
+  const fetchBabiesInfo = async (userId: number) => {
     try {
-      // 사용자 ID를 기반으로 베이비 정보 가져오기
       const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
       if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-        const babies = userResponse.data.map(baby => ({
-          userId: baby.userId,
-          babyId: baby.babyId
+        const fetchedBabies: Baby[] = await Promise.all(userResponse.data.map(async (baby: any) => {
+          const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+          return {
+            userId: baby.userId,
+            babyId: baby.babyId,
+            babyName: baby.babyName,
+            photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
+          };
         }));
 
-        console.log("Babies information:", babies);
+        setBabies(fetchedBabies);
+        setSelectedBaby(fetchedBabies[0]);
+        setBabyPhoto(fetchedBabies[0].photoUrl);
 
-        // babies 배열을 로컬 스토리지에 저장
-        localStorage.setItem('babiesInfo', JSON.stringify(babies));
-        // 각 아기의 사진 정보 가져오기
-        for (const baby of babies) {
-          if (baby.babyId) {
-            const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
-            if (photoResponse.data && photoResponse.data.length > 0) {
-              // 여기서는 첫 번째 아기의 사진만 설정합니다.
-              setBabyPhoto(photoResponse.data[0].photoUrl);
-
-              // 첫 번째 아기의 사진 URL을 로컬 스토리지에 저장
-              localStorage.setItem('babyPhotoUrl', photoResponse.data[0].photoUrl);
-
-              break; // 첫 번째 아기의 사진만 사용하려면 여기서 루프를 종료
-            }
-          }
-        }
+        localStorage.setItem('babiesInfo', JSON.stringify(fetchedBabies));
       } else {
         console.log("No baby information found for this user.");
-        // 아기 정보가 없을 경우 로컬 스토리지의 기존 데이터를 삭제
         localStorage.removeItem('babiesInfo');
-        localStorage.removeItem('babyPhotoUrl');
       }
     } catch (error) {
       console.error('Failed to fetch baby information:', error);
-      // 에러 발생 시 로컬 스토리지의 기존 데이터를 삭제
       localStorage.removeItem('babiesInfo');
-      localStorage.removeItem('babyPhotoUrl');
     }
   };
+
+  const handleBabySelect = (baby: Baby) => {
+    setSelectedBaby(baby);
+    setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
+    console.log(baby);
+  };
+
+  // useEffect(() => {
+  //   if (userId) {
+  //     fetchBabyPhoto(userId);
+  //   }
+  // }, [userId]);
+
+  // const fetchBabyPhoto = async (userId: number) => {
+  //   try {
+  //     // 사용자 ID를 기반으로 베이비 정보 가져오기
+  //     const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
+  //     if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
+  //       const babies = userResponse.data.map(baby => ({
+  //         userId: baby.userId,
+  //         babyId: baby.babyId
+  //       }));
+
+  //       console.log("Babies information:", babies);
+
+  //       // babies 배열을 로컬 스토리지에 저장
+  //       localStorage.setItem('babiesInfo', JSON.stringify(babies));
+  //       // 각 아기의 사진 정보 가져오기
+  //       for (const baby of babies) {
+  //         if (baby.babyId) {
+  //           console.log("Fetching photo for babyId:", baby.babyId);
+  //           const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+
+  //           const firstData = photoResponse.data[0];
+  //           console.log(firstData);
+  //           if (photoResponse.data[0]) {
+  //             setBabyPhoto(firstData.filePath);
+  //             localStorage.setItem('babyPhotoUrl', firstData.filePath);
+  //           }
+  //         }
+  //       }
+  //     } else {
+  //       console.log("No baby information found for this user.");
+  //       // 아기 정보가 없을 경우 로컬 스토리지의 기존 데이터를 삭제
+  //       localStorage.removeItem('babiesInfo');
+  //       localStorage.removeItem('babyPhotoUrl');
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to fetch baby information:', error);
+  //     // 에러 발생 시 로컬 스토리지의 기존 데이터를 삭제
+  //     localStorage.removeItem('babiesInfo');
+  //     localStorage.removeItem('babyPhotoUrl');
+  //   }
+  // };
 
   // 메모 불러오기
   useEffect(() => {
@@ -310,14 +337,37 @@ export default function Home() {
     <div className="h-screen flex flex-col relative">
       <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
         <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
-          <Image
-            src={babyPhoto}
-            alt="Baby Photo"
-            width={45}
-            height={45}
-            className="w-full h-full object-cover"
-          />
+          <Dropdown>
+            <DropdownTrigger>
+              <button className="focus:outline-none focus:ring-0">
+                <Image
+                  src={babyPhoto || "/img/mg-logoback.png"}
+                  alt="Baby Photo"
+                  width={45}
+                  height={45}
+                  className="object-cover"
+                />
+              </button>
+            </DropdownTrigger>
+            <DropdownMenu aria-label="Baby Selection">
+              {babies.map((baby) => (
+                <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
+                  <div className="flex items-center">
+                    <Image
+                      src={baby.photoUrl || "/img/mg-logoback.png"}
+                      alt={`Baby ${baby.babyId}`}
+                      width={30}
+                      height={30}
+                      className="rounded-full mr-2 object-cover"
+                    />
+                    <span className="text-gray-700">{baby.babyName}</span>
+                  </div>
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
         </div>
+
         <div className="flex justify-center items-center">
           <div className="relative w-full max-w-md">
             <input

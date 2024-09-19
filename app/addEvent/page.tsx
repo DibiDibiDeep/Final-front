@@ -40,6 +40,7 @@ export default function AddPage() {
         if (storedBabiesString) {
             // JSON 파싱
             const storedBabies = JSON.parse(storedBabiesString);
+            console.log(storedBabies);
 
             // 배열의 첫 번째 요소에서 babyId 추출
             if (storedBabies.length > 0) {

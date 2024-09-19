@@ -1,59 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Avatar } from '@nextui-org/react';
-import axios from 'axios';
 
 interface AvatarWithUploadProps {
-  onImageUpload: (imageSrc: string) => void;
+    onImageSelect: (file: File | null, imageSrc: string) => void;
 }
 
-const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageUpload }) => {
+const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageSelect }) => {
     const [avatarSrc, setAvatarSrc] = useState<string>("/img/mg-logoback.png");
 
-    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             if (file.type !== "image/jpeg" && file.type !== "image/png") {
                 alert("Only JPG and PNG files are allowed.");
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = () => {
                 const newAvatarSrc = reader.result as string;
                 setAvatarSrc(newAvatarSrc);
-                onImageUpload(newAvatarSrc);  // 상위 컴포넌트에 새 이미지 URL 전달
+                onImageSelect(file, newAvatarSrc);
             };
             reader.readAsDataURL(file);
-
-            // Upload to server
-            try {
-                const babyResponse = await axios.post('http://localhost:8080/api/baby', {
-                });
-
-                const newBabyId = babyResponse.data.babyId;
-
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("babyId", newBabyId.toString());
-
-                const photoResponse = await axios.post('http://localhost:8080/api/baby-photos', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-
-                console.log('Baby created and photo uploaded successfully:', photoResponse.data);
-            } catch (error) {
-                console.error('Error creating baby or uploading photo:', error);
-                alert('Failed to create baby or upload photo. Please try again.');
-            }
+        } else {
+            setAvatarSrc("/img/mg-logoback.png");
+            onImageSelect(null, "/img/mg-logoback.png");
         }
     };
 
     return (
         <div className="relative inline-block mt-10">
             <Avatar
-                isBordered color="primary"
+                isBordered
+                color="primary"
                 src={avatarSrc}
                 className="w-32 h-32 text-large border-4 border-transparent rounded-full"
                 style={{
