@@ -10,10 +10,15 @@ import { debounce } from 'lodash';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
+interface Baby {
+    userId: number;
+    babyId: number;
+}
+
 export default function AddPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [userId, setUserId] = useState<number>(1);
-    const [babyId, setBabyId] = useState<number | null>(1);
+    const [userId, setUserId] = useState<number | null>(null);
+    const [babyId, setBabyId] = useState<number | null>(null);
     const [title, setTitle] = useState<string>('');
     const [startTime, setStartTime] = useState<string>('');
     const [endTime, setEndTime] = useState<string>('');
@@ -21,6 +26,43 @@ export default function AddPage() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        // localStorage에서 userId를 가져오기
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+            setUserId(parseInt(storedUserId, 10));
+        }
+
+        // localStorage에서 문자열 가져오기 (첫 번째 babyId만 가져오기)
+        const storedBabiesString = localStorage.getItem('babiesInfo');
+
+        if (storedBabiesString) {
+            // JSON 파싱
+            const storedBabies = JSON.parse(storedBabiesString);
+
+            // 배열의 첫 번째 요소에서 babyId 추출
+            if (storedBabies.length > 0) {
+                setBabyId(storedBabies[0].babyId);
+            } else {
+                console.log("No baby information found.");
+            }
+        } else {
+            console.log("No stored baby information found.");
+        }
+
+        // 모든 babyId 가져오기 (아이 여러 명일 경우)
+        // const storedBabiesString = localStorage.getItem('babiesInfo');
+
+        // if (storedBabiesString) {
+        //     const storedBabies: Baby[] = JSON.parse(storedBabiesString);
+        //     const babyIds = storedBabies.map(baby => baby.babyId);
+        //     console.log("Baby IDs:", babyIds);
+        // } else {
+        //     console.log("No stored baby information found.");
+        // }
+
+    }, []);
 
     useEffect(() => {
         updateDateTimes(new Date());

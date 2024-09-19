@@ -75,21 +75,69 @@ export default function Home() {
     }
   }, [userId]);
 
-  // 사용자의 baby photo 가져오기
+  // // 사용자의 baby photo 가져오기
+  // const fetchBabyPhoto = async (userId: number) => {
+  //   try {
+  //     // 사용자 ID를 기반으로 베이비 ID 가져오기
+  //     const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
+
+  //     if (userResponse.data && userResponse.data.length > 0) {
+  //       const baby = userResponse.data[0]; // 첫 번째 아기 정보 사용
+  //       console.log("userId", baby.userId, ", babyId", baby.babyId);
+
+  //       if (baby.babyId) {
+  //         const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+  //         if (photoResponse.data && photoResponse.data.length > 0) {
+  //           setBabyPhoto(photoResponse.data[0].photoUrl);
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to fetch baby photo:', error);
+  //   }
+  //   // console.log(babyPhoto);
+  // };
+
   const fetchBabyPhoto = async (userId: number) => {
     try {
-      // 사용자 ID를 기반으로 베이비 ID 가져오기
-      const userResponse = await axios.get(`${BACKEND_API_URL}/api/users/${userId}`);
-      const babyId = userResponse.data.babyId; // 사용자 정보에 babyId가 포함되어 있다고 가정합니다.
+      // 사용자 ID를 기반으로 베이비 정보 가져오기
+      const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
+      if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
+        const babies = userResponse.data.map(baby => ({
+          userId: baby.userId,
+          babyId: baby.babyId
+        }));
 
-      if (babyId) {
-        const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`);
-        if (photoResponse.data && photoResponse.data.length > 0) {
-          setBabyPhoto(photoResponse.data[0].photoUrl);
+        console.log("Babies information:", babies);
+
+        // babies 배열을 로컬 스토리지에 저장
+        localStorage.setItem('babiesInfo', JSON.stringify(babies));
+        // 각 아기의 사진 정보 가져오기
+        for (const baby of babies) {
+          if (baby.babyId) {
+            const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+            if (photoResponse.data && photoResponse.data.length > 0) {
+              // 여기서는 첫 번째 아기의 사진만 설정합니다.
+              setBabyPhoto(photoResponse.data[0].photoUrl);
+
+              // 첫 번째 아기의 사진 URL을 로컬 스토리지에 저장
+              localStorage.setItem('babyPhotoUrl', photoResponse.data[0].photoUrl);
+
+              break; // 첫 번째 아기의 사진만 사용하려면 여기서 루프를 종료
+            }
+          }
         }
+      } else {
+        console.log("No baby information found for this user.");
+        // 아기 정보가 없을 경우 로컬 스토리지의 기존 데이터를 삭제
+        localStorage.removeItem('babiesInfo');
+        localStorage.removeItem('babyPhotoUrl');
       }
     } catch (error) {
-      console.error('Failed to fetch baby photo:', error);
+      console.error('Failed to fetch baby information:', error);
+      // 에러 발생 시 로컬 스토리지의 기존 데이터를 삭제
+      localStorage.removeItem('babiesInfo');
+      localStorage.removeItem('babyPhotoUrl');
     }
   };
 
@@ -128,9 +176,10 @@ export default function Home() {
   }, [selectedDate, userId]);
 
   const fetchEvents = async () => {
+    if (!userId) return;
     try {
-      // 모든 이벤트를 가져오도록 변경
-      const response = await axios.get(`${BACKEND_API_URL}/api/calendars/all`, {
+      // 해당 유저의 모든 이벤트를 가져오도록 변경
+      const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
         headers: { 'Content-Type': 'application/json' }
       });
       console.log('Backend response:', response.data);
