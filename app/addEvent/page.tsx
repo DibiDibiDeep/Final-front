@@ -34,34 +34,20 @@ export default function AddPage() {
             setUserId(parseInt(storedUserId, 10));
         }
 
-        // localStorage에서 문자열 가져오기 (첫 번째 babyId만 가져오기)
-        const storedBabiesString = localStorage.getItem('babiesInfo');
+        // localStorage에서 선택된 아이 가져오기
+        const storedSelectedBaby = localStorage.getItem('selectedBaby');
+        if (storedSelectedBaby) {
+            const selectedBaby = JSON.parse(storedSelectedBaby);
 
-        if (storedBabiesString) {
-            // JSON 파싱
-            const storedBabies = JSON.parse(storedBabiesString);
-            console.log(storedBabies);
-
-            // 배열의 첫 번째 요소에서 babyId 추출
-            if (storedBabies.length > 0) {
-                setBabyId(storedBabies[0].babyId);
+            if (selectedBaby != null) {
+                setBabyId(selectedBaby.babyId);
+                console.log("selectedBaby", selectedBaby);
             } else {
                 console.log("No baby information found.");
             }
         } else {
             console.log("No stored baby information found.");
         }
-
-        // 모든 babyId 가져오기 (아이가 여러 명일 경우)
-        // const storedBabiesString = localStorage.getItem('babiesInfo');
-
-        // if (storedBabiesString) {
-        //     const storedBabies: Baby[] = JSON.parse(storedBabiesString);
-        //     const babyIds = storedBabies.map(baby => baby.babyId);
-        //     console.log("Baby IDs:", babyIds);
-        // } else {
-        //     console.log("No stored baby information found.");
-        // }
 
     }, []);
 
