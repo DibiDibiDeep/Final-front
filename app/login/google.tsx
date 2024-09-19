@@ -3,12 +3,14 @@
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google"
 import { useRouter } from 'next/navigation';
 
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+
 const GoogleAuthLogin = () => {
     const router = useRouter();
 
     const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
         try {
-            const response = await fetch('http://localhost:8080/api/users/google', {
+            const response = await fetch(`${BACKEND_API_URL}/api/users/google`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
