@@ -51,7 +51,7 @@ export default function AddPage() {
             console.log("No stored baby information found.");
         }
 
-        // 모든 babyId 가져오기 (아이 여러 명일 경우)
+        // 모든 babyId 가져오기 (아이가 여러 명일 경우)
         // const storedBabiesString = localStorage.getItem('babiesInfo');
 
         // if (storedBabiesString) {
