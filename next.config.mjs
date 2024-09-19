@@ -17,6 +17,7 @@ const nextConfig = {
     },
     images: {
         domains: ['tinyurl.com'], // 여기에 추가된 이미지 호스트 도메인
+        domains: ['test-mongeul-s3-0911.s3.ap-northeast-2.amazonaws.com'],
     },
 };
 

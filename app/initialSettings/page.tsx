@@ -17,13 +17,6 @@ interface BabyInfo {
     gender: string;
 }
 
-async function submitBabyInfo(babyInfo: BabyInfo) {
-    const response = await axios.post(`${BACKEND_API_URL}/api/baby`, babyInfo, {
-        headers: { 'Content-Type': 'application/json' }
-    });
-    return response.data;
-}
-
 const InitialSettings: React.FC = () => {
     const [userId, setUserId] = useState<number | null>(null);
     const [babyName, setBabyName] = useState<string>('');
@@ -32,12 +25,13 @@ const InitialSettings: React.FC = () => {
         return today.toISOString().split('T')[0]; // "YYYY-MM-DD" format
     });
     const [gender, setGender] = useState<string>('남자');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [avatarSrc, setAvatarSrc] = useState<string>("/img/mg-logoback.png");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
     useEffect(() => {
-        // Retrieve userId from localStorage
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
             setUserId(parseInt(storedUserId, 10));
@@ -48,6 +42,11 @@ const InitialSettings: React.FC = () => {
 
     const handleBirthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setBirth(e.target.value);
+    };
+
+    const handleImageSelect = (file: File | null, imageSrc: string) => {
+        setSelectedFile(file);
+        setAvatarSrc(imageSrc);
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,12 +62,32 @@ const InitialSettings: React.FC = () => {
             const babyInfo: BabyInfo = {
                 userId,
                 babyName,
-                birth: new Date(birth).toISOString(), // Convert to ISO format
+                birth: new Date(birth).toISOString(),
                 gender
             };
 
-            const response = await submitBabyInfo(babyInfo);
-            console.log('Server response:', response);
+            // Create baby
+            const babyResponse = await axios.post(`${BACKEND_API_URL}/api/baby`, babyInfo);
+            const newBabyId = babyResponse.data.babyId;
+
+            // Upload photo
+            const formData = new FormData();
+            if (selectedFile) {
+                formData.append("file", selectedFile);
+            } else {
+                // Convert default image URL to File object
+                const response = await fetch(avatarSrc);
+                const blob = await response.blob();
+                const defaultImageFile = new File([blob], "default_image.png", { type: "image/png" });
+                formData.append("file", defaultImageFile);
+            }
+            formData.append("babyId", newBabyId.toString());
+
+            await axios.post(`${BACKEND_API_URL}/api/baby-photos`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            console.log('Baby created and photo uploaded successfully');
             router.push('/home');
         } catch (err) {
             if (axios.isAxiosError(err) && err.response) {
@@ -86,7 +105,7 @@ const InitialSettings: React.FC = () => {
         <CommonContainer>
             <div className="flex flex-col items-center justify-between pt-[20px] pb-6">
                 <div className="flex flex-col items-center w-full max-w-[90%] sm:max-w-md">
-                    <AvatarWithUpload onImageUpload={() => { }} />
+                    <AvatarWithUpload onImageSelect={handleImageSelect} />
                     <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-5 w-full mt-16 sm:mt-24 md:mt-28">
                         <div className="w-full flex items-center space-x-2 sm:space-x-4">
                             <label htmlFor="name" className="text-sm font-medium text-gray-700 whitespace-nowrap w-20 sm:w-24">
