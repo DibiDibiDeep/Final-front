@@ -70,6 +70,7 @@ export default function Home() {
   const [babies, setBabies] = useState<Baby[]>([]);
   const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
   const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
+  const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
 
   const router = useRouter();
 
@@ -135,39 +136,35 @@ export default function Home() {
   };
 
    // 메모 가져오기
-   useEffect(() => {
-    const fetchMemos = async () => {
-      if (!userId) return;
-
-      try {
-        const formattedDate = formatDateForBackend(selectedDate);
-        const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (Array.isArray(response.data)) {
-          const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
-            memoId: memo.memoId,
-            userId: memo.userId,
-            todayId: memo.todayId,
-            bookId: memo.bookId,
-            date: memo.date,
-            content: memo.content
-          }));
-          setMemos(fetchedMemos);
-        } else {
-          console.error('Unexpected response format for memos:', response.data);
-          setMemos([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch memos:', error);
+   const fetchAllMemos = async () => {
+    if (!userId) return;
+    try {
+      const formattedDate = formatDateForBackend(selectedDate);
+      const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (Array.isArray(response.data)) {
+        const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
+          memoId: memo.memoId,
+          userId: memo.userId,
+          todayId: memo.todayId,
+          bookId: memo.bookId,
+          date: memo.date,
+          content: memo.content
+        }));
+        setMemos(fetchedMemos);
+      } else {
+        console.error('Unexpected response format for memos:', response.data);
         setMemos([]);
       }
-    };
-    fetchMemos();
-  }, [selectedDate, userId]);
+    } catch (error) {
+      console.error('Failed to fetch memos:', error);
+      setMemos([]);
+    }
+  };
 
   // 이벤트 가져오기
-  const fetchEvents = async () => {
+  const fetchAllEvents = async () => {
     if (!userId) return;
     try {
       const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
@@ -187,7 +184,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchEvents();
+    if (userId) {
+      fetchAllMemos();
+      fetchAllEvents();
+    }
   }, [userId]);
 
   // 이벤트 핸들러
@@ -236,7 +236,7 @@ export default function Home() {
   };
 
   const handleEventDeleted = () => {
-    fetchEvents();
+    fetchAllEvents();
   };
 
   // 스와이프 핸들러
@@ -267,7 +267,7 @@ export default function Home() {
     const isSameDate = memoDate >= selectedDateStart && memoDate <= selectedDateEnd;
     const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return isSameDate && (searchTerm === '' || matchesSearch);
+    return (isSameDate || searchTerm !== '') && matchesSearch;
   });
 
   const filteredEvents = events.filter(event => {
@@ -279,13 +279,13 @@ export default function Home() {
     selectedDateEnd.setHours(23, 59, 59, 999);
 
     const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
+    const matchesSearch = 
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return isOverlapping &&
-      (searchTerm === '' ||
-        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchTerm.toLowerCase()));
+    return (isOverlapping || searchTerm !== '') && matchesSearch;
   });
-
+  
   // UI 관련 효과
   useEffect(() => {
     setCalendarVisible(isExpanded);
@@ -363,7 +363,7 @@ export default function Home() {
       {/* 캘린더 */}
       {calendarVisible && (
         <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
-          <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+          <Calendar selectedDate={displayDate} onDateSelect={handleDateSelect} />
         </div>
       )}
 
@@ -389,7 +389,7 @@ export default function Home() {
             </button>
           </div>
           <p className="text-base text-black mb-[33px]">
-            {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+          {displayDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
           {activeView === 'memo' && (
             <div className="mb-[20px] p-4 flex justify-center items-center">
@@ -402,7 +402,7 @@ export default function Home() {
             </div>
           )}
           {activeView === 'todo' && (
-            <>
+             <>
               {filteredEvents.length > 0 ? (
                 filteredEvents.map((event) => (
                   <DetailedContainer key={event.id} className="mb-[33px]">
@@ -419,7 +419,9 @@ export default function Home() {
                 ))
               ) : (
                 <div className="flex justify-center items-center">
-                  <p className='text-gray-500'>이 날짜에 해당하는 일정이 없습니다.</p>
+                  <p className='text-gray-500'>
+                    {searchTerm ? '검색 결과가 없습니다.' : '이 날짜에 해당하는 일정이 없습니다.'}
+                  </p>
                 </div>
               )}
             </>
@@ -443,7 +445,9 @@ export default function Home() {
                 ))
               ) : (
                 <div className="flex justify-center items-center">
-                  <p className='text-gray-500'>이 날짜에 해당하는 메모가 없습니다.</p>
+                  <p className='text-gray-500'>
+                    {searchTerm ? '검색 결과가 없습니다.' : '이 날짜에 해당하는 메모가 없습니다.'}
+                  </p>
                 </div>
               )}
             </>
