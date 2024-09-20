@@ -4,16 +4,7 @@ import withPWA from 'next-pwa';
 const nextConfig = {
     reactStrictMode: true,
     async rewrites() {
-        return [
-            {
-                source: '/api/generate_fairytale',
-                destination: 'http://localhost:8000/generate_fairytale',
-            },
-            {
-                source: '/api/:path*',
-                destination: 'http://localhost:8080/api/:path*',
-            },
-        ];
+        return [];
     },
     images: {
         domains: [
