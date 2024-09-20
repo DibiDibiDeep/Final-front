@@ -6,7 +6,7 @@ import DeleteModal from '../modal/DeleteModal';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface EventCardProps {
   id: number;
@@ -71,7 +71,7 @@ const EventCard: React.FC<EventCardProps> = ({ id, title, startTime, endTime, lo
   return (
     <div className="w-full px-4 py-2">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-semibold text-black">{title}</h2>
+        <h2 className="text-lg font-semibold text-black">{title}</h2>
         <Dropdown>
           <DropdownTrigger>
             <button>

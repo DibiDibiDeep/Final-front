@@ -4,16 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
+import axios from 'axios';
+import { Search, Plus } from 'lucide-react';
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
+
+// 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
 import Calendar from '../calendarapp/Calendar';
 import MemoDetail from '../memo/MemoDetail';
-import axios from 'axios';
-import { Search, Plus } from 'lucide-react';
-import { Button } from "@nextui-org/react";
 import CreateMemoModal from '../modal/CreateModal';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 
 // 이벤트 타입 정의
 type Event = {
@@ -41,6 +42,7 @@ interface Baby {
   photoUrl?: string;
 }
 
+// 유틸리티 함수
 const formatDateForBackend = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -52,24 +54,26 @@ const formatDateTimeForDisplay = (date: Date): string => {
   return date.toISOString().slice(0, 19).replace('Z', '');
 };
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+// 환경 변수
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const router = useRouter();
   const [activeView, setActiveView] = useState<'todo' | 'memo'>('todo');
   const [memos, setMemos] = useState<Memo[]>([]);
-  const [selectedMemo, setSelectedMemo] = useState<Memo | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
   const [calendarVisible, setCalendarVisible] = useState(true);
-  const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
-  const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
   const [babies, setBabies] = useState<Baby[]>([]);
   const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
+  const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
 
+  const router = useRouter();
+
+  // 사용자 ID 로드
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     if (storedUserId) {
@@ -77,6 +81,7 @@ export default function Home() {
     }
   }, []);
 
+  // 아이 정보 가져오기
   useEffect(() => {
     if (userId) {
       fetchBabiesInfo(userId);
@@ -129,23 +134,16 @@ export default function Home() {
     }
   };
 
-  const handleBabySelect = (baby: Baby) => {
-    setSelectedBaby(baby);
-    setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
-    localStorage.setItem('selectedBaby', JSON.stringify(baby));
-  };
-
-  useEffect(() => {
+   // 메모 가져오기
+   useEffect(() => {
     const fetchMemos = async () => {
       if (!userId) return;
 
       try {
         const formattedDate = formatDateForBackend(selectedDate);
-        console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
         const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
           headers: { 'Content-Type': 'application/json' }
         });
-        console.log('Backend response for Memos:', response.data);
         if (Array.isArray(response.data)) {
           const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
             memoId: memo.memoId,
@@ -168,13 +166,13 @@ export default function Home() {
     fetchMemos();
   }, [selectedDate, userId]);
 
+  // 이벤트 가져오기
   const fetchEvents = async () => {
     if (!userId) return;
     try {
       const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
         headers: { 'Content-Type': 'application/json' }
       });
-      console.log('Backend response:', response.data);
       const fetchedEvents: Event[] = response.data.map((event: any) => ({
         id: event.calendarId,
         title: event.title,
@@ -192,37 +190,18 @@ export default function Home() {
     fetchEvents();
   }, [userId]);
 
+  // 이벤트 핸들러
   const handleAddSchedule = () => {
     router.push('/addEvent');
   };
 
   const handleDateSelect = (date: Date) => setSelectedDate(date);
 
-  useEffect(() => {
-    setCalendarVisible(isExpanded);
-  }, [isExpanded]);
-
-  useEffect(() => {
-    if (!activeView) {
-      setActiveView('todo');
-    }
-  }, [activeView]);
-
-  const handlers = useSwipeable({
-    onSwipedUp: () => {
-      if (isExpanded) {
-        setIsExpanded(false);
-      }
-    },
-    onSwipedDown: () => {
-      if (!isExpanded) {
-        setIsExpanded(true);
-      }
-    },
-    trackMouse: true,
-    delta: 150,
-    preventScrollOnSwipe: isExpanded,
-  });
+  const handleBabySelect = (baby: Baby) => {
+    setSelectedBaby(baby);
+    setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
+    localStorage.setItem('selectedBaby', JSON.stringify(baby));
+  };
 
   const handleCreateMemo = async (content: string) => {
     if (!userId) {
@@ -256,6 +235,28 @@ export default function Home() {
     ));
   };
 
+  const handleEventDeleted = () => {
+    fetchEvents();
+  };
+
+  // 스와이프 핸들러
+  const handlers = useSwipeable({
+    onSwipedUp: () => {
+      if (isExpanded) {
+        setIsExpanded(false);
+      }
+    },
+    onSwipedDown: () => {
+      if (!isExpanded) {
+        setIsExpanded(true);
+      }
+    },
+    trackMouse: true,
+    delta: 150,
+    preventScrollOnSwipe: isExpanded,
+  });
+
+  // 필터링 로직
   const filteredMemos = memos.filter(memo => {
     const memoDate = new Date(memo.date);
     const selectedDateStart = new Date(selectedDate);
@@ -264,7 +265,6 @@ export default function Home() {
     selectedDateEnd.setHours(23, 59, 59, 999);
 
     const isSameDate = memoDate >= selectedDateStart && memoDate <= selectedDateEnd;
-
     const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
 
     return isSameDate && (searchTerm === '' || matchesSearch);
@@ -286,16 +286,26 @@ export default function Home() {
         event.location.toLowerCase().includes(searchTerm.toLowerCase()));
   });
 
-  const handleEventDeleted = () => {
-    fetchEvents();
-  };
+  // UI 관련 효과
+  useEffect(() => {
+    setCalendarVisible(isExpanded);
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (!activeView) {
+      setActiveView('todo');
+    }
+  }, [activeView]);
 
   const topMargin = isExpanded ? 450 : 115;
 
+  // 렌더링
   return (
     <div className="h-screen flex flex-col relative">
+      {/* 상단 바 */}
       <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
         <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
+          {/* 아이 선택 드롭다운 */}
           <Dropdown>
             <DropdownTrigger>
               <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
@@ -327,6 +337,7 @@ export default function Home() {
           </Dropdown>
         </div>
 
+        {/* 검색 입력 필드 */}        
         <div className="flex justify-center items-center">
           <div className="relative w-full max-w-md">
             <input
@@ -339,6 +350,8 @@ export default function Home() {
             <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
           </div>
         </div>
+
+        {/* 일정 추가 버튼 */}
         <button
           className="w-[45px] h-[45px] rounded-full overflow-hidden"
           onClick={handleAddSchedule}
@@ -346,18 +359,22 @@ export default function Home() {
           <Image src="/img/button/addSchedule.png" alt='일정 추가' width={45} height={45} className="w-full h-full object-cover" />
         </button>
       </div>
+
+      {/* 캘린더 */}
       {calendarVisible && (
         <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
           <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
         </div>
       )}
+
+      {/* 메인 컨테이너 */}
       <MainContainer
         className='pb-6'
         topMargin={topMargin}
         {...(isExpanded ? handlers : {})}
       >
         <div className="w-full max-w-[76vw]">
-          <div className="text-4xl text-black mb-[15px] flex space-x-4">
+          <div className="text-2xl text-black mb-[15px] flex space-x-4">
             <button
               onClick={() => setActiveView('todo')}
               className={activeView === 'todo' ? 'font-bold' : ''}
@@ -371,14 +388,14 @@ export default function Home() {
               메모
             </button>
           </div>
-          <p className="text-2xl text-black mb-[33px]">
+          <p className="text-base text-black mb-[33px]">
             {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
           </p>
           {activeView === 'memo' && (
             <div className="mb-[20px] p-4 flex justify-center items-center">
               <button
                 onClick={() => setIsCreateMemoModalOpen(true)}
-                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
+                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200 focus:outline-none focus:ring-0"
               >
                 <Plus size={24} className="text-purple-600" />
               </button>
@@ -409,7 +426,6 @@ export default function Home() {
           )}
           {activeView === 'memo' && (
             <>
-              {console.log('Filtered Memos:', filteredMemos)}
               {filteredMemos.length > 0 ? (
                 filteredMemos.map((memo) => (
                   <DetailedContainer key={memo.memoId} className="mb-[33px]">
