@@ -52,41 +52,62 @@ IconButton.displayName = 'IconButton';
 
 const BottomContainer: React.FC = () => {
     const router = useRouter();
-    const { activeView, setActiveView, handleAddSchedule, handleCreateMemo, handleVoiceRecord } = useBottomContainer();
+    const {
+        activeView,
+        setActiveView,
+        handleAddSchedule,
+        handleCreateMemo,
+        handleVoiceRecord
+    } = useBottomContainer();
     const [userId, setUserId] = useState<number | null>(null);
     const [babyId, setBabyId] = useState<number | null>(null);
 
     useEffect(() => {
-        // localStorage에서 userId를 가져오기
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
             setUserId(parseInt(storedUserId, 10));
         }
 
-        // localStorage에서 선택된 아이 가져오기
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
         if (storedSelectedBaby) {
             const selectedBaby = JSON.parse(storedSelectedBaby);
-
             if (selectedBaby != null) {
                 setBabyId(selectedBaby.babyId);
-                console.log("selectedBaby", selectedBaby);
-            } else {
-                console.log("No baby information found.");
             }
-        } else {
-            console.log("No stored baby information found.");
         }
-
     }, []);
 
     const handleButtonClick = useCallback((buttonName: string, path: string) => {
-        setActiveView(buttonName as 'home' | 'todo' | 'memo');
+        setActiveView(buttonName as 'home' | 'todo' | 'memo' | 'dairy' | 'story' | 'profile');
         router.push(path);
     }, [router, setActiveView]);
 
+    const handleScanButtonClick = useCallback(() => {
+        if (userId && babyId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.style.display = 'none';
+            input.onchange = async (event: Event) => {
+                const target = event.target as HTMLInputElement;
+                const files = target.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    console.log('선택된 파일:', file.name);
+                    await uploadImage(file, userId, babyId);
+                }
+            };
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
+        }
+    }, [userId, babyId]);
+
+
+
     const uploadImage = async (file: File, userId: number, babyId: number) => {
         const formData = new FormData();
+
         formData.append('file', file);
         formData.append('userId', userId.toString());
         formData.append('babyId', babyId.toString());
@@ -94,7 +115,6 @@ const BottomContainer: React.FC = () => {
         // ISO 8601 형식으로 현재 날짜 및 시간 추가
         const currentDate = new Date().toISOString();
         formData.append('date', currentDate);
-
         try {
             console.log('Sending request with formData:', Object.fromEntries(formData));
             const response = await axios.post(`${BACKEND_API_URL}/api/calendar-photos`, formData, {
@@ -109,8 +129,8 @@ const BottomContainer: React.FC = () => {
                 console.log('이미지 업로드 성공:', response.data);
                 const imageUrl = response.data.filePath;
                 console.log('이미지 URL:', imageUrl);
-                // return imageUrl;
 
+                // return imageUrl;
                 // const result = await processImage({ imageUrl, userId, babyId });
                 // console.log("결과 : ", result);
 
@@ -135,31 +155,8 @@ const BottomContainer: React.FC = () => {
             }
             throw error; // 에러를 상위로 전파
         }
+
     };
-
-    const handleScanButtonClick = useCallback(() => {
-        if (userId && babyId) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.style.display = 'none';
-            input.onchange = async (event: Event) => {
-                const target = event.target as HTMLInputElement;
-                const files = target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    console.log('선택된 파일:', file.name);
-                    console.log('파일 크기:', file.size);
-                    console.log('파일 타입:', file.type);
-
-                    await uploadImage(file, userId, babyId);
-                }
-            };
-            document.body.appendChild(input);
-            input.click();
-            document.body.removeChild(input);
-        }
-    }, [router]);
 
     const getButtonStyle = useCallback((buttonName: string): string => {
         if (buttonName === 'action') {
@@ -178,6 +175,9 @@ const BottomContainer: React.FC = () => {
     const renderActionButton = () => {
         switch (activeView) {
             case 'home':
+            case 'dairy':
+            case 'story':
+            case 'profile':
                 return (
                     <IconButton
                         icon={Scan}

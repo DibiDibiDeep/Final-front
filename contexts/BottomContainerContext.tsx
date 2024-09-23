@@ -5,14 +5,17 @@ import { Memo } from '@/types/index';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
-type ActiveView = 'home' | 'todo' | 'memo';
+type ActiveView = 'home' | 'todo' | 'memo' | 'dairy' | 'story' | 'profile';
 
 interface BottomContainerContextType {
     activeView: ActiveView;
-    setActiveView: (view: ActiveView) => void; // 현재 활성화된 뷰 관리
+    setActiveView: (view: ActiveView) => void;
     handleAddSchedule: () => void;
     handleCreateMemo: () => void;
     handleVoiceRecord: () => void;
+    handleDairyView: () => void;
+    handleStoryView: () => void;
+    handleProfileView: () => void;
     isCreateMemoModalOpen: boolean;
     setIsCreateMemoModalOpen: (isOpen: boolean) => void;
     isVoiceRecordModalOpen: boolean;
@@ -43,13 +46,11 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
     const [babyId, setBabyId] = useState<number | null>(null);
 
     useEffect(() => {
-        // localStorage에서 userId를 가져오기
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
             setUserId(parseInt(storedUserId, 10));
         }
 
-        // localStorage에서 선택된 아이 가져오기
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
         if (storedSelectedBaby) {
             const selectedBaby = JSON.parse(storedSelectedBaby);
@@ -63,7 +64,6 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
         } else {
             console.log("No stored baby information found.");
         }
-
     }, []);
 
     const router = useRouter();
@@ -78,6 +78,21 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
 
     const handleVoiceRecord = () => {
         setIsVoiceRecordModalOpen(true);
+    };
+
+    const handleDairyView = () => {
+        setActiveView('dairy');
+        router.push('/diary');
+    };
+
+    const handleStoryView = () => {
+        setActiveView('story');
+        router.push('/story');
+    };
+
+    const handleProfileView = () => {
+        setActiveView('profile');
+        router.push('/profile');
     };
 
     const createMemo = async (content: string): Promise<Memo | null> => {
@@ -103,7 +118,6 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
     };
 
     const saveVoiceRecord = (audioBlob: Blob) => {
-        // audio blob 서버에 전송 (현재는 로그만 출력)
         console.log('Audio recorded:', audioBlob);
         console.log('userId', userId, 'babyId', babyId);
         setIsVoiceRecordModalOpen(false);
@@ -118,6 +132,9 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
                 handleAddSchedule,
                 handleCreateMemo,
                 handleVoiceRecord,
+                handleDairyView,
+                handleStoryView,
+                handleProfileView,
                 isCreateMemoModalOpen,
                 setIsCreateMemoModalOpen,
                 isVoiceRecordModalOpen,

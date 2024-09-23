@@ -4,7 +4,9 @@ export interface Event {
     startTime: string;
     endTime: string;
     location: string;
-    description: string;
+    target: string;
+    information: string;
+    notes: string;
 }
 
 export interface Memo {

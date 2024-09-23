@@ -183,8 +183,8 @@ export default function AddPage() {
                 </div>
                 <EditContainer>
                     <div className="flex flex-col space-y-4 pt-[5px] justify-center">
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="title" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                        <div className="flex items-center space-x-8">
+                            <label htmlFor="title" className="text-sm font-medium text-gray-700 whitespace-nowrap w-20">
                                 제목
                             </label>
                             <Input
@@ -192,11 +192,11 @@ export default function AddPage() {
                                 type="text"
                                 placeholder="이벤트 제목을 입력해주세요."
                                 onChange={(e) => setTitle(e.target.value)}
-                                className='text-gray-700'
+                                className='text-gray-700 flex-1'
                             />
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="startTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                        <div className="flex items-center space-x-8">
+                            <label htmlFor="startTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-20">
                                 시작 시간
                             </label>
                             <Input
@@ -204,11 +204,11 @@ export default function AddPage() {
                                 type="datetime-local"
                                 value={startTime}
                                 onChange={handleStartTimeChange}
-                                className='text-gray-700'
+                                className='text-gray-700 flex-1'
                             />
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="endTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                        <div className="flex items-center space-x-8">
+                            <label htmlFor="endTime" className="text-sm font-medium text-gray-700 whitespace-nowrap w-20">
                                 종료 시간
                             </label>
                             <Input
@@ -216,11 +216,11 @@ export default function AddPage() {
                                 type="datetime-local"
                                 value={endTime}
                                 onChange={handleEndTimeChange}
-                                className='text-gray-700'
+                                className='text-gray-700 flex-1'
                             />
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <label htmlFor="location" className="text-sm font-medium text-gray-700 whitespace-nowrap w-24">
+                        <div className="flex items-center space-x-8">
+                            <label htmlFor="location" className="text-sm font-medium text-gray-700 whitespace-nowrap w-20">
                                 위치
                             </label>
                             <Input
@@ -228,7 +228,7 @@ export default function AddPage() {
                                 type="text"
                                 placeholder="위치를 입력해주세요."
                                 onChange={(e) => setLocation(e.target.value)}
-                                className='text-gray-700'
+                                className='text-gray-700 flex-1'
                             />
                         </div>
                     </div>

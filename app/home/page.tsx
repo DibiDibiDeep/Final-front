@@ -72,8 +72,12 @@ export default function Home() {
         }
     }, [userId]);
 
-    const handleAddSchedule = () => {
-        router.push('/addEvent');
+    useEffect(() => {
+        setCalendarVisible(isExpanded);
+    }, [isExpanded]);
+
+    const handleCheckNotice = () => {
+        router.push('/notice');
     };
 
     const fetchBabiesInfo = async (userId: number) => {
@@ -174,7 +178,9 @@ export default function Home() {
                 startTime: event.startTime,
                 endTime: event.endTime,
                 location: event.location,
-                description: event.description
+                target: event.target,
+                information: event.information,
+                notes: event.notes
             }));
             setEvents(fetchedEvents);
         } catch (error) {
@@ -309,16 +315,16 @@ export default function Home() {
                             placeholder="검색"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-56 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
+                            className="w-52 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
                         />
                         <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
                     </div>
                 </div>
                 <button
                     className="w-[45px] h-[45px] rounded-full overflow-hidden"
-                    onClick={handleAddSchedule}
+                    onClick={handleCheckNotice}
                 >
-                    <Image src="/img/button/addSchedule.png" alt='일정 추가' width={45} height={45} className="w-full h-full object-cover" />
+                    <Image src="/img/button/notice.png" alt='공지 확인' width={45} height={45} className="w-full h-full object-cover" />
                 </button>
             </div>
             {calendarVisible && (
@@ -370,7 +376,9 @@ export default function Home() {
                                             startTime={event.startTime}
                                             endTime={event.endTime}
                                             location={event.location}
-                                            description={event.description}
+                                            target={event.target}
+                                            information={event.information}
+                                            notes={event.notes}
                                             onEventDeleted={handleEventDeleted}
                                             selectedDate={selectedDate}
                                         />

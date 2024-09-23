@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
-import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, InformationCircleIcon, TagIcon } from '@heroicons/react/24/outline';
 import DeleteModal from '../modal/DeleteModal';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -14,7 +14,9 @@ interface EventCardProps {
   startTime: string;
   endTime: string;
   location: string;
-  description: string; // 새로 추가된 description 필드
+  target: string; // 새로 추가
+  information: string;
+  notes: string;
   onEventDeleted: () => void;
   selectedDate: Date;
 }
@@ -25,7 +27,9 @@ const EventCard: React.FC<EventCardProps> = ({
   startTime,
   endTime,
   location,
-  description, // 새로 추가된 description 매개변수
+  target, // 새로 추가
+  information,
+  notes,
   onEventDeleted,
   selectedDate
 }) => {
@@ -102,14 +106,22 @@ const EventCard: React.FC<EventCardProps> = ({
           {`${formatDateTimeForDisplay(startTime)} ~ ${formatDateTimeForDisplay(endTime)}`}
         </span>
       </div>
-      <div className="flex items-center mb-2">
-        <MapPinIcon className="h-5 w-5 mr-2 text-gray-600" />
-        <span className="text-sm text-gray-700">{location}</span>
-      </div>
-      {description && (
-        <div className="flex items-start mb-2">
-          <InformationCircleIcon className="h-5 w-5 mr-2 text-gray-600 mt-1" />
-          <span className="text-sm text-gray-700">{description}</span>
+      {location && (
+        <div className="flex items-center mb-2">
+          <MapPinIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{location}</span>
+        </div>
+      )}
+      {information && (
+        <div className="flex items-center mb-2">
+          <InformationCircleIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{information}</span>
+        </div>
+      )}
+      {notes && (
+        <div className="flex items-center mb-2">
+          <TagIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{notes}</span>
         </div>
       )}
       <DeleteModal isOpen={isDeleteModalOpen} onClose={handleCloseModal} onDelete={handleDelete} />
