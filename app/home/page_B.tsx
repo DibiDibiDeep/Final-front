@@ -15,8 +15,6 @@ import { Button } from "@nextui-org/react";
 import CreateMemoModal from '../modal/CreateModal';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Event, Memo, Baby } from '@/types/index';
-import { useBottomContainer } from '@/contexts/BottomContainerContext';
-import RecordModal from '../modal/RecordModal';
 
 const formatDateForBackend = (date: Date) => {
     const year = date.getFullYear();
@@ -34,30 +32,18 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 export default function Home() {
     const [selectedDate, setSelectedDate] = useState(() => new Date());
     const router = useRouter();
+    const [activeView, setActiveView] = useState<'todo' | 'memo'>('todo');
     const [memos, setMemos] = useState<Memo[]>([]);
     const [selectedMemo, setSelectedMemo] = useState<Memo | null>(null);
     const [isExpanded, setIsExpanded] = useState(true);
     const [calendarVisible, setCalendarVisible] = useState(true);
     const [events, setEvents] = useState<Event[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
-
-    const {
-        activeView,
-        setActiveView,
-        isCreateMemoModalOpen,
-        setIsCreateMemoModalOpen,
-        isVoiceRecordModalOpen,
-        setIsVoiceRecordModalOpen,
-        handleAddSchedule: contextHandleAddSchedule,
-        handleCreateMemo: contextHandleCreateMemo,
-        handleVoiceRecord: contextHandleVoiceRecord,
-        createMemo,
-        saveVoiceRecord
-    } = useBottomContainer();
 
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -71,10 +57,6 @@ export default function Home() {
             fetchBabiesInfo(userId);
         }
     }, [userId]);
-
-    const handleAddSchedule = () => {
-        router.push('/addEvent');
-    };
 
     const fetchBabiesInfo = async (userId: number) => {
         try {
@@ -186,7 +168,21 @@ export default function Home() {
         fetchEvents();
     }, [userId]);
 
+    const handleAddSchedule = () => {
+        router.push('/addEvent');
+    };
+
     const handleDateSelect = (date: Date) => setSelectedDate(date);
+
+    useEffect(() => {
+        setCalendarVisible(isExpanded);
+    }, [isExpanded]);
+
+    useEffect(() => {
+        if (!activeView) {
+            setActiveView('todo');
+        }
+    }, [activeView]);
 
     const handlers = useSwipeable({
         onSwipedUp: () => {
@@ -211,10 +207,15 @@ export default function Home() {
         }
 
         try {
-            const newMemo = await createMemo(content);
-            if (newMemo) {
-                setMemos(prevMemos => [newMemo, ...prevMemos]);
-            }
+            const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
+                userId: userId,
+                date: formatDateTimeForDisplay(new Date()),
+                content: content,
+                todayId: null,
+                bookId: null
+            });
+            const newMemo: Memo = response.data;
+            setMemos(prevMemos => [newMemo, ...prevMemos]);
             setIsCreateMemoModalOpen(false);
         } catch (error) {
             console.error('Failed to create memo:', error);
@@ -335,7 +336,7 @@ export default function Home() {
                     <div className="text-4xl text-black mb-[15px] flex space-x-4">
                         <button
                             onClick={() => setActiveView('todo')}
-                            className={(activeView === 'home' || activeView === 'todo') ? 'font-bold' : ''}
+                            className={activeView === 'todo' ? 'font-bold' : ''}
                         >
                             일정
                         </button>
@@ -352,14 +353,14 @@ export default function Home() {
                     {activeView === 'memo' && (
                         <div className="mb-[20px] p-4 flex justify-center items-center">
                             <button
-                                onClick={contextHandleCreateMemo}
+                                onClick={() => setIsCreateMemoModalOpen(true)}
                                 className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
                             >
                                 <Plus size={24} className="text-purple-600" />
                             </button>
                         </div>
                     )}
-                    {(activeView === 'home' || activeView === 'todo') && (
+                    {activeView === 'todo' && (
                         <>
                             {filteredEvents.length > 0 ? (
                                 filteredEvents.map((event) => (
@@ -414,11 +415,6 @@ export default function Home() {
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}
                 onCreateMemo={handleCreateMemo}
-            />
-            <RecordModal
-                isOpen={isVoiceRecordModalOpen}
-                onClose={() => setIsVoiceRecordModalOpen(false)}
-                onSave={saveVoiceRecord}
             />
         </div>
     );
