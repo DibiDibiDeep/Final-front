@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
-import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, InformationCircleIcon, TagIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, FaceSmileIcon, InformationCircleIcon, TagIcon } from '@heroicons/react/24/outline';
 import DeleteModal from '../modal/DeleteModal';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -110,6 +110,12 @@ const EventCard: React.FC<EventCardProps> = ({
         <div className="flex items-center mb-2">
           <MapPinIcon className="h-5 w-5 mr-2 text-gray-600" />
           <span className="text-sm text-gray-700">{location}</span>
+        </div>
+      )}
+      {target && (
+        <div className="flex items-center mb-2">
+          <FaceSmileIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{target}</span>
         </div>
       )}
       {information && (
