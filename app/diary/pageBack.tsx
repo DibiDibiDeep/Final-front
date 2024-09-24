@@ -214,7 +214,7 @@ export default function DiaryPage() {
         <div className="max-w-md mx-auto">
             {entries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[812px]">
-                    <p className="text-xl mb-4">금일 알림장을 올려주세요.</p>
+                    <p className="text-xl text-white mb-4">금일 알림장을 올려주세요.</p>
                     <div className="mb-[20px] p-4 flex justify-center items-center">
                         <button
                             className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
