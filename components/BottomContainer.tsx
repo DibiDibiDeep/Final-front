@@ -4,7 +4,7 @@ import { Home, ClipboardList, Scan, BookHeart, User, Plus, LucideIcon } from 'lu
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import axios from 'axios';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface IconButtonProps {
     icon: LucideIcon;
@@ -130,7 +130,6 @@ const BottomContainer: React.FC = () => {
                 const imageUrl = response.data.filePath;
                 console.log('이미지 URL:', imageUrl);
 
-                // return imageUrl;
                 // const result = await processImage({ imageUrl, userId, babyId });
                 // console.log("결과 : ", result);
 
@@ -138,18 +137,18 @@ const BottomContainer: React.FC = () => {
                 localStorage.setItem('calendarData', JSON.stringify(imageUrl));
 
                 // 결과 페이지로 이동
-                router.push('/calendarResult');
+                // router.push('/calendarResult');
             } else {
                 console.error('서버 응답에 filePath가 없습니다:', response.data);
                 throw new Error('Invalid server response');
             }
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                console.error('Axios 에러:', error.response?.data || error.message);
-                if (error.response) {
-                    console.error('에러 상태:', error.response.status);
-                    console.error('에러 데이터:', error.response.data);
-                }
+                // console.error('Axios 에러:', error.response?.data || error.message);
+                // if (error.response) {
+                //     console.error('에러 상태:', error.response.status);
+                //     console.error('에러 데이터:', error.response.data);
+                // }
             } else {
                 console.error('알 수 없는 에러:', error);
             }
