@@ -29,9 +29,21 @@ const LoginPage: React.FC = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', data.user.userId);
 
-        router.push('/home');
+          if (data.hasBaby) {
+            router.push('/home');
+          } else {
+            router.push('/initialSettings');
+          }
+        } else {
+          console.error('Unexpected data structure. Full data:', data);
+        }
       } else {
-        console.error('Login failed');
+        const errorText = await response.text();
+        if (response.status === 401) {
+          console.error('Authentication failed. Please log in again.', errorText);
+        } else {
+          console.error('Login failed. Status:', response.status, 'Response:', errorText);
+        }
       }
     } catch (error) {
       console.error('Error during login:', error);
@@ -41,6 +53,10 @@ const LoginPage: React.FC = () => {
   const handleLoginClick = () => {
     signIn('google');
   };
+
+  if (status === "authenticated") {
+    return <p>로그인 중입니다...</p>; // 이미 로그인된 경우
+  }
 
   return (
     <div>

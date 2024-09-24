@@ -1,4 +1,4 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions, Account, User } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { JWT } from "next-auth/jwt";
 
@@ -22,8 +22,8 @@ export const authOptions: NextAuthOptions = {
         })
     ],
     callbacks: {
-        async jwt({ token, account }: { token: JWT; account: any }) {
-            if (account) {
+        async jwt({ token, account, user }: { token: JWT; account: Account | null; user: User | undefined }) {
+            if (account && account.access_token) {
                 token.accessToken = account.access_token;
             }
             return token;
@@ -32,7 +32,10 @@ export const authOptions: NextAuthOptions = {
             session.accessToken = token.accessToken;
             return session;
         }
-    }
+    },
+    pages: {
+        signIn: '/auth/signin', // 로그인 페이지 URL
+    },
 };
 
 // NextAuth 핸들러 생성
