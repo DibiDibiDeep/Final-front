@@ -23,27 +23,21 @@ const LoginPage: React.FC = () => {
         },
         body: JSON.stringify({ token: session?.accessToken }),
       });
-
+  
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', data.user.userId);
-
-          if (data.hasBaby) {
-            router.push('/home');
-          } else {
-            router.push('/initialSettings');
-          }
+  
+        if (data.hasBaby) {
+          router.push('/home');
         } else {
-          console.error('Unexpected data structure. Full data:', data);
+          router.push('/initialSettings');
         }
       } else {
-        const errorText = await response.text();
-        if (response.status === 401) {
-          console.error('Authentication failed. Please log in again.', errorText);
-        } else {
-          console.error('Login failed. Status:', response.status, 'Response:', errorText);
-        }
+        // 여기에서 response.json()으로 데이터를 먼저 읽어온 후 출력
+        const errorData = await response.json(); 
+        console.error('Unexpected data structure. Full data:', errorData);
       }
     } catch (error) {
       console.error('Error during login:', error);
