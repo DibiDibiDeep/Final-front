@@ -33,7 +33,7 @@ const LoginPage = () => {
           localStorage.setItem('user', JSON.stringify(data.user));
           localStorage.setItem('userId', data.user.userId.toString());
 
-          if (data.hasBaby === true) {
+          if (data.hasBaby) {
             router.push('/home');
           } else {
             router.push('/initialSettings');
@@ -43,7 +43,11 @@ const LoginPage = () => {
         }
       } else {
         const errorText = await response.text();
-        console.error('Login failed. Status:', response.status, 'Response:', errorText);
+        if (response.status === 401) {
+          console.error('Authentication failed. Please log in again.', errorText);
+        } else {
+          console.error('Login failed. Status:', response.status, 'Response:', errorText);
+        }
       }
     } catch (error) {
       console.error('Error during login:', error);
@@ -53,6 +57,10 @@ const LoginPage = () => {
   const handleGoogleLogin = () => {
     signIn('google');
   };
+
+  if (status === "authenticated") {
+    return <p>로그인 중입니다...</p>; // 이미 로그인된 경우
+  }
 
   return (
     <div>
