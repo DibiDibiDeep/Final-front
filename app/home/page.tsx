@@ -36,21 +36,21 @@ const formatDateTimeForDisplay = (date: Date): string => {
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export default function Home() {
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [memos, setMemos] = useState<Memo[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [calendarVisible, setCalendarVisible] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [userId, setUserId] = useState<number | null>(null);
-  const [babies, setBabies] = useState<Baby[]>([]);
-  const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
-  const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
-  const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
+    const [selectedDate, setSelectedDate] = useState(() => new Date());
+    const [memos, setMemos] = useState<Memo[]>([]);
+    const [events, setEvents] = useState<Event[]>([]);
+    const [isExpanded, setIsExpanded] = useState(true);
+    const [calendarVisible, setCalendarVisible] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [userId, setUserId] = useState<number | null>(null);
+    const [babies, setBabies] = useState<Baby[]>([]);
+    const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
+    const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
+    const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
 
-  const router = useRouter();
-  
-  const {
+    const router = useRouter();
+
+    const {
         activeView,
         setActiveView,
         isCreateMemoModalOpen,
@@ -65,75 +65,75 @@ export default function Home() {
     } = useBottomContainer();
 
 
-  // 사용자 ID 로드
-  useEffect(() => {
-    const storedUserId = localStorage.getItem('userId');
-    if (storedUserId) {
-      setUserId(parseInt(storedUserId, 10));
-    }
-  }, []);
-
-  // 아이 정보 가져오기
-  useEffect(() => {
-    if (userId) {
-      fetchBabiesInfo(userId);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (userId) {
-      fetchEvents();
-    }
-  }, [userId]);  
-    
-  const fetchBabiesInfo = async (userId: number) => {
-    try {
-      const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
-      if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-        const fetchedBabies: Baby[] = await Promise.all(userResponse.data.map(async (baby: any) => {
-          const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
-          return {
-            userId: baby.userId,
-            babyId: baby.babyId,
-            babyName: baby.babyName,
-            photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
-          };
-        }));
-
-        setBabies(fetchedBabies);
-
-        // localStorage에서 저장된 선택된 아이 정보 확인
-        const storedSelectedBaby = localStorage.getItem('selectedBaby');
-        if (storedSelectedBaby) {
-          const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
-          const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
-          if (foundBaby) {
-            setSelectedBaby(foundBaby);
-            setBabyPhoto(foundBaby.photoUrl);
-          } else {
-            // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
-            setSelectedBaby(fetchedBabies[0]);
-            setBabyPhoto(fetchedBabies[0].photoUrl);
-            localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
-          }
-        } else {
-          // 저장된 선택 정보가 없으면 첫 번째 아이 선택
-          setSelectedBaby(fetchedBabies[0]);
-          setBabyPhoto(fetchedBabies[0].photoUrl);
-          localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+    // 사용자 ID 로드
+    useEffect(() => {
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+            setUserId(parseInt(storedUserId, 10));
         }
-      } else {
-        console.log("No baby information found for this user.");
-        localStorage.removeItem('selectedBaby');
-      }
-    } catch (error) {
-      console.error('Failed to fetch baby information:', error);
-      localStorage.removeItem('selectedBaby');
-    }
-  };
+    }, []);
 
-   // 메모 가져오기
-   useEffect(() => {
+    // 아이 정보 가져오기
+    useEffect(() => {
+        if (userId) {
+            fetchBabiesInfo(userId);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (userId) {
+            fetchEvents();
+        }
+    }, [userId]);
+
+    const fetchBabiesInfo = async (userId: number) => {
+        try {
+            const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
+            if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
+                const fetchedBabies: Baby[] = await Promise.all(userResponse.data.map(async (baby: any) => {
+                    const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+                    return {
+                        userId: baby.userId,
+                        babyId: baby.babyId,
+                        babyName: baby.babyName,
+                        photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
+                    };
+                }));
+
+                setBabies(fetchedBabies);
+
+                // localStorage에서 저장된 선택된 아이 정보 확인
+                const storedSelectedBaby = localStorage.getItem('selectedBaby');
+                if (storedSelectedBaby) {
+                    const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
+                    const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
+                    if (foundBaby) {
+                        setSelectedBaby(foundBaby);
+                        setBabyPhoto(foundBaby.photoUrl);
+                    } else {
+                        // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
+                        setSelectedBaby(fetchedBabies[0]);
+                        setBabyPhoto(fetchedBabies[0].photoUrl);
+                        localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                    }
+                } else {
+                    // 저장된 선택 정보가 없으면 첫 번째 아이 선택
+                    setSelectedBaby(fetchedBabies[0]);
+                    setBabyPhoto(fetchedBabies[0].photoUrl);
+                    localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                }
+            } else {
+                console.log("No baby information found for this user.");
+                localStorage.removeItem('selectedBaby');
+            }
+        } catch (error) {
+            console.error('Failed to fetch baby information:', error);
+            localStorage.removeItem('selectedBaby');
+        }
+    };
+
+    // 메모 가져오기
+    useEffect(() => {
         const fetchMemos = async () => {
             if (!userId) return;
 
@@ -166,8 +166,8 @@ export default function Home() {
         fetchMemos();
     }, [selectedDate, userId]);
 
-  // 이벤트 가져오기
-  const fetchEvents = async () => {
+    // 이벤트 가져오기
+    const fetchEvents = async () => {
         if (!userId) return;
         try {
             const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
@@ -190,20 +190,20 @@ export default function Home() {
         }
     };
 
-  // 이벤트 핸들러
-  const handleCheckNotice = () => {
-    router.push('/notice');
-  };
+    // 이벤트 핸들러
+    const handleCheckNotice = () => {
+        router.push('/notice');
+    };
 
-  const handleDateSelect = (date: Date) => setSelectedDate(date);
+    const handleDateSelect = (date: Date) => setSelectedDate(date);
 
-  const handleBabySelect = (baby: Baby) => {
-    setSelectedBaby(baby);
-    setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
-    localStorage.setItem('selectedBaby', JSON.stringify(baby));
-  };
+    const handleBabySelect = (baby: Baby) => {
+        setSelectedBaby(baby);
+        setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
+        localStorage.setItem('selectedBaby', JSON.stringify(baby));
+    };
 
-  const handleCreateMemo = async (content: string) => {
+    const handleCreateMemo = async (content: string) => {
         if (!userId) {
             console.error('User ID is not available');
             return;
@@ -218,78 +218,78 @@ export default function Home() {
         } catch (error) {
             console.error('Failed to create memo:', error);
         }
-  };
+    };
 
-  const handleMemoDeleted = (deletedMemoId: number) => {
-    setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
-  };
+    const handleMemoDeleted = (deletedMemoId: number) => {
+        setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
+    };
 
-  const handleMemoUpdated = (updatedMemo: Memo) => {
-    setMemos(prevMemos => prevMemos.map(memo =>
-      memo.memoId === updatedMemo.memoId ? updatedMemo : memo
-    ));
-  };
+    const handleMemoUpdated = (updatedMemo: Memo) => {
+        setMemos(prevMemos => prevMemos.map(memo =>
+            memo.memoId === updatedMemo.memoId ? updatedMemo : memo
+        ));
+    };
 
-  const handleEventDeleted = () => {
-    fetchEvents();
-  };
+    const handleEventDeleted = () => {
+        fetchEvents();
+    };
 
-  // 스와이프 핸들러
-  const handlers = useSwipeable({
-    onSwipedUp: () => {
-      if (isExpanded) {
-        setIsExpanded(false);
-      }
-    },
-    onSwipedDown: () => {
-      if (!isExpanded) {
-        setIsExpanded(true);
-      }
-    },
-    trackMouse: true,
-    delta: 150,
-    preventScrollOnSwipe: isExpanded,
-  });
+    // 스와이프 핸들러
+    const handlers = useSwipeable({
+        onSwipedUp: () => {
+            if (isExpanded) {
+                setIsExpanded(false);
+            }
+        },
+        onSwipedDown: () => {
+            if (!isExpanded) {
+                setIsExpanded(true);
+            }
+        },
+        trackMouse: true,
+        delta: 150,
+        preventScrollOnSwipe: isExpanded,
+    });
 
-  // 필터링 로직
-  const filteredMemos = memos.filter(memo => {
-    const memoDate = new Date(memo.date);
-    const selectedDateStart = new Date(selectedDate);
-    selectedDateStart.setHours(0, 0, 0, 0);
-    const selectedDateEnd = new Date(selectedDate);
-    selectedDateEnd.setHours(23, 59, 59, 999);
+    // 필터링 로직
+    const filteredMemos = memos.filter(memo => {
+        const memoDate = new Date(memo.date);
+        const selectedDateStart = new Date(selectedDate);
+        selectedDateStart.setHours(0, 0, 0, 0);
+        const selectedDateEnd = new Date(selectedDate);
+        selectedDateEnd.setHours(23, 59, 59, 999);
 
-    const isSameDate = memoDate >= selectedDateStart && memoDate <= selectedDateEnd;
-    const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
+        const isSameDate = memoDate >= selectedDateStart && memoDate <= selectedDateEnd;
+        const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return (isSameDate || searchTerm !== '') && matchesSearch;
-  });
+        return (isSameDate || searchTerm !== '') && matchesSearch;
+    });
 
-  const filteredEvents = events.filter(event => {
-    const eventStart = new Date(event.startTime);
-    const eventEnd = new Date(event.endTime);
-    const selectedDateStart = new Date(selectedDate);
-    selectedDateStart.setHours(0, 0, 0, 0);
-    const selectedDateEnd = new Date(selectedDate);
-    selectedDateEnd.setHours(23, 59, 59, 999);
+    const filteredEvents = events.filter(event => {
+        const eventStart = new Date(event.startTime);
+        const eventEnd = new Date(event.endTime);
+        const selectedDateStart = new Date(selectedDate);
+        selectedDateStart.setHours(0, 0, 0, 0);
+        const selectedDateEnd = new Date(selectedDate);
+        selectedDateEnd.setHours(23, 59, 59, 999);
 
-    const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
-    const matchesSearch = 
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchTerm.toLowerCase());
+        const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
+        const matchesSearch =
+            event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            event.location.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return (isOverlapping || searchTerm !== '') && matchesSearch;
-  });
-  
-  // UI 관련 효과
-  useEffect(() => {
-    setCalendarVisible(isExpanded);
-  }, [isExpanded]);
+        return (isOverlapping || searchTerm !== '') && matchesSearch;
+    });
 
-  const topMargin = isExpanded ? 450 : 115;
+    // UI 관련 효과
+    useEffect(() => {
+        setCalendarVisible(isExpanded);
+    }, [isExpanded]);
 
-  // 렌더링
-  return (
+    const topMargin = isExpanded ? 450 : 115;
+
+    // 렌더링
+    return (
         <div className="h-screen flex flex-col relative">
             <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
                 <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
@@ -371,16 +371,6 @@ export default function Home() {
                     <p className="text-2xl text-black mb-[33px]">
                         {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                     </p>
-                    {activeView === 'memo' && (
-                        <div className="mb-[20px] p-4 flex justify-center items-center">
-                            <button
-                                onClick={contextHandleCreateMemo}
-                                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
-                            >
-                                <Plus size={24} className="text-purple-600" />
-                            </button>
-                        </div>
-                    )}
                     {(activeView === 'home' || activeView === 'todo') && (
                         <>
                             {filteredEvents.length > 0 ? (
