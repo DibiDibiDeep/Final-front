@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Square, X } from 'lucide-react';
+import { Mic, Square } from 'lucide-react';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@nextui-org/react";
 
 interface RecordModalProps {
     isOpen: boolean;
@@ -54,39 +55,59 @@ const RecordModal: React.FC<RecordModalProps> = ({ isOpen, onClose, onSave }) =>
         }
     };
 
-    if (!isOpen) return null;
+    const handleClose = () => {
+        if (isRecording) {
+            stopRecording();
+        }
+        onClose();
+    };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-[90%] max-w-sm">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-gray-700">음성 메모 녹음</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                        <X size={24} />
-                    </button>
-                </div>
-                <div className="flex flex-col items-center space-y-4">
-                    <div className="text-2xl font-bold text-gray-700">
-                        {Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, '0')}
+        <Modal
+            isOpen={isOpen}
+            onClose={handleClose}
+            classNames={{
+                base: "bg-white dark:bg-gray-800",
+                header: "border-b border-gray-200 dark:border-gray-700",
+                body: "py-6",
+                footer: "border-t border-gray-200 dark:border-gray-700"
+            }}
+        >
+            <ModalContent>
+                <ModalHeader className="flex flex-col gap-1">음성 메모 녹음</ModalHeader>
+                <ModalBody>
+                    <div className="flex flex-col items-center space-y-4">
+                        <div className="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                            {Math.floor(recordingTime / 60)}:{String(recordingTime % 60).padStart(2, '0')}
+                        </div>
+                        {isRecording ? (
+                            <Button
+                                color="danger"
+                                variant="shadow"
+                                onPress={stopRecording}
+                                className="w-16 h-16 rounded-full"
+                            >
+                                <Square size={32} />
+                            </Button>
+                        ) : (
+                            <Button
+                                color="primary"
+                                variant="shadow"
+                                onPress={startRecording}
+                                className="w-16 h-16 rounded-full"
+                            >
+                                <Mic size={32} />
+                            </Button>
+                        )}
                     </div>
-                    {isRecording ? (
-                        <button
-                            onClick={stopRecording}
-                            className="bg-red-500 text-white p-4 rounded-full hover:bg-red-600 transition-colors"
-                        >
-                            <Square size={32} />
-                        </button>
-                    ) : (
-                        <button
-                            onClick={startRecording}
-                            className="bg-purple-600 text-white p-4 rounded-full hover:bg-purple-700 transition-colors"
-                        >
-                            <Mic size={32} />
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
+                </ModalBody>
+                {/* <ModalFooter>
+                    <Button color="danger" variant="light" onPress={handleClose}>
+                        닫기
+                    </Button>
+                </ModalFooter> */}
+            </ModalContent>
+        </Modal>
     );
 };
 
