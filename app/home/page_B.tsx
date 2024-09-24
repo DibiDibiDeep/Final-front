@@ -15,8 +15,6 @@ import { Button } from "@nextui-org/react";
 import CreateMemoModal from '../modal/CreateModal';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Event, Memo, Baby } from '@/types/index';
-import { useBottomContainer } from '@/contexts/BottomContainerContext';
-import RecordModal from '../modal/RecordModal';
 
 const formatDateForBackend = (date: Date) => {
     const year = date.getFullYear();
@@ -34,30 +32,18 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://local
 export default function Home() {
     const [selectedDate, setSelectedDate] = useState(() => new Date());
     const router = useRouter();
+    const [activeView, setActiveView] = useState<'todo' | 'memo'>('todo');
     const [memos, setMemos] = useState<Memo[]>([]);
     const [selectedMemo, setSelectedMemo] = useState<Memo | null>(null);
     const [isExpanded, setIsExpanded] = useState(true);
     const [calendarVisible, setCalendarVisible] = useState(true);
     const [events, setEvents] = useState<Event[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
-
-    const {
-        activeView,
-        setActiveView,
-        isCreateMemoModalOpen,
-        setIsCreateMemoModalOpen,
-        isVoiceRecordModalOpen,
-        setIsVoiceRecordModalOpen,
-        handleAddSchedule: contextHandleAddSchedule,
-        handleCreateMemo: contextHandleCreateMemo,
-        handleVoiceRecord: contextHandleVoiceRecord,
-        createMemo,
-        saveVoiceRecord
-    } = useBottomContainer();
 
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -71,14 +57,6 @@ export default function Home() {
             fetchBabiesInfo(userId);
         }
     }, [userId]);
-
-    useEffect(() => {
-        setCalendarVisible(isExpanded);
-    }, [isExpanded]);
-
-    const handleCheckNotice = () => {
-        router.push('/notice');
-    };
 
     const fetchBabiesInfo = async (userId: number) => {
         try {
@@ -178,9 +156,7 @@ export default function Home() {
                 startTime: event.startTime,
                 endTime: event.endTime,
                 location: event.location,
-                target: event.target,
-                information: event.information,
-                notes: event.notes
+                description: event.description
             }));
             setEvents(fetchedEvents);
         } catch (error) {
@@ -192,7 +168,21 @@ export default function Home() {
         fetchEvents();
     }, [userId]);
 
+    const handleAddSchedule = () => {
+        router.push('/addEvent');
+    };
+
     const handleDateSelect = (date: Date) => setSelectedDate(date);
+
+    useEffect(() => {
+        setCalendarVisible(isExpanded);
+    }, [isExpanded]);
+
+    useEffect(() => {
+        if (!activeView) {
+            setActiveView('todo');
+        }
+    }, [activeView]);
 
     const handlers = useSwipeable({
         onSwipedUp: () => {
@@ -217,10 +207,15 @@ export default function Home() {
         }
 
         try {
-            const newMemo = await createMemo(content);
-            if (newMemo) {
-                setMemos(prevMemos => [newMemo, ...prevMemos]);
-            }
+            const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
+                userId: userId,
+                date: formatDateTimeForDisplay(new Date()),
+                content: content,
+                todayId: null,
+                bookId: null
+            });
+            const newMemo: Memo = response.data;
+            setMemos(prevMemos => [newMemo, ...prevMemos]);
             setIsCreateMemoModalOpen(false);
         } catch (error) {
             console.error('Failed to create memo:', error);
@@ -315,16 +310,16 @@ export default function Home() {
                             placeholder="검색"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-52 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
+                            className="w-56 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
                         />
                         <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
                     </div>
                 </div>
                 <button
                     className="w-[45px] h-[45px] rounded-full overflow-hidden"
-                    onClick={handleCheckNotice}
+                    onClick={handleAddSchedule}
                 >
-                    <Image src="/img/button/notice.png" alt='공지 확인' width={45} height={45} className="w-full h-full object-cover" />
+                    <Image src="/img/button/addSchedule.png" alt='일정 추가' width={45} height={45} className="w-full h-full object-cover" />
                 </button>
             </div>
             {calendarVisible && (
@@ -341,7 +336,7 @@ export default function Home() {
                     <div className="text-4xl text-black mb-[15px] flex space-x-4">
                         <button
                             onClick={() => setActiveView('todo')}
-                            className={(activeView === 'home' || activeView === 'todo') ? 'font-bold' : ''}
+                            className={activeView === 'todo' ? 'font-bold' : ''}
                         >
                             일정
                         </button>
@@ -358,14 +353,14 @@ export default function Home() {
                     {activeView === 'memo' && (
                         <div className="mb-[20px] p-4 flex justify-center items-center">
                             <button
-                                onClick={contextHandleCreateMemo}
+                                onClick={() => setIsCreateMemoModalOpen(true)}
                                 className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
                             >
                                 <Plus size={24} className="text-purple-600" />
                             </button>
                         </div>
                     )}
-                    {(activeView === 'home' || activeView === 'todo') && (
+                    {activeView === 'todo' && (
                         <>
                             {filteredEvents.length > 0 ? (
                                 filteredEvents.map((event) => (
@@ -376,9 +371,7 @@ export default function Home() {
                                             startTime={event.startTime}
                                             endTime={event.endTime}
                                             location={event.location}
-                                            target={event.target}
-                                            information={event.information}
-                                            notes={event.notes}
+                                            description={event.description}
                                             onEventDeleted={handleEventDeleted}
                                             selectedDate={selectedDate}
                                         />
@@ -422,11 +415,6 @@ export default function Home() {
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}
                 onCreateMemo={handleCreateMemo}
-            />
-            <RecordModal
-                isOpen={isVoiceRecordModalOpen}
-                onClose={() => setIsVoiceRecordModalOpen(false)}
-                onSave={saveVoiceRecord}
             />
         </div>
     );

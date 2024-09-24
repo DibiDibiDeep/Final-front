@@ -56,12 +56,29 @@ const GoogleAuthLogin = () => {
         }
     };
 
+    const handleGoogleError = (error: unknown) => {
+        console.error("Google Login failed. Error details:", error);
+
+        // 에러 객체의 구조를 파악하기 위한 추가 로깅
+        if (error instanceof Error) {
+            console.error("Error name:", error.name);
+            console.error("Error message:", error.message);
+            console.error("Error stack:", error.stack);
+        } else {
+            console.error("Non-Error object received:", error);
+        }
+
+        // 여기에 추가적인 에러 처리 로직을 구현할 수 있습니다.
+        // 예: 사용자에게 에러 메시지 표시, 에러 리포팅 서비스로 전송 등
+    };
+
+
     return (
         <>
             <GoogleLogin
                 onSuccess={handleGoogleSuccess}
-                onError={(error: unknown) => {
-                    console.error("Google Login failed:", error);
+                onError={() => {
+                    return handleGoogleError as unknown as () => void;
                 }}
                 width={300}
                 useOneTap

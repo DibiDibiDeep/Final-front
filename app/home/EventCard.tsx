@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
-import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, FaceSmileIcon, InformationCircleIcon, TagIcon } from '@heroicons/react/24/outline';
 import DeleteModal from '../modal/DeleteModal';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -14,11 +14,25 @@ interface EventCardProps {
   startTime: string;
   endTime: string;
   location: string;
+  target: string; // 새로 추가
+  information: string;
+  notes: string;
   onEventDeleted: () => void;
-  selectedDate: Date; // 현재 선택된 날짜 정보
+  selectedDate: Date;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ id, title, startTime, endTime, location, onEventDeleted, selectedDate }) => {
+const EventCard: React.FC<EventCardProps> = ({
+  id,
+  title,
+  startTime,
+  endTime,
+  location,
+  target, // 새로 추가
+  information,
+  notes,
+  onEventDeleted,
+  selectedDate
+}) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
 
@@ -51,10 +65,8 @@ const EventCard: React.FC<EventCardProps> = ({ id, title, startTime, endTime, lo
     eventDate.setHours(0, 0, 0, 0);
     const selected = new Date(selectedDate);
     selected.setHours(0, 0, 0, 0);
-
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? '오후' : '오전';
@@ -94,10 +106,30 @@ const EventCard: React.FC<EventCardProps> = ({ id, title, startTime, endTime, lo
           {`${formatDateTimeForDisplay(startTime)} ~ ${formatDateTimeForDisplay(endTime)}`}
         </span>
       </div>
-      <div className="flex items-center">
-        <MapPinIcon className="h-5 w-5 mr-2 text-gray-600" />
-        <span className="text-sm text-gray-700">{location}</span>
-      </div>
+      {location && (
+        <div className="flex items-center mb-2">
+          <MapPinIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{location}</span>
+        </div>
+      )}
+      {target && (
+        <div className="flex items-center mb-2">
+          <FaceSmileIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{target}</span>
+        </div>
+      )}
+      {information && (
+        <div className="flex items-center mb-2">
+          <InformationCircleIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{information}</span>
+        </div>
+      )}
+      {notes && (
+        <div className="flex items-center mb-2">
+          <TagIcon className="h-5 w-5 mr-2 text-gray-600" />
+          <span className="text-sm text-gray-700">{notes}</span>
+        </div>
+      )}
       <DeleteModal isOpen={isDeleteModalOpen} onClose={handleCloseModal} onDelete={handleDelete} />
     </div>
   );
