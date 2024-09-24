@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Select from '@/components/Select';
 import { useRouter } from 'next/navigation';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface BabyInfo {
     userId: number;

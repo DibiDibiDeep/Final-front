@@ -4,7 +4,7 @@ import Image from 'next/image';
 import StoryCard from './StoryCard';
 import { Metadata } from 'next';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface Book {
     bookId: number;

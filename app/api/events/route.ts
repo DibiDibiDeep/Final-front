@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import axios from 'axios';
 
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.BACKEND_API_URL;
 const HEADERS = { 'Content-Type': 'application/json' };
 
 // 모든 일정 가져오기

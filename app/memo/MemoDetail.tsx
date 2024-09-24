@@ -12,18 +12,8 @@ type Memo = {
   userId: number;
   todayId: number | null;
   bookId: number | null;
-  date: string; // ISO 8601 형식의 문자열 (e.g. "2024-03-01T15:30:00")
+  date: string;
   content: string;
-};
-
-// 유틸리티 함수
-const formatDateTimeForBackend = (date: Date): string => {
-  return date.toISOString().slice(0, 19).replace('T', ' ');
-};
-
-const formatDateTimeForDisplay = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleString(); // 또는 원하는 형식으로 포맷팅
 };
 
 interface MemoDetailProps {
@@ -37,7 +27,20 @@ interface MemoDetailProps {
   onMemoUpdated: (updatedMemo: Memo) => void;
 }
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+// 환경 변수
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
+// 유틸리티 함수
+const formatDateTimeForDisplay = (dateString: string): string => {
+  const date = new Date(dateString);
+  const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000)); // KST는 UTC+9
+  return kstDate.toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+};
 
 const MemoDetail: React.FC<MemoDetailProps> = ({
   memoId,
@@ -49,10 +52,12 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
   onMemoDeleted,
   onMemoUpdated
 }) => {
+  // 상태 및 모달관리
   const { isOpen: isDeleteModalOpen, onOpen: onOpenDeleteModal, onClose: onCloseDeleteModal } = useDisclosure();
   const { isOpen: isEditModalOpen, onOpen: onOpenEditModal, onClose: onCloseEditModal } = useDisclosure();
   const [editedContent, setEditedContent] = useState(content);
 
+  // 메모 삭제 핸들러
   const handleDelete = async () => {
     try {
       await axios.delete(`${BACKEND_API_URL}/api/memos/${memoId}`);
@@ -60,10 +65,11 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
       onCloseDeleteModal();
     } catch (error) {
       console.error('Failed to delete memo:', error);
-      // 에러 처리 로직
+      // MEMO: 사용자에게 오류 메시지 표시
     }
   };
 
+  // 메모 수정 핸들러
   const handleEdit = async () => {
     try {
       const updatedMemoData = {
@@ -80,12 +86,13 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
       onCloseEditModal();
     } catch (error) {
       console.error('Failed to update memo:', error);
-      // 에러 처리 로직
+      // MEMO: 사용자에게 오류 메시지 표시
     }
   };
 
   return (
     <div className="w-full px-4 py-2">
+      {/* 메모 내용 및 옵션 메뉴 */}
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-700">{content}</span>
         <div className="flex items-center">
@@ -94,7 +101,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
           </span>
           <Dropdown>
             <DropdownTrigger>
-              <button>
+              <button className="focus:outline-none focus:ring-0">
                 <EllipsisVerticalIcon className="h-6 w-6 text-gray-500" />
               </button>
             </DropdownTrigger>
@@ -109,16 +116,21 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
           </Dropdown>
         </div>
       </div>
+
+      {/* 메모 메타데이터 */}
       <div className="text-xs text-gray-500 mt-1">
-        <span className="mr-2">User ID: {userId}</span>
         {todayId && <span className="mr-2">Today ID: {todayId}</span>}
         {bookId && <span>Book ID: {bookId}</span>}
       </div>
+
+      {/* 삭제 확인 모달 */}
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={onCloseDeleteModal}
         onDelete={handleDelete}
       />
+
+      {/* 수정 모달 */}
       <Modal isOpen={isEditModalOpen} onClose={onCloseEditModal}>
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 text-gray-700">메모 수정</ModalHeader>
@@ -127,6 +139,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
               rows={4}
+              className="focus:outline-none focus:ring-0 focus:border-gray-300"
             />
           </ModalBody>
           <ModalFooter>
