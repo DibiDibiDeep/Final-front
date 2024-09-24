@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import axios from 'axios';
 import { Search, Plus } from 'lucide-react';
-import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
@@ -20,31 +19,6 @@ import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import RecordModal from '../modal/RecordModal';
 
-// 이벤트 타입 정의
-type Event = {
-  id: number;
-  title: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-};
-
-// 메모 타입 정의
-type Memo = {
-  memoId: number;
-  userId: number;
-  todayId: number | null;
-  bookId: number | null;
-  date: string; // DATETIME 형식의 문자열
-  content: string;
-};
-
-interface Baby {
-  userId: number;
-  babyId: number;
-  babyName: string;
-  photoUrl?: string;
-}
 
 // 유틸리티 함수
 const formatDateForBackend = (date: Date) => {
@@ -68,7 +42,6 @@ export default function Home() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [calendarVisible, setCalendarVisible] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [babies, setBabies] = useState<Baby[]>([]);
   const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
@@ -109,7 +82,6 @@ export default function Home() {
 
   useEffect(() => {
     if (userId) {
-      fetchMemos();
       fetchEvents();
     }
   }, [userId]);  
@@ -219,6 +191,10 @@ export default function Home() {
     };
 
   // 이벤트 핸들러
+  const handleCheckNotice = () => {
+    router.push('/notice');
+  };
+
   const handleDateSelect = (date: Date) => setSelectedDate(date);
 
   const handleBabySelect = (baby: Baby) => {
@@ -255,7 +231,7 @@ export default function Home() {
   };
 
   const handleEventDeleted = () => {
-    fetchAllEvents();
+    fetchEvents();
   };
 
   // 스와이프 핸들러
