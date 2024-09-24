@@ -40,22 +40,33 @@ const NoticePage: React.FC = () => {
         }
     }, []);
 
+
     useEffect(() => {
         if (userId) {
+            // console.log('userId', userId);
             getAllCalendarData();
         }
     }, [userId]);
 
     const getAllCalendarData = async () => {
         try {
-            const response = await axios.get<CalendarData[]>(`${BACKEND_API_URL}/api/calendar-photo-inf`);
+            const response = await axios.get<CalendarData[]>(`${BACKEND_API_URL}/api/calendar-photo-inf/${userId}`);
             if (response.status !== 200) {
                 throw new Error(`Failed to process image. Status: ${response.status}`);
             }
+            console.log("response", response.data);
             setCalendarData(response.data);
-        } catch (error) {
-            console.error('Error during fetch:', error);
-            throw new Error('Failed to fetch calendar data');
+        } catch (error: any) {
+            if (error.response) {
+                // 서버에서 응답을 받은 경우
+                console.error(`Response error: Status ${error.response.status} -`, error.response.data);
+            } else if (error.request) {
+                // 요청이 서버에 도달하지 못한 경우 (네트워크 문제 등)
+                console.error('Request error: No response received', error.request);
+            } else {
+                // 그 외의 에러 (코드 상의 문제 등)
+                console.error('Unknown error:', error.message);
+            }
         }
     };
 
@@ -68,7 +79,8 @@ const NoticePage: React.FC = () => {
             <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
                 <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">일정 목록</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {calendarData.map((data) => {
+                    {/* {calendarData.map((data) => { */}
+                    {Array.isArray(calendarData) && calendarData.map((data) => { // API 호출이 실패한 경우나 예상치 못한 상황에서 calendarData가 배열이 아닌 값으로 설정된 경우 에러 방지
                         const inferenceResult: InferenceResult = JSON.parse(data.inferenceResult);
                         return (
                             <div
