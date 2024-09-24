@@ -1,7 +1,8 @@
 'use client'
 import { Providers } from "./providers";
-import BottomContainer from '@/components/BottomContainer';
+import BottomContainer from "@/components/BottomContainer";
 import { usePathname } from 'next/navigation';
+import { BottomContainerProvider } from '@/contexts/BottomContainerContext';
 
 export default function ClientLayout({
     children,
@@ -9,21 +10,19 @@ export default function ClientLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname();
-
-    // Determine if the current path is the login page/loading page/initial setting page
     const isLoginPage = pathname === '/login';
-    const isLoadingPage = pathname === '/'; // Assuming '/' is your loading page route
+    const isLoadingPage = pathname === '/';
     const isInitialSettingPage = pathname === '/initialSettings';
     const isAddEventPage = pathname === '/addEvent';
     const isEditEventPage = pathname?.startsWith('/editEvent/');
-
-    // Show BottomContainer only if not on login page and not on loading page ans not on initial setting page
     const showBottomContainer = !isLoginPage && !isLoadingPage && !isInitialSettingPage && !isAddEventPage && !isEditEventPage;
 
     return (
         <Providers>
-            {children}
-            {showBottomContainer && <BottomContainer />}
+            <BottomContainerProvider>
+                {children}
+                {showBottomContainer && <BottomContainer />}
+            </BottomContainerProvider>
         </Providers>
     );
 }

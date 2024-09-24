@@ -12,6 +12,9 @@ const nextConfig = {
             'test-mongeul-s3-0911.s3.ap-northeast-2.amazonaws.com'
         ],
     },
+    // 동적 라우팅을 위한 추가 설정
+    pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'mdx'],
+    trailingSlash: false,
 };
 
 const pwaConfig = {
