@@ -1,37 +1,33 @@
 'use client'
 
-import { signIn, useSession } from "next-auth/react";
+import React, { useEffect } from 'react';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-
-const LoginPage = () => {
+const LoginPage: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated" && session) {
-      handleLoginSuccess(session);
+    if (status === 'authenticated' && session) {
+      handleGoogleLogin();
     }
-  }, [session, status, router]);
+  }, [session, status]);
 
-  const handleLoginSuccess = async (session: any) => {
+  const handleGoogleLogin = async () => {
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/users/google`, {
+      const response = await fetch('/api/users/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token: session.accessToken }),
+        body: JSON.stringify({ token: session?.accessToken }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data && typeof data === 'object') {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('userId', data.user.userId.toString());
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userId', data.user.userId);
 
           if (data.hasBaby) {
             router.push('/home');
@@ -54,7 +50,7 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleLoginClick = () => {
     signIn('google');
   };
 
@@ -64,7 +60,7 @@ const LoginPage = () => {
 
   return (
     <div>
-      <button onClick={handleGoogleLogin}>Sign in with Google</button>
+      <button onClick={handleLoginClick}>Sign in with Google</button>
     </div>
   );
 };
