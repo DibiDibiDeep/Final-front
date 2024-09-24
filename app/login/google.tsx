@@ -20,6 +20,8 @@ const LoginPage: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'device_id': 'your-device-id',    // device_id 추가
+          'device_name': 'your-device-name'
         },
         body: JSON.stringify({ token: session?.accessToken }),
       });

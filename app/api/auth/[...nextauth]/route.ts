@@ -17,7 +17,7 @@ declare module "next-auth/jwt" {
 export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
-            clientId: process.env.NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID!,
+            clientId: process.env.GOOGLE_AUTH_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET!
         })
     ],
@@ -34,7 +34,7 @@ export const authOptions: NextAuthOptions = {
         }
     },
     pages: {
-        signIn: '/auth/signin', // 로그인 페이지 URL
+        signIn: '/login', // 로그인 페이지 URL
     },
 };
 
