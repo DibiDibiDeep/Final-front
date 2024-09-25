@@ -1,64 +1,47 @@
-'use client'
+'use client';
 
-import React, { useEffect } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const LoginPage: React.FC = () => {
-  const { data: session, status } = useSession();
+const DevLogin: React.FC = () => {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'authenticated' && session) {
-      handleGoogleLogin();
-    }
-  }, [session, status]);
-
-  const handleGoogleLogin = async () => {
+  const handleLogin = async () => {
     try {
-      const response = await fetch('/api/users/google', {
+      const response = await fetch('/api/users/dev-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'device_id': 'your-device-id',    // device_id 추가
-          'device_name': 'your-device-name'
         },
-        body: JSON.stringify({ token: session?.accessToken }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userId', data.user.userId);
-  
-        if (data.hasBaby) {
-          router.push('/home');
-        } else {
-          router.push('/initialSettings');
-        }
+        // 토큰과 사용자 정보를 로컬 스토리지에 저장
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('userId', data.user.userId.toString());
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('hasBaby', data.hasBaby.toString());
+        localStorage.setItem('babyId', data.babyId.toString());
+        
+        // 홈 페이지로 리다이렉트
+        window.location.href = '/home';
       } else {
-        // 여기에서 response.json()으로 데이터를 먼저 읽어온 후 출력
-        const errorData = await response.json(); 
-        console.error('Unexpected data structure. Full data:', errorData);
+        setError('Login failed');
       }
     } catch (error) {
-      console.error('Error during login:', error);
+      setError('Error during login: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
-  const handleLoginClick = () => {
-    signIn('google');
-  };
-
-  if (status === "authenticated") {
-    return <p>로그인 중입니다...</p>; // 이미 로그인된 경우
-  }
-
   return (
     <div>
-      <button onClick={handleLoginClick}>Sign in with Google</button>
+      <button onClick={handleLogin}>개발 환경 로그인</button>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 };
 
-export default LoginPage;
+export default DevLogin;
