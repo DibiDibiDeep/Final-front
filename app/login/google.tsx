@@ -1,59 +1,29 @@
 'use client';
+import { useState, useEffect } from 'react';
 
-import React, { useEffect, useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
 
-const GoogleLogin: React.FC = () => {
-  const router = useRouter();
-
-  // NextAuth의 useSession 훅을 사용하여 세션 정보 가져오기
-  const { data: session, status } = useSession();
-
+export default function GoogleAuthLogin() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 세션 정보가 있으면 콘솔에 로그 출력 및 localStorage에 저장
-    if (session && session.accessToken) {
-      console.log('User session:', session);
-      localStorage.setItem('accessToken', session.accessToken);
-      // 여기에 필요한 다른 세션 정보를 localStorage에 저장할 수 있습니다.
-      router.push('/home');
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      const googleLoginUrl = `${GOOGLE_AUTH_URL}?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`;
+      window.location.href = googleLoginUrl;
     }
-  }, [session, router]);
+  }, []);
 
-  const handleLogin = async () => {
-    try {
-      // 로그인
-      const result = await signIn('google', { callbackUrl: '/home' });
-      if (result?.error) {
-        setError(result.error);
-      }
-    } catch (error) {
-      setError('Error during login: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  };
-
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
-  if (session) {
+  if (error) {
     return (
       <div>
-        <p>Logged in as {session.user?.email}</p>
-        {/* 로그아웃 */}
-        <button onClick={() => signOut()}>Sign out</button>
+        <p>오류: {error}</p>
+        <button onClick={() => window.location.reload()}>다시 시도</button>
       </div>
     );
   }
 
-  return (
-    <div>
-      <button onClick={handleLogin}>Google 로그인</button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
-  );
-};
-
-export default GoogleLogin;
+  return <div>Google 로그인으로 리다이렉팅 중...</div>;
+}

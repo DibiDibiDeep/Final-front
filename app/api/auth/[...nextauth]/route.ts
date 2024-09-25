@@ -24,8 +24,8 @@ export const authOptions: NextAuthOptions = {
                     prompt: "consent",
                     access_type: "offline",
                     response_type: "code",
-                    device_id: "dev1",
-                    device_name: "development"
+                    // device_id: "dev1",
+                    // device_name: "development"
                 }
             }
         })
@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
         }
     },
     pages: {
-        signIn: '/login', // 로그인 페이지 URL
+        signIn: '/home', // 로그인 페이지 URL
     },
 };
 
