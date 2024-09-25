@@ -17,8 +17,17 @@ declare module "next-auth/jwt" {
 export const authOptions: NextAuthOptions = {
     providers: [
         GoogleProvider({
-            clientId: process.env.GOOGLE_AUTH_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET!
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                    device_id: "dev1",
+                    device_name: "development"
+                }
+            }
         })
     ],
     callbacks: {
