@@ -1,59 +1,44 @@
-'use client';
+// 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+// import { useState, useEffect } from 'react';
+// import { useRouter } from 'next/navigation';
 
-const GoogleLogin: React.FC = () => {
-  const router = useRouter();
+// const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-  // NextAuth의 useSession 훅을 사용하여 세션 정보 가져오기
-  const { data: session, status } = useSession();
+// export default function GoogleAuthLogin() {
+//   const [error, setError] = useState<string | null>(null);
+//   const router = useRouter();
 
-  const [error, setError] = useState<string | null>(null);
+//   useEffect(() => {
+//     const fetchAuthUrl = async () => {
+//       try {
+//         const response = await fetch(`${BACKEND_API_URL}/api/auth/google-url`, {
+//           method: 'GET',
+//         });
 
-  useEffect(() => {
-    // 세션 정보가 있으면 콘솔에 로그 출력 및 localStorage에 저장
-    if (session && session.accessToken) {
-      console.log('User session:', session);
-      localStorage.setItem('accessToken', session.accessToken);
-      // 여기에 필요한 다른 세션 정보를 localStorage에 저장할 수 있습니다.
-      router.push('/home');
-    }
-  }, [session, router]);
+//         if (!response.ok) {
+//           throw new Error('Failed to fetch auth URL');
+//         }
 
-  const handleLogin = async () => {
-    try {
-      // 로그인
-      const result = await signIn('google', { callbackUrl: '/home' });
-      if (result?.error) {
-        setError(result.error);
-      }
-    } catch (error) {
-      setError('Error during login: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  };
+//         const { url } = await response.json();
+//         window.location.href = url; // 구글 로그인 페이지로 리다이렉트
+//       } catch (error) {
+//         console.error('Error fetching auth URL:', error);
+//         setError('Google 로그인을 시작할 수 없습니다. 나중에 다시 시도해주세요.');
+//       }
+//     };
 
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
+//     fetchAuthUrl();
+//   }, []);
 
-  if (session) {
-    return (
-      <div>
-        <p>Logged in as {session.user?.email}</p>
-        {/* 로그아웃 */}
-        <button onClick={() => signOut()}>Sign out</button>
-      </div>
-    );
-  }
+//   if (error) {
+//     return (
+//       <div>
+//         <p>에러: {error}</p>
+//         <button onClick={() => window.location.reload()}>다시 시도</button>
+//       </div>
+//     );
+//   }
 
-  return (
-    <div>
-      <button onClick={handleLogin}>Google 로그인</button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
-  );
-};
-
-export default GoogleLogin;
+//   return <div>Google 로그인으로 리다이렉트 중...</div>;
+// }
