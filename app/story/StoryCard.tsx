@@ -11,9 +11,10 @@ interface StoryCardProps {
     title: string;
     coverPath: string;
     priority?: boolean;
+    onDelete: (id: number) => void; // Add onDelete prop
 }
 
-export default function StoryCard({ id, title, coverPath, priority = false }: StoryCardProps) {
+export default function StoryCard({ id, title, coverPath, priority = false, onDelete }: StoryCardProps) {
     const [imageSrc, setImageSrc] = useState<string>(coverPath);
     const [hasError, setHasError] = useState<boolean>(false);
     const router = useRouter();
@@ -38,6 +39,11 @@ export default function StoryCard({ id, title, coverPath, priority = false }: St
         setImageSrc('/img/storyThumbnail/fallback.jpg'); // Path to fallback image
     }, []);
 
+    const handleDelete = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent the click event from triggering the story view
+        onDelete(id); // Call the onDelete function passed in as a prop
+    }, [id, onDelete]);
+
     return (
         <div
             onClick={handleClick}
@@ -60,6 +66,13 @@ export default function StoryCard({ id, title, coverPath, priority = false }: St
             </div>
             <div className="p-3">
                 <h3 className="font-bold text-gray-700 mb-1 truncate text-base sm:text-lg md:text-xl">{title}</h3>
+                <button
+                    onClick={handleDelete}
+                    className="text-red-500 hover:underline"
+                    aria-label={`Delete story: ${title}`}
+                >
+                    삭제
+                </button>
             </div>
         </div>
     );
