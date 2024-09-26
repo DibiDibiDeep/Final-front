@@ -132,7 +132,7 @@ export default function StoryCardGrid() {
 
     return (
         <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
-            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Your Favorite Stories</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">내 동화</h1>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
                 <StoryCardList books={books} />
             </div>
