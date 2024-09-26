@@ -18,9 +18,9 @@ export default function Login() {
         e.preventDefault();
     
         // Check for dummy login credentials
-        if (userId === "3" && email === "mmongeul@gmail.com") {
-            localStorage.setItem('userId', '3');
-            localStorage.setItem('email', 'mmongeul@gmail.com')
+        if (userId === "1" && email === "chulsoo@example.com") {
+            localStorage.setItem('userId', '1');
+            localStorage.setItem('email', 'chulsoo@example.com')
             setError(""); // Clear any previous errors
             router.push("/home"); // Redirect directly to home
             return;

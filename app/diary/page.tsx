@@ -13,6 +13,7 @@ interface DiaryEntry {
 }
 
 interface DiaryData {
+    alimInfId: number;
     name: string;
     emotion: string;
     health: string;
@@ -76,9 +77,11 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
     if (!isOpen || !data) return null;
 
     const handleCreateFairyTale = async () => {
+        setLoading(true);
+        setError(null);
         try {
             // 동화 생성
-            const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale`, data);
+            const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale/${data.alimInfId}`, data);
             setFairyTale(response.data);
 
             // 생성된 동화 저장
