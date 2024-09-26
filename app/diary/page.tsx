@@ -106,10 +106,10 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
                     <p><strong>감정:</strong> {data.emotion}</p>
                     <p><strong>건강:</strong> {data.health}</p>
                     <p><strong>영양:</strong> {data.nutrition}</p>
-                    <p><strong>활동:</strong> {data.activities.join(', ')}</p>
+                    <p><strong>활동:</strong> {data.activities?.join(', ') ?? '정보 없음'}</p>
                     <p><strong>사회성:</strong> {data.social}</p>
                     <p><strong>특이사항:</strong> {data.special}</p>
-                    <p><strong>키워드:</strong> {data.keywords.join(', ')}</p>
+                    <p><strong>키워드:</strong> {data.keywords?.join(', ') ?? '정보 없음'}</p>
                     <p><strong>일기:</strong> {data.diary}</p>
                 </div>
                 <div className="relative bottom-6 left-0 right-0 flex justify-center">
