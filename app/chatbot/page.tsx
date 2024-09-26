@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
+import axios from 'axios';
+
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface Message {
   id: number;
@@ -50,13 +53,12 @@ const DummyChatInterface: React.FC = () => {
       });
 
       if (firstMatch) {
-      // TypeScript에게 firstMatch가 HTMLElement임을 명시적으로 알려줍니다.
-      (firstMatch as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+        (firstMatch as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   }, [searchTerm]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (inputMessage.trim() !== '') {
       const newMessage: Message = {
         id: messages.length + 1,
@@ -67,15 +69,27 @@ const DummyChatInterface: React.FC = () => {
       setMessages([...messages, newMessage]);
       setInputMessage('');
       
-      setTimeout(() => {
+      try {
+        const response = await axios.post(`${BACKEND_API_URL}/api/chat/send`, {
+          userId: 1, // 실제 사용자 ID로 대체해야 함
+          babyId: 1, // 실제 아기 ID로 대체해야 함
+          content: inputMessage,
+          sender: 'user',
+          timestamp: new Date().toISOString()
+        });
+
         const botResponse: Message = {
           id: messages.length + 2,
-          text: "죄송합니다. 현재 더미 데이터만 제공 중입니다.",
+          text: response.data.content,
           sender: 'bot',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date(response.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prevMessages => [...prevMessages, botResponse]);
-      }, 1000);
+        console.log(messages)
+      } catch (error) {
+        console.error('Error sending message:', error);
+        // 에러 처리 로직 추가
+      }
     }
   };
 
