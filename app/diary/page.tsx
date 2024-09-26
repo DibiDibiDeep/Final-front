@@ -12,6 +12,7 @@ interface DiaryEntry {
     content: string;
 }
 
+// activities, special이 Null이면 동화 생성 불가
 interface DiaryData {
     alimInfId: number;
     name: string;
