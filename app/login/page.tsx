@@ -16,7 +16,7 @@ export default function Login() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-    
+
         // Check for dummy login credentials
         if (userId === "1" && email === "chulsoo@example.com") {
             localStorage.setItem('userId', '1');
@@ -25,14 +25,14 @@ export default function Login() {
             router.push("/home"); // Redirect directly to home
             return;
         }
-    
+
         if (!userId || !email) {
             setError("Please enter both User ID and Email.");
             return;
         }
-    
+
         setError("");
-    
+
         try {
             const response = await fetch(`${BACKEND_API_URL}/api/auth/login`, {
                 method: "POST",
@@ -41,11 +41,11 @@ export default function Login() {
                 },
                 body: JSON.stringify({ userId, email }), // Ensure keys match with backend
             });
-    
+
             if (!response.ok) {
                 throw new Error(await response.text());
             }
-    
+
             const data = await response.json();
             router.push(data.redirectUrl);
         } catch (err) {
@@ -71,7 +71,7 @@ export default function Login() {
                         placeholder="User ID"
                         value={userId}
                         onChange={(e) => setUserId(e.target.value)}
-                        className="mb-2 p-2 rounded border border-gray-300"
+                        className="mb-2 p-2 rounded border border-gray-300 text-gray-700"
                         required
                     />
                     <input
@@ -79,7 +79,7 @@ export default function Login() {
                         placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="mb-2 p-2 rounded border border-gray-300"
+                        className="mb-2 p-2 rounded border border-gray-300 text-gray-700"
                         required
                     />
                     {error && <p className="text-red-500">{error}</p>}
