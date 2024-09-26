@@ -15,11 +15,7 @@ interface Message {
 }
 
 const dummyMessages: Message[] = [
-  { id: 1, text: "안녕하세요! 무엇을 도와드릴까요?", sender: 'bot', timestamp: '10:00' },
-  { id: 2, text: "날씨가 어떤지 알려줘", sender: 'user', timestamp: '10:01' },
-  { id: 3, text: "오늘의 날씨는 맑고 기온은 22도입니다.", sender: 'bot', timestamp: '10:01' },
-  { id: 4, text: "고마워", sender: 'user', timestamp: '10:02' },
-  { id: 5, text: "천만에요. 더 필요한 것이 있으신가요?", sender: 'bot', timestamp: '10:02' },
+  { id: 1, text: "안녕하세요! 무엇을 도와드릴까요?", sender: 'bot', timestamp: '10:00' }
 ];
 
 const DummyChatInterface: React.FC = () => {
@@ -29,6 +25,8 @@ const DummyChatInterface: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [babyPhoto, setBabyPhoto] = useState<string>("/img/mg-logoback.png");
+  const [userId, setUserId] = useState<number | null>(null);
+  const [babyId, setBabyId] = useState<number | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,6 +56,28 @@ const DummyChatInterface: React.FC = () => {
     }
   }, [searchTerm]);
 
+  useEffect(() => {
+    // Load userId and babyId from localStorage or state management
+    const storedUserId = localStorage.getItem('userId');
+    const storedBabyId = localStorage.getItem('babyId');
+    if (storedUserId) setUserId(parseInt(storedUserId));
+    if (storedBabyId) setBabyId(parseInt(storedBabyId));
+
+    // Fetch previous messages
+    if (userId && babyId) {
+      fetchMessages();
+    }
+  }, [userId, babyId]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get(`${BACKEND_API_URL}/api/chat/user/${userId}/baby/${babyId}`);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (inputMessage.trim() !== '') {
       const newMessage: Message = {
@@ -71,24 +91,35 @@ const DummyChatInterface: React.FC = () => {
       
       try {
         const response = await axios.post(`${BACKEND_API_URL}/api/chat/send`, {
-          userId: 1, // 실제 사용자 ID로 대체해야 함
-          babyId: 1, // 실제 아기 ID로 대체해야 함
+          userId: userId,
+          babyId: babyId,
           content: inputMessage,
           sender: 'user',
           timestamp: new Date().toISOString()
         });
-
-        const botResponse: Message = {
-          id: messages.length + 2,
-          text: response.data.content,
-          sender: 'bot',
-          timestamp: new Date(response.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prevMessages => [...prevMessages, botResponse]);
-        console.log(messages)
+  
+        if (response.data && response.data.response) {
+          const botResponse: Message = {
+            id: messages.length + 2,
+            text: response.data.response,
+            sender: 'bot',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages(prevMessages => [...prevMessages, botResponse]);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          // 사용자에게 오류 메시지를 표시할 수 있습니다.
+        }
       } catch (error) {
         console.error('Error sending message:', error);
-        // 에러 처리 로직 추가
+        // 사용자에게 오류 메시지를 표시합니다.
+        const errorMessage: Message = {
+          id: messages.length + 2,
+          text: "죄송합니다. 메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.",
+          sender: 'bot',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prevMessages => [...prevMessages, errorMessage]);
       }
     }
   };

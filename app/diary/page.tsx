@@ -5,7 +5,7 @@ import { Plus, Edit, X } from 'lucide-react';
 import CreateDiaryModal from '../modal/DiaryModal';
 import axios from 'axios';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface DiaryEntry {
     date: string;
