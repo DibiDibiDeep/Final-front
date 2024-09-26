@@ -70,9 +70,20 @@ const DummyChatInterface: React.FC = () => {
   }, [userId, babyId]);
 
   const fetchMessages = async () => {
+    if (userId === null || babyId === null) {
+      console.error('User ID or Baby ID is not available');
+      return;
+    }
+  
     try {
       const response = await axios.get(`${BACKEND_API_URL}/api/chat/user/${userId}/baby/${babyId}`);
-      setMessages(response.data);
+      const formattedMessages = response.data.map((msg: any) => ({
+        id: msg.id,
+        text: msg.content,
+        sender: msg.sender,
+        timestamp: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }));
+      setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
