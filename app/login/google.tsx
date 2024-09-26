@@ -1,18 +1,29 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/auth';
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const GOOGLE_REDIRECT_URI = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export default function GoogleAuthLogin() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const initiateGoogleLogin = async () => {
+      try {
+        const response = await fetch(`${BACKEND_API_URL}/api/auth/google-url`);
+        if (!response.ok) {
+          throw new Error('Failed to get Google Auth URL');
+        }
+        const data = await response.json();
+        window.location.href = data.url;
+      } catch (err) {
+        setError('Google OAuth 설정을 가져오는 데 실패했습니다.');
+        console.error(err);
+      }
+    };
+
     const token = localStorage.getItem('authToken');
     if (!token) {
-      const googleLoginUrl = `${GOOGLE_AUTH_URL}?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`;
-      window.location.href = googleLoginUrl;
+      initiateGoogleLogin();
     }
   }, []);
 
