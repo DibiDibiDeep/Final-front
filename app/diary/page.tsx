@@ -225,10 +225,11 @@ export default function DiaryPage() {
             });
 
             const infResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${response.data.alimId}`);
+            console.log(infResponse);
 
             const newEntry = {
                 date: now.toLocaleDateString('ko-KR'),
-                content: infResponse.data.diary,
+                content: content, // Use the content from the modal input
                 alimId: response.data.alimId
             };
 
@@ -278,33 +279,43 @@ export default function DiaryPage() {
     };
 
     return (
-        <div className="max-w-md mx-auto">
-            <div className="mb-[20px] p-4 flex justify-center items-center">
-                <button
-                    className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
-                    onClick={addEntry}
-                >
-                    <Plus size={24} className="text-purple-600" />
-                </button>
+        <div className="max-w-md mx-auto min-h-screen flex flex-col">
+            <div className="flex-grow flex flex-col justify-center items-center">
+                {entries.length === 0 ? (
+                    <>
+                        <div className="mb-4">
+                            <button
+                                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
+                                onClick={addEntry}
+                            >
+                                <Plus size={24} className="text-purple-600" />
+                            </button>
+                        </div>
+                        <p className="text-xl text-white">알림장이 없습니다.</p>
+                    </>
+                ) : (
+                    <div className="w-full space-y-4 text-gray-700 overflow-y-auto">
+                        <div className="flex justify-center mb-4">
+                            <button
+                                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
+                                onClick={addEntry}
+                            >
+                                <Plus size={24} className="text-purple-600" />
+                            </button>
+                        </div>
+                        {entries.map((entry, index) => (
+                            <Card
+                                key={index}
+                                date={entry.date}
+                                content={entry.content}
+                                alimId={entry.alimId}
+                                onClick={() => openDetailModal(entry.alimId)}
+                                onDelete={() => handleDeleteDiary(entry.alimId)}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
-            {entries.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[812px]">
-                    <p className="text-xl text-white mb-4">알림장이 없습니다.</p>
-                </div>
-            ) : (
-                <div className="space-y-4 text-gray-700">
-                    {entries.map((entry, index) => (
-                        <Card
-                            key={index}
-                            date={entry.date}
-                            content={entry.content}
-                            alimId={entry.alimId}
-                            onClick={() => openDetailModal(entry.alimId)}
-                            onDelete={() => handleDeleteDiary(entry.alimId)}
-                        />
-                    ))}
-                </div>
-            )}
             <CreateDiaryModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
