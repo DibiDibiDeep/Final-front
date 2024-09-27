@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, X } from 'lucide-react';
 import CreateDiaryModal from '../modal/DiaryModal';
 import axios from 'axios';
@@ -151,6 +151,11 @@ export default function DiaryPage() {
     const [babyId, setBabyId] = useState<number | null>(null);
     const [diaryData, setDiaryData] = useState<DiaryData | null>(null);
 
+    const todayEntry = useMemo(() => {
+        const today = new Date().toLocaleDateString('ko-KR');
+        return entries.find(entry => entry.date === today);
+    }, [entries]);
+
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
@@ -260,7 +265,9 @@ export default function DiaryPage() {
     };
 
     const addEntry = () => {
-        setIsModalOpen(true);
+        if (!todayEntry) {
+            setIsModalOpen(true);
+        }
     };
 
     const openDetailModal = (alimId: number) => {
@@ -281,29 +288,23 @@ export default function DiaryPage() {
     return (
         <div className="max-w-md mx-auto min-h-screen flex flex-col">
             <div className="flex-grow flex flex-col justify-center items-center">
-                {entries.length === 0 ? (
-                    <>
-                        <div className="mb-4">
-                            <button
-                                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
-                                onClick={addEntry}
-                            >
-                                <Plus size={24} className="text-purple-600" />
-                            </button>
-                        </div>
-                        <p className="text-xl text-white">알림장이 없습니다.</p>
-                    </>
-                ) : (
-                    <div className="w-full space-y-4 text-gray-700 overflow-y-auto">
-                        <div className="flex justify-center mb-4">
-                            <button
-                                className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
-                                onClick={addEntry}
-                            >
-                                <Plus size={24} className="text-purple-600" />
-                            </button>
-                        </div>
-                        {entries.map((entry, index) => (
+                <div className="w-full space-y-4 text-gray-700 overflow-y-auto">
+                    <div className="flex justify-center mb-4">
+                        <button
+                            className={`flex items-center justify-center w-10 h-7 rounded-full transition-colors duration-200 ${todayEntry
+                                ? 'bg-gray-200 cursor-not-allowed'
+                                : 'bg-purple-100 hover:bg-purple-200'
+                                }`}
+                            onClick={addEntry}
+                            disabled={!!todayEntry}
+                        >
+                            <Plus size={24} className={todayEntry ? 'text-gray-500' : 'text-purple-600'} />
+                        </button>
+                    </div>
+                    {entries.length === 0 ? (
+                        <p className="text-xl text-white text-center">알림장이 없습니다.</p>
+                    ) : (
+                        entries.map((entry, index) => (
                             <Card
                                 key={index}
                                 date={entry.date}
@@ -312,9 +313,9 @@ export default function DiaryPage() {
                                 onClick={() => openDetailModal(entry.alimId)}
                                 onDelete={() => handleDeleteDiary(entry.alimId)}
                             />
-                        ))}
-                    </div>
-                )}
+                        ))
+                    )}
+                </div>
             </div>
             <CreateDiaryModal
                 isOpen={isModalOpen}
