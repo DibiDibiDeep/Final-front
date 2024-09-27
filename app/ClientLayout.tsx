@@ -1,4 +1,5 @@
 'use client'
+
 import { Providers } from "./providers";
 import BottomContainer from "@/components/BottomContainer";
 import { usePathname } from 'next/navigation';

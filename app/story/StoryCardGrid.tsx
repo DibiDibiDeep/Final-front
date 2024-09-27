@@ -15,7 +15,7 @@ function BookSkeleton() {
     return <div className="w-full h-64 bg-gray-200 rounded animate-pulse"></div>;
 }
 
-function StoryCardList({ books }: { books: Book[] }) {
+function StoryCardList({ books, onDelete }: { books: Book[]; onDelete: (id: number) => void; }) {
     return (
         <>
             {books.map((book, index) => (
@@ -25,6 +25,7 @@ function StoryCardList({ books }: { books: Book[] }) {
                     title={book.title}
                     coverPath={book.coverPath}
                     priority={index < 4}
+                    onDelete={onDelete} // Pass the delete handler to StoryCard
                 />
             ))}
         </>
@@ -70,6 +71,21 @@ async function getUserBooks(userId: number): Promise<Book[]> {
     }
 }
 
+async function deleteUserBook(bookId: number): Promise<void> {
+    try {
+        const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete the book.');
+        }
+    } catch (error) {
+        console.error('Failed to delete book:', error);
+        throw error;
+    }
+}
+
 export default function StoryCardGrid() {
     const [books, setBooks] = useState<Book[] | null>(null);
     const [error, setError] = useState<Error | null>(null);
@@ -91,6 +107,15 @@ export default function StoryCardGrid() {
             setLoading(false);
         }
     }, []);
+
+    const handleDelete = async (bookId: number) => {
+        try {
+            await deleteUserBook(bookId);
+            setBooks((prevBooks) => prevBooks?.filter((book) => book.bookId !== bookId) || null);
+        } catch (error) {
+            setError(error as Error); // Type assertion here
+        }
+    };
 
     if (loading) {
         return (
@@ -115,7 +140,7 @@ export default function StoryCardGrid() {
         <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
             <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Your Favorite Stories</h1>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
-                <StoryCardList books={books} />
+                <StoryCardList books={books} onDelete={handleDelete} />
             </div>
         </main>
     );

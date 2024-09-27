@@ -5,7 +5,7 @@ import { Plus, Edit, X } from 'lucide-react';
 import CreateDiaryModal from '../modal/DiaryModal';
 import axios from 'axios';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface DiaryEntry {
     date: string;
@@ -62,13 +62,18 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
 
     const handleCreateFairyTale = async () => {
         try {
+            setLoading(true);
             // 동화 생성
-            const response = await axios.post<FairyTale>('http://localhost:8000/generate_fairytale', data);
-            setFairyTale(response.data);
+            const response = await axios.post<string>(`${BACKEND_API_URL}/api/books/generate_fairytale`, data);
+            const generatedFairyTale = JSON.parse(response.data);
+            setFairyTale(generatedFairyTale);
 
             // 생성된 동화 저장
-            const storageResponse = await axios.post('/api/store_fairytale', response.data);
-            setStorageResult(`동화가 성공적으로 저장되었습니다. Book ID: ${storageResponse.data.bookId}`);
+            const storageResponse = await axios.post(`${BACKEND_API_URL}/api/books/process_book`, {
+                ...data,
+                fairyTale: generatedFairyTale
+            });
+            setStorageResult(`동화가 성공적으로 저장되었습니다. Book ID: ${storageResponse.data.id}`);
         } catch (err) {
             setError('동화를 생성하거나 저장하는 중 오류가 발생했습니다.');
             console.error('Error:', err);
@@ -76,6 +81,7 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
             setLoading(false);
         }
     };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -111,33 +117,17 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
 };
 
 
-export default function DiaryPage() {
+export default function Home() {
     const [entries, setEntries] = useState<DiaryEntry[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
-    const [babyId, setBabyId] = useState<number | null>(null);
     const [diaryData, setDiaryData] = useState<DiaryData | null>(null);
 
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
             setUserId(parseInt(storedUserId, 10));
-        }
-
-        // localStorage에서 선택된 아이 가져오기
-        const storedSelectedBaby = localStorage.getItem('selectedBaby');
-        if (storedSelectedBaby) {
-            const selectedBaby = JSON.parse(storedSelectedBaby);
-
-            if (selectedBaby != null) {
-                setBabyId(selectedBaby.babyId);
-                console.log("selectedBaby", selectedBaby);
-            } else {
-                console.log("No baby information found.");
-            }
-        } else {
-            console.log("No stored baby information found.");
         }
 
         const storedDiaryData = localStorage.getItem('diaryData');
@@ -154,27 +144,25 @@ export default function DiaryPage() {
             return;
         }
 
-        // 현재 시간을 한국 시간으로 설정
-        const now = new Date();
-        const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-        const formattedDate = koreanTime.toISOString();
-
-        const noticeData = {
-            userId,
-            babyId,
-            content,
-            date: formattedDate,
-        };
-
         try {
-            const response = await axios.post(`${BACKEND_API_URL}/api/today-sum`, noticeData, {
-                headers: { 'Content-Type': 'application/json' }
+            const response = await axios.post(`${BACKEND_API_URL}/api/books/generate_fairytale`, {
+                user_id: userId,
+                baby_id: 3, // 더미 값
+                report: content,
             });
-            console.log(response.data);
 
-            localStorage.setItem('diaryData', JSON.stringify(response.data));
-            setDiaryData(response.data);
-            setEntries([{ date: koreanTime.toLocaleDateString('ko-KR'), content: response.data.diary }]);
+            const generatedFairyTale = JSON.parse(response.data);
+
+            const processedBook = await axios.post(`${BACKEND_API_URL}/api/books/process_book`, {
+                user_id: userId,
+                baby_id: 3,
+                report: content,
+                fairyTale: generatedFairyTale
+            });
+
+            setDiaryData(processedBook.data);
+            localStorage.setItem('diaryData', JSON.stringify(processedBook.data));
+            setEntries([{ date: new Date().toLocaleDateString(), content: content }]);
             setIsModalOpen(false);
         } catch (error) {
             console.error('Failed to create diary entry:', error);
@@ -182,18 +170,13 @@ export default function DiaryPage() {
     };
 
     const handleDeleteDiary = async () => {
-        if (!userId) {
-            console.error('User ID is not available');
+        if (!userId || !diaryData) {
+            console.error('User ID or Diary Data is not available');
             return;
         }
 
         try {
-            // 백엔드로 일기 삭제 요청 보내기 (ID 기반으로)
-            // await axios.delete(`${BACKEND_API_URL}/api/alims/${userId}`, { // userId 수정 필요
-            //     headers: { 'Content-Type': 'application/json' }
-            // });
-
-            // 상태 업데이트: 프론트엔드에서 일기 항목 삭제
+            await axios.delete(`${BACKEND_API_URL}/api/books/${diaryData.user_id}`);
             setEntries([]);
             setDiaryData(null);
             localStorage.removeItem('diaryData');

@@ -275,10 +275,10 @@ export default function Home() {
 
         const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
         const matchesSearch =
-            event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            event.location.toLowerCase().includes(searchTerm.toLowerCase());
+        (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||  // Safely access title
+        (event.location?.toLowerCase().includes(searchTerm.toLowerCase()) || '');  // Safely access location
 
-        return (isOverlapping || searchTerm !== '') && matchesSearch;
+    return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
 
     // UI 관련 효과
