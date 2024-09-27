@@ -10,6 +10,7 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 interface DiaryEntry {
     date: string;
     content: string;
+    alimId: number;
 }
 
 // activities, special이 Null이면 동화 생성 불가
@@ -50,13 +51,13 @@ const getFormattedDateTime = (date: Date): string => {
 };
 
 
-const Card: React.FC<DiaryEntry & { onClick: () => void; onDelete: () => void }> = ({ date, content, onClick, onDelete }) => (
+const Card: React.FC<DiaryEntry & { onClick: () => void; onDelete: () => void }> = ({ date, content, alimId, onClick, onDelete }) => (
     <div className="bg-white/70 shadow-md rounded-lg p-4 cursor-pointer mx-4 relative" onClick={onClick}>
         <h2 className="font-bold text-lg mb-2">{date}</h2>
         <p>{content?.length > 100 ? `${content.substring(0, 100)}...` : content}</p>
         <button
             onClick={(e) => {
-                e.stopPropagation(); // Stop the onClick event from propagating to the parent
+                e.stopPropagation();
                 onDelete();
             }}
             className="absolute top-2 right-2 text-red-500 hover:text-red-700"
@@ -72,10 +73,10 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [storageResult, setStorageResult] = useState<string | null>(null);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     if (!isOpen || !data) return null;
 
-    // 문자열 또는 문자열 배열을 처리하는 범용 함수
     const getStringOrArrayAsString = (value: string | string[]): string => {
         if (typeof value === 'string') {
             return value;
@@ -86,14 +87,19 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
     };
 
     const handleCreateFairyTale = async () => {
+        if (!data.activities || !data.special) {
+            setValidationError('활동 및 특이사항이 있어야 동화를 생성할 수 있습니다.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
+        setValidationError(null);
+
         try {
-            // 동화 생성
             const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale/${data.alimInfId}`, data);
             setFairyTale(response.data);
 
-            // 생성된 동화 저장
             const storageResponse = await axios.post(`${BACKEND_API_URL}/api/books/process_book`, response.data);
             setStorageResult(`동화가 성공적으로 저장되었습니다. Book ID: ${storageResponse.data.bookId}`);
         } catch (err) {
@@ -124,20 +130,21 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
                     <p><strong>키워드:</strong> {getStringOrArrayAsString(data.keywords)}</p>
                     <p><strong>일기:</strong> {data.diary}</p>
                 </div>
-                <div className="relative bottom-2 left-0 right-0 flex justify-center">
+                <div className="relative bottom-2 left-0 right-0 flex flex-col items-center">
                     <button
                         onClick={handleCreateFairyTale}
                         className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors duration-200"
                     >
                         동화 생성하기
                     </button>
+                    {validationError && (
+                        <p className="text-red-500 mt-2">{validationError}</p>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
-
-
 
 export default function DiaryPage() {
     const [entries, setEntries] = useState<DiaryEntry[]>([]);
@@ -150,31 +157,53 @@ export default function DiaryPage() {
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
-            setUserId(parseInt(storedUserId, 10));
+            const parsedUserId = parseInt(storedUserId, 10);
+            setUserId(parsedUserId);
+            fetchAllDiaries(parsedUserId);
+        } else {
+            console.error('User ID not found in localStorage');
         }
 
-        // localStorage에서 선택된 아이 가져오기
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
         if (storedSelectedBaby) {
             const selectedBaby = JSON.parse(storedSelectedBaby);
-
             if (selectedBaby != null) {
                 setBabyId(selectedBaby.babyId);
-                console.log("selectedBaby", selectedBaby);
-            } else {
-                console.log("No baby information found.");
             }
-        } else {
-            console.log("No stored baby information found.");
-        }
-
-        const storedDiaryData = localStorage.getItem('diaryData');
-        if (storedDiaryData) {
-            const parsedData = JSON.parse(storedDiaryData);
-            setDiaryData(parsedData);
-            setEntries([{ date: new Date().toLocaleDateString(), content: parsedData.diary }]);
         }
     }, []);
+
+    const fetchAllDiaries = async (userIdParam: number) => {
+        try {
+            // Set a very wide date range to fetch all entries
+            const start = new Date(0).toISOString().split('T')[0] + 'T00:00:00'; // January 1, 1970
+            const end = new Date().toISOString().split('T')[0] + 'T23:59:59'; // Current date
+
+            const response = await axios.get(`${BACKEND_API_URL}/api/alims/user/${userIdParam}`, {
+                params: {
+                    start: start,
+                    end: end
+                }
+            });
+
+            console.log('API Response:', response.data); // 디버깅을 위한 로그
+
+            const allEntries = response.data.map((entry: any) => ({
+                date: new Date(entry.date).toLocaleDateString('ko-KR'),
+                content: entry.content,
+                alimId: entry.alimId
+            }));
+
+            // Sort entries by date, most recent first
+            allEntries.sort((a: DiaryEntry, b: DiaryEntry) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            setEntries(allEntries);
+        } catch (error) {
+            console.error('Failed to fetch diaries:', error);
+        }
+    };
 
     const handleCreateDiary = async (content: string) => {
         if (!userId || !babyId) {
@@ -182,39 +211,33 @@ export default function DiaryPage() {
             return;
         }
 
-        // Get the current time and format it for the backend.
         const now = new Date();
         const formattedDate = getFormattedDateTime(now);
 
-        // Prepare the noticeData to include babyId, userId, and content.
         const noticeData = {
-            alimId: null, // 새로운 Alim 생성이므로 null
+            alimId: null,
             userId,
             babyId,
             content,
             date: formattedDate,
         };
 
-        console.log(JSON.stringify(noticeData));
-
         try {
-            // Send the request to the backend with the correct data.
             const response = await axios.post(`${BACKEND_API_URL}/api/alims`, noticeData, {
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            // Store the response in local storage and update state.
-            // localStorage.setItem('diaryData', JSON.stringify(response.data));
-            // console.log("알림장", JSON.stringify(response.data));
-            // setDiaryData(response.data);
-
             const infResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${response.data.alimId}`);
 
+            const newEntry = {
+                date: now.toLocaleDateString('ko-KR'),
+                content: infResponse.data.diary,
+                alimId: response.data.alimId
+            };
 
-            setEntries([{ date: now.toLocaleDateString('ko-KR'), content: infResponse.data.diary }]);
+            setEntries(prevEntries => [newEntry, ...prevEntries]);
             setDiaryData(infResponse.data);
             localStorage.setItem('diaryData', JSON.stringify(infResponse.data));
-
 
             setIsModalOpen(false);
         } catch (error) {
@@ -222,22 +245,17 @@ export default function DiaryPage() {
         }
     };
 
-    const handleDeleteDiary = async () => {
-        if (!userId) {
-            console.error('User ID is not available');
-            return;
-        }
-
+    const handleDeleteDiary = async (alimId: number) => {
         try {
-            // 백엔드로 일기 삭제 요청 보내기 (ID 기반으로)
-            // await axios.delete(`${BACKEND_API_URL}/api/alims/${userId}`, { // userId 수정 필요
-            //     headers: { 'Content-Type': 'application/json' }
-            // });
+            await axios.delete(`${BACKEND_API_URL}/api/alims/${alimId}`, {
+                headers: { 'Content-Type': 'application/json' }
+            });
 
-            // 상태 업데이트: 프론트엔드에서 일기 항목 삭제
-            setEntries([]);
-            setDiaryData(null);
-            localStorage.removeItem('diaryData');
+            setEntries(prevEntries => prevEntries.filter(entry => entry.alimId !== alimId));
+            if (entries.length === 1) {
+                setDiaryData(null);
+                localStorage.removeItem('diaryData');
+            }
         } catch (error) {
             console.error('Failed to delete diary entry:', error);
         }
@@ -247,46 +265,48 @@ export default function DiaryPage() {
         setIsModalOpen(true);
     };
 
-    const openDetailModal = () => {
+    const openDetailModal = (alimId: number) => {
+        // Fetch the specific diary data and set it to diaryData
+        fetchDiaryData(alimId);
         setIsDetailModalOpen(true);
+    };
+
+    const fetchDiaryData = async (alimId: number) => {
+        try {
+            const response = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`);
+            setDiaryData(response.data);
+        } catch (error) {
+            console.error('Failed to fetch diary data:', error);
+        }
     };
 
     return (
         <div className="max-w-md mx-auto">
+            <div className="mb-[20px] p-4 flex justify-center items-center">
+                <button
+                    className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
+                    onClick={addEntry}
+                >
+                    <Plus size={24} className="text-purple-600" />
+                </button>
+            </div>
             {entries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[812px]">
-                    <p className="text-xl text-white mb-4">금일 알림장을 올려주세요.</p>
-                    <div className="mb-[20px] p-4 flex justify-center items-center">
-                        <button
-                            className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
-                            onClick={addEntry}
-                        >
-                            <Plus size={24} className="text-purple-600" />
-                        </button>
-                    </div>
+                    <p className="text-xl text-white mb-4">알림장이 없습니다.</p>
                 </div>
             ) : (
-                <>
-                    <div className="mb-[20px] p-4 flex justify-center items-center">
-                        <button
-                            className="flex items-center justify-center w-10 h-7 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors duration-200"
-                            onClick={addEntry}
-                        >
-                            <Plus size={24} className="text-purple-600" />
-                        </button>
-                    </div>
-                    <div className="space-y-4 text-gray-700">
-                        {entries.map((entry, index) => (
-                            <Card
-                                key={index}
-                                date={entry.date}
-                                content={entry.content}
-                                onClick={openDetailModal}
-                                onDelete={handleDeleteDiary} // 삭제 기능 연결
-                            />
-                        ))}
-                    </div>
-                </>
+                <div className="space-y-4 text-gray-700">
+                    {entries.map((entry, index) => (
+                        <Card
+                            key={index}
+                            date={entry.date}
+                            content={entry.content}
+                            alimId={entry.alimId}
+                            onClick={() => openDetailModal(entry.alimId)}
+                            onDelete={() => handleDeleteDiary(entry.alimId)}
+                        />
+                    ))}
+                </div>
             )}
             <CreateDiaryModal
                 isOpen={isModalOpen}
