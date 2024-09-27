@@ -14,8 +14,8 @@ export default function Login() {
                         alt="logo"
                         className="flex mx-auto my-0"
                     />
-                    <p className="flex items-center justify-center text-white">Mongeul</p>
-                    <p className="flex items-center justify-center text-white">Mongeul</p>
+                    <p className="flex items-center justify-center text-white font-bold text-2xl mb-2">Mongeul</p>
+                    <p className="flex items-center justify-center text-white font-bold text-2xl mb-8">Mongeul</p>
                     <GoogleAuthLogin />
                 </div>
             </div>
