@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import StoryCard from './StoryCard';
+import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -48,6 +49,28 @@ function LoginRequired() {
     );
 }
 
+async function getUserBooks(userId: number): Promise<Book[]> {
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
+    }
+
+    try {
+        const response = await fetch(`${BACKEND_API_URL}/api/books/user/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    } catch (error) {
+        console.error('Failed to fetch books:', error);
+        throw error;
+    }
+}
+
 async function deleteUserBook(bookId: number): Promise<void> {
     try {
         const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`, {
@@ -63,46 +86,15 @@ async function deleteUserBook(bookId: number): Promise<void> {
     }
 }
 
-async function getUserBooks(userId: number): Promise<Book[]> {
-    try {
-        const response = await fetch(`${BACKEND_API_URL}/api/books/user/${userId}`);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: Book[] = await response.json();
-
-        if (!Array.isArray(data)) {
-            throw new Error('Response is not a valid array');
-        }
-
-        return data;
-    } catch (error) {
-        console.error('Failed to fetch books:', error);
-        throw error;
-    }
-}
-
 export default function StoryCardGrid() {
-    const [userId, setUserId] = useState<number | null>(null);
     const [books, setBooks] = useState<Book[] | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId));
-        } else {
-            setUserId(null);
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (userId !== null) {
-            getUserBooks(userId)
+        const user = getCurrentUser();
+        if (user) {
+            getUserBooks(user.userId)
                 .then((fetchedBooks) => {
                     setBooks(fetchedBooks);
                     setLoading(false);
@@ -111,8 +103,10 @@ export default function StoryCardGrid() {
                     setError(err);
                     setLoading(false);
                 });
+        } else {
+            setLoading(false);
         }
-    }, [userId]);
+    }, []);
 
     const handleDelete = async (bookId: number) => {
         try {
@@ -122,7 +116,6 @@ export default function StoryCardGrid() {
             setError(error as Error); // Type assertion here
         }
     };
-
 
     if (loading) {
         return (
@@ -138,13 +131,14 @@ export default function StoryCardGrid() {
         return <ErrorFallback error={error} />;
     }
 
-    if (userId === null || books === null) {
+    const user = getCurrentUser();
+    if (!user || !books) {
         return <LoginRequired />;
     }
 
     return (
         <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
-            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">내 동화</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Your Favorite Stories</h1>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
                 <StoryCardList books={books} onDelete={handleDelete} />
             </div>
