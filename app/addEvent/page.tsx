@@ -32,7 +32,10 @@ export default function AddPage() {
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
             setUserId(parseInt(storedUserId, 10));
+
         }
+
+        console.log(storedUserId);
 
         // localStorage에서 선택된 아이 가져오기
         const storedSelectedBaby = localStorage.getItem('selectedBaby');

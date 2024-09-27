@@ -1,6 +1,4 @@
 'use client'
-
-import { SessionProvider } from "next-auth/react";
 import { Providers } from "./providers";
 import BottomContainer from "@/components/BottomContainer";
 import { usePathname } from 'next/navigation';
@@ -20,14 +18,11 @@ export default function ClientLayout({
   const showBottomContainer = !isLoginPage && !isLoadingPage && !isInitialSettingPage && !isAddEventPage && !isEditEventPage;
 
   return (
-    // 모든 페이지와 컴포넌트에서 NextAuth의 세션 기능 사용 가능, useSession 훅 사용하여 현재 세션 정보에 접근
-    <SessionProvider>
-      <Providers>
-        <BottomContainerProvider>
-          {children}
-          {showBottomContainer && <BottomContainer />}
-        </BottomContainerProvider>
-      </Providers>
-    </SessionProvider>
+    <Providers>
+      <BottomContainerProvider>
+        {children}
+        {showBottomContainer && <BottomContainer />}
+      </BottomContainerProvider>
+    </Providers>
   );
 }
