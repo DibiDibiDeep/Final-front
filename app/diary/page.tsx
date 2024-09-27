@@ -99,11 +99,8 @@ const DiaryDetailModal: React.FC<{ isOpen: boolean; onClose: () => void; data: D
         try {
             const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale/${data.alimInfId}`, data);
             setFairyTale(response.data);
-
-            const storageResponse = await axios.post(`${BACKEND_API_URL}/api/books/process_book`, response.data);
-            setStorageResult(`동화가 성공적으로 저장되었습니다. Book ID: ${storageResponse.data.bookId}`);
         } catch (err) {
-            setError('동화를 생성하거나 저장하는 중 오류가 발생했습니다.');
+            setError('동화를 생성하는 중 오류가 발생했습니다.');
             console.error('Error:', err);
         } finally {
             setLoading(false);
