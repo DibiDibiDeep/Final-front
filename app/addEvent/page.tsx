@@ -35,7 +35,9 @@ export default function AddPage() {
 
         }
 
-        console.log(storedUserId);
+        // console.log("jwt id", storedUserId);
+        // console.log("jwt email", localStorage.getItem('userEmail'));
+        // console.log("jwt name", localStorage.getItem('userName'));
 
         // localStorage에서 선택된 아이 가져오기
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
