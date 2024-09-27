@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import StoryCard from './StoryCard';
+import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -47,26 +48,21 @@ function LoginRequired() {
     );
 }
 
-// Token-related code commented out for now
-// async function getAuthToken(): Promise<string | null> {
-//     const token = localStorage.getItem('authToken');
-//     return token ? token : null;
-// }
-
 async function getUserBooks(userId: number): Promise<Book[]> {
-    // Token check removed
-    // const token = await getAuthToken();
-    // if (!token) {
-    //     throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
-    // }
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
+    }
 
     try {
-        const response = await fetch(`${BACKEND_API_URL}/api/books/user/${userId}`);
-
+        const response = await fetch(`${BACKEND_API_URL}/api/books/user/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         return response.json();
     } catch (error) {
         console.error('Failed to fetch books:', error);
@@ -75,24 +71,14 @@ async function getUserBooks(userId: number): Promise<Book[]> {
 }
 
 export default function StoryCardGrid() {
-    const [userId, setUserId] = useState<number | null>(null);
     const [books, setBooks] = useState<Book[] | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId));
-        } else {
-            setUserId(null);
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (userId !== null) {
-            getUserBooks(userId)
+        const user = getCurrentUser();
+        if (user) {
+            getUserBooks(user.userId)
                 .then((fetchedBooks) => {
                     setBooks(fetchedBooks);
                     setLoading(false);
@@ -101,8 +87,10 @@ export default function StoryCardGrid() {
                     setError(err);
                     setLoading(false);
                 });
+        } else {
+            setLoading(false);
         }
-    }, [userId]);
+    }, []);
 
     if (loading) {
         return (
@@ -118,7 +106,8 @@ export default function StoryCardGrid() {
         return <ErrorFallback error={error} />;
     }
 
-    if (userId === null || books === null) {
+    const user = getCurrentUser();
+    if (!user || !books) {
         return <LoginRequired />;
     }
 

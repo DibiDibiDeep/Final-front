@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import Router from 'next/router';
+import { jwtDecode } from "jwt-decode";
 
 interface User {
     userId: number;
@@ -7,58 +6,54 @@ interface User {
     name: string;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-
-export async function initiateGoogleLogin(): Promise<void> {
-    const response = await fetch(`${BACKEND_URL}/api/auth/google-url`);
-    const data = await response.json();
-    window.location.href = data.url;
+interface JwtPayload {
+    sub: string;
+    userId: number;
+    name: string;
+    iat: number;
+    exp: number;
 }
 
-export async function handleGoogleCallback(code: string): Promise<User> {
-    const response = await fetch(`${BACKEND_URL}/api/auth/google-callback?code=${code}`);
-    if (!response.ok) {
-        throw new Error('Google authentication failed');
+export function decodeToken(token: string): User {
+    try {
+        console.log('Decoding token:', token);
+        const decodedToken = jwtDecode<JwtPayload>(token);
+        console.log('Decoded token:', decodedToken);
+        return {
+            userId: decodedToken.userId,
+            email: decodedToken.sub,
+            name: decodedToken.name
+        };
+    } catch (error) {
+        console.error('Failed to decode token:', error);
+        throw new Error('Invalid token');
     }
-    return response.json();
 }
 
-export async function getCurrentUser(): Promise<User | null> {
-    const response = await fetch(`${BACKEND_URL}/api/auth/user`, {
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        return null;
-    }
-
-    return response.json();
+export function setAuthToken(token: string) {
+    console.log('Setting auth token in localStorage');
+    localStorage.setItem('authToken', token);
 }
 
-export async function logout(): Promise<void> {
-    await fetch(`${BACKEND_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-    });
-    Router.push('/login');
+export function getAuthToken(): string | null {
+    console.log('Getting auth token from localStorage');
+    return localStorage.getItem('authToken');
 }
 
-export function useAuth() {
-    const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+export function removeAuthToken() {
+    console.log('Removing auth token from localStorage');
+    localStorage.removeItem('authToken');
+}
 
-    useEffect(() => {
-        getCurrentUser().then((user) => {
-            setUser(user);
-            setLoading(false);
-        });
-    }, []);
-
-    const checkAuth = () => {
-        if (!loading && !user) {
-            Router.push('/login');
+export function getCurrentUser(): User | null {
+    const token = getAuthToken();
+    if (token) {
+        try {
+            return decodeToken(token);
+        } catch (error) {
+            console.error('Error in getCurrentUser:', error);
+            removeAuthToken();
         }
-    };
-
-    return { user, loading, checkAuth };
+    }
+    return null;
 }
