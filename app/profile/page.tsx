@@ -83,8 +83,19 @@ const MyPage: React.FC = () => {
         }
     };
 
-    const handleChildClick = (babyId: number) => {
-        router.push(`/initialSetting?babyId=${babyId}`);
+    const handleChildClick = (baby: Baby) => {
+        // 선택한 아기의 정보를 로컬 스토리지에 저장
+        const selectedBabyInfo = {
+            babyId: baby.babyId,
+            babyName: baby.babyName,
+            birth: baby.birth,
+            gender: baby.gender,
+            photoUrl: baby.photoUrl
+        };
+        localStorage.setItem('selectedBaby', JSON.stringify(selectedBabyInfo));
+    
+        // initialSettings 페이지로 이동
+        router.push(`/initialSettings?babyId=${baby.babyId}`);
     };
 
     const handleLogout = () => {
@@ -125,7 +136,7 @@ const MyPage: React.FC = () => {
         <CommonContainer>
             <div className="flex flex-col items-center justify-between pt-[20px] pb-6">
                 <div className="flex flex-col items-center w-full max-w-[90%] sm:max-w-md">
-                    <h1 className="text-2xl font-bold mb-4 text-white">내 아이</h1>
+                    <h1 className="text-2xl font-bold mb-4 text-gray-600">내 아이</h1>
 
                     <div className="mb-6 w-full">
                         {babies.length > 0 ? (
@@ -138,7 +149,7 @@ const MyPage: React.FC = () => {
                                 </button>
                                 <div
                                     className="flex-shrink-0 w-40 flex flex-col items-center cursor-pointer mx-12"
-                                    onClick={() => handleChildClick(currentBaby.babyId)}
+                                    onClick={() => handleChildClick(currentBaby)}
                                 >
                                     <div className="w-40 h-40 bg-transparent rounded-full overflow-hidden border-2 border-white mb-3">
                                         <Image
@@ -149,9 +160,9 @@ const MyPage: React.FC = () => {
                                             className="object-cover w-full h-full rounded-full"
                                         />
                                     </div>
-                                    <p className="text-lg font-bold text-center text-white">{currentBaby.babyName}</p>
-                                    <p className="text-md text-center text-white mt-4">{formatBirthDate(currentBaby.birth)}</p>
-                                    <p className="text-md text-center text-white mt-2">{currentBaby.gender}</p>
+                                    <p className="text-lg font-bold text-center text-gray-600">{currentBaby.babyName}</p>
+                                    <p className="text-md text-center text-gray-600 mt-4">{formatBirthDate(currentBaby.birth)}</p>
+                                    <p className="text-md text-center text-gray-600 mt-2">{currentBaby.gender}</p>
                                 </div>
                                 <button
                                     onClick={handleNextBaby}

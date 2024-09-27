@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Button, Input, Image } from '@nextui-org/react';
@@ -12,15 +12,27 @@ export default function Login() {
     const [userId, setUserId] = useState('');
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
+    const [session, setSession] = useState<any>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        // 컴포넌트 마운트 시 로컬 스토리지에서 세션 정보 확인
+        const storedSession = localStorage.getItem('session');
+        if (storedSession) {
+            setSession(JSON.parse(storedSession));
+            router.push("/home"); // 이미 로그인된 경우 홈으로 리다이렉트
+        }
+    }, [router]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         // Check for dummy login credentials
-        if (userId === "1" && email === "chulsoo@example.com") {
-            localStorage.setItem('userId', '1');
-            localStorage.setItem('email', 'chulsoo@example.com')
+        if (userId === "3" && email === "mmongeul@gmail.com") {
+            const dummySession = { userId: '3', email: 'mmongeul@gmail.com' };
+            localStorage.setItem('session', JSON.stringify(dummySession));
+            localStorage.setItem('userId', '3');
+            localStorage.setItem('email', 'mmongeul@gmail.com');
             setError(""); // Clear any previous errors
             router.push("/home"); // Redirect directly to home
             return;
@@ -47,9 +59,16 @@ export default function Login() {
             }
 
             const data = await response.json();
-            router.push(data.redirectUrl);
+
+            // 세션 정보 저장
+            const sessionData = { userId: data.userId, email: data.email };
+            localStorage.setItem('session', JSON.stringify(sessionData));
+            localStorage.setItem('userId', data.userId);
+            localStorage.setItem('email', data.email);
+            
+            router.push(data.redirectUrl || "/home");
         } catch (err) {
-            setError(error || "An error occurred");
+            setError((err as Error).message || "An error occurred");
         }
     };
 
