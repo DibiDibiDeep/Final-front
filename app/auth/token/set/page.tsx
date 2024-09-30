@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { setAuthToken, decodeToken } from '@/utils/authUtils';
 
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+
 export default function SetToken() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -17,23 +19,40 @@ export default function SetToken() {
             try {
                 const user = decodeToken(token);
                 console.log('Decoded user:', user);
-
                 setAuthToken(token);
                 console.log('Token set in local storage');
 
-                // 사용자 정보를 로컬 스토리지에 저장
                 localStorage.setItem('userId', user.userId.toString());
                 localStorage.setItem('userEmail', user.email);
                 localStorage.setItem('userName', user.name);
                 console.log('User info saved in local storage');
 
-                setMessage('Login successful. Redirecting...');
+                setMessage('Login successful. Checking user data...');
 
-                // 홈 페이지로 리다이렉트
-                setTimeout(() => {
-                    console.log('Redirecting to home page');
-                    router.push('/home');
-                }, 1500);
+                // Send GET request to check for babyId
+                fetch(`${BACKEND_API_URL}/api/baby/user/${user.userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('data', data);
+                        if (data != null) {
+                            console.log('BabyId found. Redirecting to home page');
+                            router.push('/home');
+                        } else {
+                            console.log('No babyId found. Redirecting to initialSettings page');
+                            router.push('/initialSettings');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking user data:', error);
+                        setMessage('Error occurred. Redirecting to login page...');
+                        setTimeout(() => router.push('/login?error=api_error'), 1500);
+                    });
+
             } catch (error) {
                 console.error('Failed to process token:', error);
                 setMessage('Login failed. Redirecting to login page...');
