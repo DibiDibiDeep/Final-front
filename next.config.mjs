@@ -11,6 +11,13 @@ const nextConfig = {
             'tinyurl.com',
             'test-mongeul-s3-0911.s3.ap-northeast-2.amazonaws.com'
         ],
+    remotePatterns:[
+        {
+            protocol: 'https',
+            hostname: 'test-mongeul-s3-0911.s3.ap-northeast-2.amazonaws.com',
+            pathname: '/**',
+        }
+    ],
     },
     // 동적 라우팅을 위한 추가 설정
     pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'mdx'],

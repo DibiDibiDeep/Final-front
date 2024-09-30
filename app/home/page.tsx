@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import axios from 'axios';
-import { Search, Plus } from 'lucide-react';
+import { Search, MessageCircle, ChevronLeft} from 'lucide-react';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
@@ -195,6 +195,14 @@ export default function Home() {
         router.push('/notice');
     };
 
+    const handleChatbotClick = () => {
+        router.push('/chatbot');
+    };
+
+    const handleBackClick = () => {
+        router.back();
+    };
+
     const handleDateSelect = (date: Date) => setSelectedDate(date);
 
     const handleBabySelect = (baby: Baby) => {
@@ -290,9 +298,16 @@ export default function Home() {
 
     // 렌더링
     return (
-        <div className="h-screen flex flex-col relative">
-            <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
+        <div className="h-screen flex flex-col items-center">
+            <div className="w-full max-w-md mt-8 flex justify-between items-center px-4">
                 <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
+                    {/* 뒤로 가기 버튼 */}
+                    <button
+                    onClick={handleBackClick}
+                    className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
+                    >
+                    <ChevronLeft size={24} color="#6B46C1" />
+                    </button>
                     <Dropdown>
                         <DropdownTrigger>
                             <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
@@ -346,6 +361,12 @@ export default function Home() {
             {calendarVisible && (
                 <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
                     <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+                    <button
+                        onClick={handleChatbotClick}
+                        className="fixed bottom-72 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"
+                    >
+                        <MessageCircle size={24} />
+            </button>
                 </div>
             )}
             <MainContainer

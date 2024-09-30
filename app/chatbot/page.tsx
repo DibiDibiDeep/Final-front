@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft } from 'lucide-react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
+import { Baby } from '@/types/index';
+import { jwtDecode } from 'jwt-decode';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
@@ -44,14 +48,28 @@ const DummyChatInterface: React.FC = () => {
   const [babyPhoto, setBabyPhoto] = useState<string>("/img/mg-logoback.png");
   const [userId, setUserId] = useState<number | null>(null);
   const [babyId, setBabyId] = useState<number | null>(null);
+  const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
+  const [babies, setBabies] = useState<Baby[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [session, setSession] = useState<Session | null>(IS_DEVELOPMENT ? DUMMY_SESSION : null);
-
+  const [token, setToken] = useState<string | null>(null);
+  
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
+  };
+
+  const router = useRouter();
+
+  const handleBackClick = () => {
+    router.back();
+  };
+
+  const handleBabySelect = (baby: Baby) => {
+    setSelectedBaby(baby);
+    setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
+    localStorage.setItem('selectedBaby', JSON.stringify(baby));
   };
 
   useEffect(scrollToBottom, [messages]);
@@ -79,48 +97,55 @@ const DummyChatInterface: React.FC = () => {
   }, [searchTerm]);
 
   useEffect(() => {
-    if (!IS_DEVELOPMENT) {
-      // 실제 환경에서만 로컬 스토리지에서 세션 정보를 로드
-      const storedSession = localStorage.getItem('session');
-      const storedSelectedBaby = localStorage.getItem('selectedBaby');
-      
-      if (storedSession) {
-        setSession(JSON.parse(storedSession));
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      try {
+        const decodedToken: any = jwtDecode(storedToken);
+        const currentTime = Date.now() / 1000;
+        setToken(storedToken);
+        setUserId(decodedToken.userId);
+        console.log('Stored token:', storedToken); // 디버깅을 위한 로그
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
       }
+    } else {
+      setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
+    }
+  
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+      const parsedUserId = JSON.parse(storedUserId);
+      setUserId(parsedUserId);
+    }
 
-      if (storedSelectedBaby) {
-        try {
-          const selectedBabyObj = JSON.parse(storedSelectedBaby);
-          setBabyId(selectedBabyObj.babyId);
-        } catch (error) {
-          console.error('Error parsing selectedBaby:', error);
-          setError('Error loading baby information. Please try logging in again.');
-        }
-      }
-      
-      if (!storedSession || !storedSelectedBaby) {
-        setError('Session or baby information not found. Please log in again.');
-      }
+    const storedSelectedBaby = localStorage.getItem('selectedBaby');
+    if (storedSelectedBaby) {
+      const selectedBabyObj = JSON.parse(storedSelectedBaby);
+      setBabyId(selectedBabyObj.babyId);
+      setSelectedBaby(selectedBabyObj);
     }
   }, []);
 
+  // userId나 babyId가 변경될 때 메시지를 가져오는 useEffect 추가
   useEffect(() => {
-    // Fetch previous messages when session and babyId are available
-    if (session && babyId) {
-      console.log('Fetching messages for userId:', session.userId, 'and babyId:', babyId);
+    if (userId !== null && babyId !== null) {
       fetchMessages();
     }
-  }, [session, babyId]);
+  }, [userId, babyId]);
 
   const fetchMessages = async () => {
-    if (userId === null || babyId === null) {
-      setError('User ID or Baby ID is not available');
-      console.error('User ID or Baby ID is not available');
+    if (!token || userId === null || babyId === null) {
+      setError('사용자 정보나 인증 토큰이 없습니다.');
       return;
     }
   
     try {
-      const response = await axios.get(`${BACKEND_API_URL}/api/chat/history/${userId}/${babyId}`);
+      const response = await axios.get(`${BACKEND_API_URL}/api/chat/history/${userId}/${babyId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const formattedMessages = response.data.map((msg: any) => ({
         id: msg.id,
         text: msg.content,
@@ -130,6 +155,7 @@ const DummyChatInterface: React.FC = () => {
       setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setError('메시지를 불러오는데 실패했습니다.');
     }
   };
 
@@ -137,37 +163,42 @@ const DummyChatInterface: React.FC = () => {
     setError(null); // Clear any previous errors
     console.log('Sending message. userId:', userId, 'babyId:', babyId, 'inputMessage:', inputMessage);
 
-    if (inputMessage.trim() !== ''  && session && babyId !== null) {
-      const newMessage: Message = {
-        userId: session.userId,
-        babyId: babyId,
-        id: messages.length + 1,
-        text: inputMessage,
-        sender: 'user',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+    if (inputMessage.trim() === '' || userId === null || babyId === null) {
+      setError('메시지를 전송할 수 없습니다. 모든 정보가 올바르게 설정되었는지 확인해 주세요.');
+      return;
+    }
+
+    console.log('Sending token:', token);
+  
+    const newMessage: Message = {
+      userId: userId,
+      babyId: babyId,
+      id: messages.length + 1,
+      text: inputMessage,
+      sender: 'user',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
       setMessages([...messages, newMessage]);
       setInputMessage('');
       
       try {
         const response = await axios.post(`${BACKEND_API_URL}/api/chat/send`, {
-          userId: session.userId,
+          userId: userId,
           babyId: babyId,
           content: inputMessage,
           sender: 'user',
           timestamp: new Date().toISOString()
         }, {
           headers: {
-            'Authorization': `Bearer ${session.userId}` // 만약 JWT를 사용한다면
+            'Authorization': `Bearer ${token}`
           }
         });
         
         console.log('Server response:', response.data);
-        console.log('session', session)
 
         if (response.data && response.data.content) {
           const botResponse: Message = {
-            userId: session.userId,
+            userId: userId,
             babyId: babyId,
             id: messages.length + 2,
             text: response.data.content,
@@ -177,39 +208,63 @@ const DummyChatInterface: React.FC = () => {
           setMessages(prevMessages => [...prevMessages, botResponse]);
         } else {
           console.error('Unexpected response format:', response.data);
+          throw new Error('Unexpected response format from server');
         }
 
       } catch (error) {
         console.error('Error sending message:', error);
-        // 사용자에게 오류 메시지를 표시
-        const errorMessage: Message = {
-          userId: session.userId,
-          babyId: babyId,
-          id: messages.length + 2,
-          text: "죄송합니다. 메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.",
-          sender: 'bot',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prevMessages => [...prevMessages, errorMessage]);
+        if (axios.isAxiosError(error)) {
+          console.error('Response data:', error.response?.data);
+          console.error('Response status:', error.response?.status);
+        }
+        setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
       }
-    } else {
-      console.error('Cannot send message: input is empty or userId/babyId is not set');
-    }
-    setTimeout(scrollToBottom, 100);
-  };
+    
+      setTimeout(scrollToBottom, 100);
+    };
 
   return (
-    <div className="flex flex-col pb-32 pt-6 h-screen">
-      <div className="fixed top-[37px] right-[23px] flex items-center space-x-[13px] z-30">
+    <div className="h-screen flex flex-col items-center">
+      <div className="w-full max-w-md mt-8 flex justify-between items-center px-4">
         <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
-          <Image
-            src={babyPhoto}
-            alt="Baby Photo"
-            width={45}
-            height={45}
-            className="w-full h-full object-cover"
-          />
+          {/* 뒤로 가기 버튼 */}
+          <button
+            onClick={handleBackClick}
+            className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
+            >
+            <ChevronLeft size={24} color="#6B46C1" />
+            </button>
+            <Dropdown>
+                <DropdownTrigger>
+                    <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
+                        <Image
+                            src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
+                            alt="Baby Photo"
+                            width={45}
+                            height={45}
+                            className="rounded-full object-cover object-center"
+                        />
+                    </button>
+                </DropdownTrigger>
+                <DropdownMenu aria-label="Baby Selection">
+                    {babies.map((baby) => (
+                        <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
+                            <div className="flex items-center">
+                                <Image
+                                    src={baby.photoUrl || "/img/mg-logoback.png"}
+                                    alt={`Baby ${baby.babyId}`}
+                                    width={30}
+                                    height={30}
+                                    className="rounded-full mr-2 object-cover w-8 h-8"
+                                />
+                                <span className="text-gray-700">{baby.babyName}</span>
+                            </div>
+                        </DropdownItem>
+                    ))}
+                </DropdownMenu>
+            </Dropdown>
         </div>
+
         <div className="flex justify-center items-center">
           <div className="relative w-full max-w-md">
             <input
@@ -225,10 +280,10 @@ const DummyChatInterface: React.FC = () => {
       </div>
       <div 
         ref={chatContainerRef} 
-        className="flex-1 overflow-hidden"
+        className="flex-1 overflow-hidden scrollbar-hide"
         style={{
-          marginTop: '80px', // 상단 고정 영역의 높이만큼 여백
-          marginBottom: '80px', // 하단 입력 영역의 높이만큼 여백
+          marginTop: '10px', // 상단 고정 영역의 높이만큼 여백
+          marginBottom: '190px', // 하단 입력 영역의 높이만큼 여백
           height: 'calc(100vh - 160px)',
           overflowY: 'auto', // 전체 높이에서 상하단 영역 높이를 뺌
         }}
