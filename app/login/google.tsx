@@ -20,7 +20,7 @@ export default function GoogleAuthLogin(): JSX.Element {
 
     if (currentUser) {
       setUser(currentUser);
-      router.push('/home');
+      // router.push('/home');
     } else {
       setIsLoading(false); // Set loading to false when no user is found
     }
