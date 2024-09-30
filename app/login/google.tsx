@@ -42,6 +42,17 @@ export default function GoogleAuthLogin(): JSX.Element {
     }
   };
 
+  const checkAuthState = () => {
+    const token = getAuthToken();
+    if (!token) {
+      setUser(null); // Explicitly set user to null if there's no token
+    }
+  };
+
+  useEffect(() => {
+    checkAuthState(); // Check auth state whenever this component mounts
+  }, []);
+
   if (error) {
     return (
       <div>

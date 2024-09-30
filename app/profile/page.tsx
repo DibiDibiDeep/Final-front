@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import CommonContainer from '@/components/CommonContainer';
+import { removeAuthToken } from '@/utils/authUtils';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -84,7 +85,6 @@ const MyPage: React.FC = () => {
     };
 
     const handleChildClick = (baby: Baby) => {
-        // 선택한 아기의 정보를 로컬 스토리지에 저장
         const selectedBabyInfo = {
             babyId: baby.babyId,
             babyName: baby.babyName,
@@ -93,13 +93,13 @@ const MyPage: React.FC = () => {
             photoUrl: baby.photoUrl
         };
         localStorage.setItem('selectedBaby', JSON.stringify(selectedBabyInfo));
-    
-        // initialSettings 페이지로 이동
         router.push(`/initialSettings?babyId=${baby.babyId}`);
     };
 
     const handleLogout = () => {
-        window.localStorage.clear();
+        console.log('Logging out...');
+        removeAuthToken(); // Clear the auth token
+        localStorage.removeItem('userId'); // Clear user ID if it exists
         router.push('/login');
     };
 
@@ -185,7 +185,6 @@ const MyPage: React.FC = () => {
                             <span className="text-primary group-hover:text-white">로그아웃</span>
                         </button>
                     </div>
-
 
                 </div>
             </div>
