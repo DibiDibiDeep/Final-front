@@ -363,7 +363,7 @@ export default function Home() {
                     <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
                     <button
                         onClick={handleChatbotClick}
-                        className="fixed bottom-72 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"
+                        className="fixed bottom-100 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"
                     >
                         <MessageCircle size={24} />
             </button>

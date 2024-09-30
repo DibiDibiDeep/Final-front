@@ -56,8 +56,6 @@ const MyPage: React.FC = () => {
         setError(null);
         try {
             const response = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
-            console.log('API Response:', response.data);
-
             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(response.data.map(async (baby: any) => {
                     const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
@@ -70,11 +68,7 @@ const MyPage: React.FC = () => {
                         photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
                     };
                 }));
-
-                console.log('Fetched Babies:', fetchedBabies);
                 setBabies(fetchedBabies);
-            } else {
-                console.log("No baby information found for this user.");
             }
         } catch (error) {
             console.error('Failed to fetch baby information:', error);
@@ -94,6 +88,12 @@ const MyPage: React.FC = () => {
         };
         localStorage.setItem('selectedBaby', JSON.stringify(selectedBabyInfo));
         router.push(`/initialSettings?babyId=${baby.babyId}`);
+    };
+
+    // 아이 추가
+    const handleAddBaby = async () => {
+        localStorage.removeItem('selectedBaby');
+        router.push(`/initialSettings`);
     };
 
     const handleLogout = () => {
@@ -174,6 +174,16 @@ const MyPage: React.FC = () => {
                         ) : (
                             <p className="text-center text-gray-500">No child profiles found.</p>
                         )}
+                    </div>
+
+
+                    <div className="mt-4 w-full">
+                        <button
+                            onClick={handleAddBaby}
+                            className="flex items-center justify-center w-full py-2 px-4 border border-primary rounded-lg transition-colors duration-300 ease-in-out hover:bg-primary group"
+                        >
+                            <span className="text-primary group-hover:text-white">아이 추가하기</span>
+                        </button>
                     </div>
 
                     <div className="mt-4 w-full">

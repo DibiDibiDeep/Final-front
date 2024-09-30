@@ -161,7 +161,7 @@ const DummyChatInterface: React.FC = () => {
 
   const handleSendMessage = async () => {
     setError(null); // Clear any previous errors
-    console.log('Sending message. userId:', userId, 'babyId:', babyId, 'inputMessage:', inputMessage);
+    console.log('Sending message. userId:', userId, 'babyId:', babyId, 'authToken:', token, 'inputMessage:', inputMessage);
 
     if (inputMessage.trim() === '' || userId === null || babyId === null) {
       setError('메시지를 전송할 수 없습니다. 모든 정보가 올바르게 설정되었는지 확인해 주세요.');
