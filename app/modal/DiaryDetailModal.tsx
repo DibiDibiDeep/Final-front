@@ -73,49 +73,29 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         }
     };
 
-    const formatDateForBackend = (dateString: string): string => {
-        const date = new Date(dateString);
-        const koreaTime = new Date(date.getTime() + (9 * 60 * 60 * 1000)); // UTC to KST (UTC+9)
-        return koreaTime.toISOString().slice(0, 19); // '2024-09-28T00:00:00' 형식으로 반환
-    };
-
     const handleCreateDiary = async () => {
 
         setLoading(true);
         setError(null);
 
         try {
-            const formattedDate = formatDateForBackend(noticeData.date);
-
             // 알림장 업데이트 또는 생성
             let alimId = data.alimId;
-            if (!alimId) {
-                const createResponse = await axios.post(`${BACKEND_API_URL}/api/alims`, {
-                    ...noticeData,
-                    content: content,
-                    date: formattedDate
-                });
-                alimId = createResponse.data.alimId;
-            } else {
-                await axios.put(`${BACKEND_API_URL}/api/alims/${alimId}`, {
-                    userId: noticeData.userId,
-                    babyId: noticeData.babyId,
-                    content: content,
-                    date: formattedDate
-                });
-            }
 
             // AlimInf 생성을 위한 데이터 준비
             const alimInfData = {
-                alim_id: alimId,
-                user_id: noticeData.userId,
-                baby_id: noticeData.babyId,
+                alimId: alimId,
+                userId: noticeData.userId,
+                babyId: noticeData.babyId,
                 content: content,
-                date: formattedDate,
+                date: noticeData.date,
+                sendToML: true,
                 // 필요한 경우 여기에 추가 필드를 포함시킵니다.
             };
 
-            const response = await axios.post(`${BACKEND_API_URL}/api/alim-inf`, alimInfData);
+            console.log("alimInfData date", alimInfData.date);
+
+            const response = await axios.post(`${BACKEND_API_URL}/api/alims`, alimInfData);
             console.log("Created AlimInf:", response.data);
 
             const infResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`);
@@ -125,7 +105,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             updateEntries({
                 alimId: alimId,
                 content: content,
-                date: formattedDate
+                date: noticeData.date
             });
         } catch (err) {
             setError('일기 생성 중 오류가 발생했습니다.');

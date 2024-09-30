@@ -64,33 +64,33 @@ const getFormattedDateTime = (date: Date): string => {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`; // YYYY-MM-DDTHH:MM:SS
 };
 
-const convertToKoreanDateTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    const koreanDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-    return koreanDate.toISOString().slice(0, 19).replace('Z', '');
-};
-
 const getKoreanISOString = (date: Date): string => {
     const koreanDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
     return koreanDate.toISOString().slice(0, 19);
 };
 
+const Card: React.FC<DiaryEntry & { onClick: () => void; onDelete: () => void }> = ({ date, content, alimId, onClick, onDelete }) => {
+    const dateObj = new Date(date);
+    const formattedDate = `${dateObj.getFullYear()}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getDate().toString().padStart(2, '0')}`;
 
-const Card: React.FC<DiaryEntry & { onClick: () => void; onDelete: () => void }> = ({ date, content, alimId, onClick, onDelete }) => (
-    <div className="bg-white/70 shadow-md rounded-lg p-4 cursor-pointer mx-4 relative" onClick={onClick}>
-        <h2 className="font-bold text-lg mb-2">{date}</h2>
-        <p>{content?.length > 100 ? `${content.substring(0, 100)}...` : content}</p>
-        <button
-            onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-            }}
-            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-        >
-            <X size={16} />
-        </button>
-    </div>
-);
+    return (
+        <div className="bg-white/70 shadow-md rounded-lg p-4 cursor-pointer mx-4 relative" onClick={onClick}>
+            <h2 className="font-bold text-lg mb-2">{formattedDate}</h2>
+            <p>{content?.length > 100 ? `${content.substring(0, 100)}...` : content}</p>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                }}
+                className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+            >
+                <X size={16} />
+            </button>
+        </div>
+    );
+};
+
+
 
 
 export default function DiaryPage() {
@@ -109,10 +109,22 @@ export default function DiaryPage() {
         date: ''
     });
 
+    // entries 배열의 date를 로그로 출력하는 useEffect
+    useEffect(() => {
+        entries.forEach((entry) => {
+            console.log(entry.date); // date를 로그로 출력
+        });
+    }, [entries]); // entries가 변경될 때마다 실행
+
+
     const todayEntry = useMemo(() => {
-        const today = new Date().toLocaleDateString('ko-KR');
-        return entries.find(entry => entry.date === today);
+        // 현재 날짜를 YYYY-MM-DD 형식으로 변환
+        const today = new Date();
+        const formattedToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        return entries.find(entry => entry.date.startsWith(formattedToday));
     }, [entries]);
+
 
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -148,7 +160,8 @@ export default function DiaryPage() {
             console.log('Fetched diaries:', response.data);
 
             const allEntries = response.data.map((entry: any) => ({
-                date: new Date(entry.date).toLocaleDateString('ko-KR'),
+                // date: getFormattedDateTime(new Date(entry.date)),
+                date: entry.date,
                 content: entry.content,
                 alimId: entry.alimId
             }));
@@ -236,7 +249,7 @@ export default function DiaryPage() {
             userId: userId,
             babyId: babyId,
             content: entry.content,
-            date: convertToKoreanDateTime(entry.date)
+            date: entry.date
         });
         setIsDetailModalOpen(true);
     };
@@ -303,7 +316,7 @@ export default function DiaryPage() {
                     userId: userId,
                     babyId: babyId,
                     content: selectedEntry?.content ?? '',
-                    date: selectedEntry ? convertToKoreanDateTime(selectedEntry.date) : ''
+                    date: selectedEntry ? selectedEntry.date : ''
                 }}
             />
         </div>
