@@ -66,7 +66,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [fairyTale, setFairyTale] = useState<FairyTale | null>(null);
-    const [storageResult, setStorageResult] = useState<string | null>(null);
+    const [fairyTaleGenerated, setFairyTaleGenerated] = useState<boolean>(false);
 
     useEffect(() => {
         if (data) {
@@ -75,6 +75,11 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             fetchDiaryData(data.alimId);
         }
     }, [data]);
+
+    useEffect(() => {
+        console.log("fairyTaleGenerated actual state:", fairyTaleGenerated);
+    }, [fairyTaleGenerated]);
+
 
     const fetchDiaryData = async (alimId: number) => {
         setLoading(true);
@@ -129,6 +134,20 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             setAlimData(null);
         } finally {
             setLoading(false);
+        }
+        checkFairyTaleStatus(alimId);
+    };
+
+    const checkFairyTaleStatus = async (alimId: number) => {
+        try {
+            const response = await axios.get(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`);
+            console.log("checkFairyTaleStatus", response.data);
+            const newStatus = response.data.status === "COMPLETED";
+            setFairyTaleGenerated(newStatus);
+            console.log("fairyTaleGenerated set to:", newStatus);
+        } catch (error) {
+            console.error('Failed to check fairy tale status:', error);
+            setFairyTaleGenerated(false);
         }
     };
 
@@ -198,12 +217,12 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         setLoading(true);
         setError(null);
         setFairyTale(null);
-        setStorageResult(null);
 
         try {
             // 동화 생성
             const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, diaryData);
             setFairyTale(response.data);
+            setFairyTaleGenerated(true);
         } catch (err) {
             setError('동화를 생성하거나 저장하는 중 오류가 발생했습니다.');
             console.error('Error:', err);
@@ -258,9 +277,15 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                         </>
                     )}
                     {diaryData && (
-                        <Button color="secondary" onPress={handleCreateFairyTale}>
-                            동화 생성
-                        </Button>
+                        fairyTaleGenerated ? (
+                            <Button isDisabled color="primary" variant="flat">
+                                동화 생성됨
+                            </Button>
+                        ) : (
+                            <Button color="primary" onPress={handleCreateFairyTale}>
+                                동화 생성
+                            </Button>
+                        )
                     )}
                 </ModalFooter>
             </ModalContent>
