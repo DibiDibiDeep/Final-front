@@ -5,7 +5,6 @@ npm i @aws-sdk/s3-request-presigner
 npx nextui-cli@latest add avatar
 npx nextui-cli@latest add select
 
-
 ## Getting Started
 
 First, run the development server:
@@ -21,6 +20,8 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## FRONT MAIN MERGE
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
