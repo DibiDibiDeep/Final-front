@@ -10,6 +10,7 @@ export default function SetToken() {
     const searchParams = useSearchParams();
     const token = searchParams?.get('token');
     const [message, setMessage] = useState('Processing login...');
+    
 
     useEffect(() => {
         console.log('SetToken: useEffect triggered');
