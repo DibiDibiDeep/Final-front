@@ -254,15 +254,6 @@ export default function DiaryPage() {
         setIsDetailModalOpen(true);
     };
 
-    const fetchDiaryData = async (alimId: number) => {
-        try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`);
-            setDiaryData(response.data);
-        } catch (error) {
-            console.error('Failed to fetch diary data:', error);
-        }
-    };
-
     return (
         <div className="max-w-md mx-auto min-h-screen flex flex-col">
             <div className="flex-grow flex flex-col justify-center items-center">

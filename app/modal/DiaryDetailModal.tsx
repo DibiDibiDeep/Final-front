@@ -5,6 +5,12 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Texta
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
+interface DiaryEntry {
+    date: string;
+    content: string;
+    alimId: number;
+}
+
 interface DiaryDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -13,10 +19,12 @@ interface DiaryDetailModalProps {
     noticeData: NoticeData;
 }
 
-interface DiaryEntry {
-    date: string;
+interface NoticeData {
+    alimId: number | null;
+    userId: number | null;
+    babyId: number | null;
     content: string;
-    alimId: number;
+    date: string;
 }
 
 interface DiaryData {
@@ -35,37 +43,112 @@ interface DiaryData {
     role: string;
 }
 
-interface NoticeData {
-    alimId: number | null;
-    userId: number | null;
-    babyId: number | null;
+interface AlimData {
+    alimId: number;
     content: string;
     date: string;
+    userId: number;
+    babyId: number;
+}
+
+interface FairyTale {
+    title: string;
+    pages: {
+        text: string;
+        image_url: string;
+    }[];
 }
 
 const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, data, updateEntries, noticeData }) => {
     const [content, setContent] = useState('');
     const [diaryData, setDiaryData] = useState<DiaryData | null>(null);
+    const [alimData, setAlimData] = useState<AlimData | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [fairyTale, setFairyTale] = useState<FairyTale | null>(null);
+    const [storageResult, setStorageResult] = useState<string | null>(null);
 
     useEffect(() => {
         if (data) {
             setContent(data.content);
+            console.log("alimId", data.alimId);
+            fetchDiaryData(data.alimId);
         }
     }, [data]);
 
-    if (!isOpen || !data) return null;
+    const fetchDiaryData = async (alimId: number) => {
+        setLoading(true);
+        setError(null);
+        try {
+            console.log(`Fetching diary data for alimId: ${alimId}`);
+            let diaryResponse;
+            try {
+                diaryResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`);
+            } catch (diaryError) {
+                console.log('Failed to fetch diary data:', diaryError);
+                diaryResponse = null;
+            }
+
+            if (diaryResponse && diaryResponse.data && typeof diaryResponse.data === 'object' && Object.keys(diaryResponse.data).length > 0) {
+                console.log("Diary data exists and is valid");
+                console.log('Diary API Response:', diaryResponse.data);
+                setDiaryData(diaryResponse.data);
+                setAlimData(null);
+            } else {
+                console.log("일기 데이터가 없거나 유효하지 않습니다. Alim 데이터를 가져옵니다.");
+                let alimResponse;
+                try {
+                    alimResponse = await axios.get(`${BACKEND_API_URL}/api/alims/${alimId}`);
+                } catch (alimError) {
+                    console.log('Failed to fetch alim data:', alimError);
+                    throw new Error("Alim 데이터를 가져오는 데 실패했습니다.");
+                }
+
+                if (alimResponse && alimResponse.data && typeof alimResponse.data === 'object' && Object.keys(alimResponse.data).length > 0) {
+                    console.log("Alim data fetched successfully");
+                    console.log('Alim API Response:', alimResponse.data);
+                    setAlimData(alimResponse.data);
+                    setDiaryData(null);
+                } else {
+                    throw new Error("유효한 Alim 데이터를 받지 못했습니다.");
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch data:', error);
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 404) {
+                    setError('알림장 정보를 찾을 수 없습니다.');
+                    console.log('알림장 정보를 찾을 수 없습니다.');
+                } else {
+                    setError(`데이터를 가져오는 데 실패했습니다. (${error.response?.status || '알 수 없는 오류'})`);
+                }
+            } else {
+                setError('데이터를 가져오는 데 실패했습니다.');
+            }
+            setDiaryData(null);
+            setAlimData(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newContent = e.target.value;
+        setContent(newContent);
+        if (alimData) {
+            setAlimData({ ...alimData, content: newContent });
+        }
+    };
 
     const handleTempSave = async () => {
         try {
-            await axios.put(`${BACKEND_API_URL}/api/alims/${data.alimId}`, {
+            await axios.put(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, {
                 userId: noticeData.userId,
                 babyId: noticeData.babyId,
                 content: content,
                 date: noticeData.date
             });
-            updateEntries({ ...data, content: content });
+            updateEntries({ ...data!, content: content });
             onClose();
         } catch (error) {
             console.error('Failed to update diary entry:', error);
@@ -74,15 +157,12 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     };
 
     const handleCreateDiary = async () => {
-
         setLoading(true);
         setError(null);
 
         try {
-            // 알림장 업데이트 또는 생성
-            let alimId = data.alimId;
+            let alimId = data!.alimId;
 
-            // AlimInf 생성을 위한 데이터 준비
             const alimInfData = {
                 alimId: alimId,
                 userId: noticeData.userId,
@@ -90,18 +170,16 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                 content: content,
                 date: noticeData.date,
                 sendToML: true,
-                // 필요한 경우 여기에 추가 필드를 포함시킵니다.
             };
 
-            console.log("alimInfData date", alimInfData.date);
+            console.log("alimInfData", alimInfData);
 
             const response = await axios.post(`${BACKEND_API_URL}/api/alims`, alimInfData);
             console.log("Created AlimInf:", response.data);
 
-            const infResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`);
-            setDiaryData(infResponse.data);
+            // Fetch updated diary data
+            await fetchDiaryData(alimId);
 
-            // 엔트리 업데이트
             updateEntries({
                 alimId: alimId,
                 content: content,
@@ -115,20 +193,37 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         }
     };
 
+    const handleCreateFairyTale = async () => {
+        onClose();
+        setLoading(true);
+        setError(null);
+        setFairyTale(null);
+        setStorageResult(null);
+
+        try {
+            // 동화 생성
+            const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, diaryData);
+            setFairyTale(response.data);
+        } catch (err) {
+            setError('동화를 생성하거나 저장하는 중 오류가 발생했습니다.');
+            console.error('Error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isOpen || !data) return null;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <ModalContent>
                 <ModalHeader className="flex flex-col gap-1 text-gray-700">알림장 상세</ModalHeader>
                 <ModalBody>
-                    {!diaryData ? (
-                        <Textarea
-                            value={content}
-                            onChange={(e) => setContent(e.target.value)}
-                            placeholder="알림장 내용"
-                            rows={4}
-                        />
-                    ) : (
+                    {loading ? (
+                        <p className="text-blue-500">로딩 중...</p>
+                    ) : error ? (
+                        <p className="text-red-500">{error}</p>
+                    ) : diaryData ? (
                         <div className="space-y-2 mb-4 text-gray-700">
                             <p><strong>이름:</strong> {diaryData.name}</p>
                             <p><strong>감정:</strong> {diaryData.emotion}</p>
@@ -140,12 +235,19 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                             <p><strong>키워드:</strong> {Array.isArray(diaryData.keywords) ? diaryData.keywords.join(', ') : diaryData.keywords}</p>
                             <p><strong>일기:</strong> {diaryData.diary}</p>
                         </div>
+                    ) : alimData ? (
+                        <Textarea
+                            value={alimData.content}
+                            onChange={handleContentChange}
+                            placeholder="알림장 내용"
+                            rows={4}
+                        />
+                    ) : (
+                        <p>데이터를 불러오는 데 실패했습니다.</p>
                     )}
-                    {error && <p className="text-red-500 mt-2">{error}</p>}
-                    {loading && <p className="text-blue-500 mt-2">로딩 중...</p>}
                 </ModalBody>
                 <ModalFooter>
-                    {!diaryData && (
+                    {!diaryData && alimData && (
                         <>
                             <Button color="default" variant="light" onPress={handleTempSave}>
                                 임시 저장
@@ -155,9 +257,11 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                             </Button>
                         </>
                     )}
-                    {/* <Button color="danger" variant="light" onPress={onClose}>
-                        닫기
-                    </Button> */}
+                    {diaryData && (
+                        <Button color="secondary" onPress={handleCreateFairyTale}>
+                            동화 생성
+                        </Button>
+                    )}
                 </ModalFooter>
             </ModalContent>
         </Modal>
