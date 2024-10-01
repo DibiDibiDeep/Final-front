@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { Search, ChevronLeft } from 'lucide-react';
+import ResetChatModal from '../modal/ResetChatModal';
+import { Search, ChevronLeft, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
@@ -10,7 +11,6 @@ import { Baby } from '@/types/index';
 import { jwtDecode } from 'jwt-decode';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 
 interface Message {
   userId: number;
@@ -21,26 +21,8 @@ interface Message {
   timestamp: string;
 }
 
-interface Session {
-  userId: number;
-  email: string;
-  token: string;
-  // 필요한 다른 세션 정보들을 여기에 추가할 수 있습니다.
-}
-
-// 더미 세션 데이터
-const DUMMY_SESSION: Session = {
-  userId: 3,
-  email: 'mmongeul@gmail.com',
-  token: 'dummy-token-for-development'
-};
-
-const dummyMessages: Message[] = [
-  { userId: 0, babyId: 0, id: 1, text: "안녕하세요! 무엇을 도와드릴까요?", sender: 'bot', timestamp: '10:00' }
-];
-
 const DummyChatInterface: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>(dummyMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -52,7 +34,7 @@ const DummyChatInterface: React.FC = () => {
   const [babies, setBabies] = useState<Baby[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -71,6 +53,30 @@ const DummyChatInterface: React.FC = () => {
     setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
     localStorage.setItem('selectedBaby', JSON.stringify(baby));
   };
+
+  const handleResetChat = () => {
+    setIsResetModalOpen(true);
+  };
+
+  const confirmResetChat = async () => {
+    if (!token || userId === null || babyId === null) {
+        setError('사용자 정보나 인증 토큰이 없습니다.');
+        return;
+    }
+
+    try {
+        await axios.post(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        setMessages([]);
+        setIsResetModalOpen(false);
+    } catch (error) {
+        console.error('Error resetting chat history:', error);
+        setError('채팅 내역 초기화에 실패했습니다.');
+    }
+};
 
   useEffect(scrollToBottom, [messages]);
 
@@ -129,10 +135,60 @@ const DummyChatInterface: React.FC = () => {
 
   // userId나 babyId가 변경될 때 메시지를 가져오는 useEffect 추가
   useEffect(() => {
-    if (userId !== null && babyId !== null) {
+    if (userId !== null && babyId !== null && token) {
       fetchMessages();
     }
-  }, [userId, babyId]);
+  }, [userId, babyId, token]);
+
+    // 아이 정보 가져오기
+    useEffect(() => {
+      if (userId) {
+          fetchBabiesInfo(userId);
+      }
+  }, [userId]);
+
+  const fetchBabiesInfo = async (userId: number) => {
+    try {
+        const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
+        if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
+            const fetchedBabies: Baby[] = await Promise.all(userResponse.data.map(async (baby: any) => {
+                const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+                return {
+                    userId: baby.userId,
+                    babyId: baby.babyId,
+                    babyName: baby.babyName,
+                    photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
+                };
+            }));
+
+            setBabies(fetchedBabies);
+
+            // localStorage에서 저장된 선택된 아이 정보 확인
+            const storedSelectedBaby = localStorage.getItem('selectedBaby');
+            if (storedSelectedBaby) {
+                const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
+                const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
+                if (foundBaby) {
+                    setSelectedBaby(foundBaby);
+                } else {
+                    // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
+                    setSelectedBaby(fetchedBabies[0]);
+                    localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                }
+            } else {
+                // 저장된 선택 정보가 없으면 첫 번째 아이 선택
+                setSelectedBaby(fetchedBabies[0]);
+                localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+            }
+        } else {
+            console.log("No baby information found for this user.");
+            localStorage.removeItem('selectedBaby');
+        }
+    } catch (error) {
+        console.error('Failed to fetch baby information:', error);
+        localStorage.removeItem('selectedBaby');
+    }
+};
 
   const fetchMessages = async () => {
     if (!token || userId === null || babyId === null) {
@@ -173,7 +229,7 @@ const DummyChatInterface: React.FC = () => {
     const newMessage: Message = {
       userId: userId,
       babyId: babyId,
-      id: messages.length + 1,
+      id: Date.now(),
       text: inputMessage,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -200,7 +256,7 @@ const DummyChatInterface: React.FC = () => {
           const botResponse: Message = {
             userId: userId,
             babyId: babyId,
-            id: messages.length + 2,
+            id: Date.now(),
             text: response.data.content,
             sender: 'bot',
             timestamp: new Date(response.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -226,45 +282,43 @@ const DummyChatInterface: React.FC = () => {
   return (
     <div className="h-screen flex flex-col items-center">
       <div className="w-full max-w-md mt-8 flex justify-between items-center px-4">
-        <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
-          {/* 뒤로 가기 버튼 */}
+      <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
           <button
             onClick={handleBackClick}
             className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
-            >
+          >
             <ChevronLeft size={24} color="#6B46C1" />
-            </button>
-            <Dropdown>
-                <DropdownTrigger>
-                    <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
-                        <Image
-                            src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
-                            alt="Baby Photo"
-                            width={45}
-                            height={45}
-                            className="rounded-full object-cover object-center"
-                        />
-                    </button>
-                </DropdownTrigger>
-                <DropdownMenu aria-label="Baby Selection">
-                    {babies.map((baby) => (
-                        <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
-                            <div className="flex items-center">
-                                <Image
-                                    src={baby.photoUrl || "/img/mg-logoback.png"}
-                                    alt={`Baby ${baby.babyId}`}
-                                    width={30}
-                                    height={30}
-                                    className="rounded-full mr-2 object-cover w-8 h-8"
-                                />
-                                <span className="text-gray-700">{baby.babyName}</span>
-                            </div>
-                        </DropdownItem>
-                    ))}
-                </DropdownMenu>
-            </Dropdown>
+          </button>
+          <Dropdown>
+            <DropdownTrigger>
+              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
+                <Image
+                  src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
+                  alt="Baby Photo"
+                  width={45}
+                  height={45}
+                  className="rounded-full object-cover object-center"
+                />
+              </button>
+            </DropdownTrigger>
+            <DropdownMenu aria-label="Baby Selection">
+              {babies.map((baby) => (
+                <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
+                  <div className="flex items-center">
+                    <Image
+                      src={baby.photoUrl || "/img/mg-logoback.png"}
+                      alt={`Baby ${baby.babyId}`}
+                      width={30}
+                      height={30}
+                      className="rounded-full mr-2 object-cover w-8 h-8"
+                    />
+                    <span className="text-gray-700">{baby.babyName}</span>
+                  </div>
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
         </div>
-
         <div className="flex justify-center items-center">
           <div className="relative w-full max-w-md">
             <input
@@ -277,39 +331,60 @@ const DummyChatInterface: React.FC = () => {
             <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
           </div>
         </div>
+        {/* 채팅 초기화 아이콘 */}
+        <button
+                    onClick={handleResetChat}
+                    className="ml-2 p-2 rounded-full hover:bg-gray-200 transition duration-200"
+                    aria-label="채팅 초기화"
+                >
+                    <Trash2 size={20} color="#6B46C1" />
+                </button>
       </div>
+      {error && (
+        <div className="text-red-500 text-center my-2">
+          {error}
+        </div>
+      )}
       <div 
         ref={chatContainerRef} 
-        className="flex-1 overflow-hidden scrollbar-hide"
+        className="flex-1 overflow-hidden scrollbar-hide w-full"
         style={{
-          marginTop: '10px', // 상단 고정 영역의 높이만큼 여백
-          marginBottom: '190px', // 하단 입력 영역의 높이만큼 여백
+          marginTop: '10px',
+          marginBottom: '190px',
           height: 'calc(100vh - 160px)',
-          overflowY: 'auto', // 전체 높이에서 상하단 영역 높이를 뺌
+          overflowY: 'auto',
         }}
       >
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`mb-4 flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+        {messages.length > 0 ? (
+          messages.map((message, index) => (
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-white'
-              }`}
+              key={`${message.id}-${index}`}
+              className={`mb-4 flex ${message.sender === 'user' ? 'justify-end text-gray-800' : 'justify-start text-gray-800'}`}
             >
-              <p className="message-text">{message.text}</p>
-              <span className="text-xs text-gray-400 mt-1 block">
-                {message.timestamp}
-              </span>
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  message.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-white'
+                }`}
+              >
+                <p className="message-text">{message.text}</p>
+                <span className="text-xs text-gray-400 mt-1 block">
+                  {message.timestamp}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <div className="text-center text-gray-500">메시지가 없습니다.</div>
+        )}
         <div ref={messagesEndRef} />
+        <ResetChatModal
+                isOpen={isResetModalOpen}
+                onClose={() => setIsResetModalOpen(false)}
+                onReset={confirmResetChat}
+            />
       </div>
-      
       <div className="fixed bottom-32 left-5 right-5 p-4 flex items-center">
-        <div className="flex items-center max-w-screen-lg mx-auto">
+        <div className="flex items-center max-w-screen-lg mx-auto w-full">
           <input
             type="text"
             value={inputMessage}

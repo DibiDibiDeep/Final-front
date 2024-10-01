@@ -60,7 +60,6 @@ export default function Home() {
         handleAddSchedule: contextHandleAddSchedule,
         handleCreateMemo: contextHandleCreateMemo,
         handleVoiceRecord: contextHandleVoiceRecord,
-        createMemo,
         saveVoiceRecord
     } = useBottomContainer();
 
@@ -80,11 +79,10 @@ export default function Home() {
         }
     }, [userId]);
 
+    // selectedBaby가 변경될 때마다 fetchEvents 호출
     useEffect(() => {
-        if (userId) {
-            fetchEvents();
-        }
-    }, [userId]);
+        fetchEvents();
+    }, [selectedBaby]);
 
     const fetchBabiesInfo = async (userId: number) => {
         try {
@@ -135,12 +133,12 @@ export default function Home() {
     // 메모 가져오기
     useEffect(() => {
         const fetchMemos = async () => {
-            if (!userId) return;
+            if (!userId || !selectedBaby) return;
 
             try {
                 const formattedDate = formatDateForBackend(selectedDate);
-                console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
-                const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
+                console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
+                const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
                     headers: { 'Content-Type': 'application/json' }
                 });
                 console.log('Backend response for Memos:', response.data);
@@ -148,6 +146,7 @@ export default function Home() {
                     const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
                         memoId: memo.memoId,
                         userId: memo.userId,
+                        babyId: selectedBaby.babyId,
                         todayId: memo.todayId,
                         bookId: memo.bookId,
                         date: memo.date,
@@ -164,31 +163,37 @@ export default function Home() {
             }
         };
         fetchMemos();
-    }, [selectedDate, userId]);
+    }, [selectedDate, userId, selectedBaby]);
 
-    // 이벤트 가져오기
-    const fetchEvents = async () => {
-        if (!userId) return;
-        try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
-                headers: { 'Content-Type': 'application/json' }
-            });
-            console.log('Backend response:', response.data);
-            const fetchedEvents: Event[] = response.data.map((event: any) => ({
-                id: event.calendarId,
-                title: event.title,
-                startTime: event.startTime,
-                endTime: event.endTime,
-                location: event.location,
-                target: event.target,
-                information: event.information,
-                notes: event.notes
-            }));
-            setEvents(fetchedEvents);
-        } catch (error) {
-            console.error('Failed to fetch events:', error);
-        }
-    };
+// 이벤트 가져오기
+const fetchEvents = async () => {
+    if (!userId || !selectedBaby) return;
+    try {
+
+        const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        console.log('Backend response:', response.data);
+
+        const fetchedEvents: Event[] = response.data.map((event: any) => ({
+            id: event.calendarId,
+            babyId: selectedBaby.babyId,
+            userId: userId,
+            title: event.title,
+            startTime: event.startTime,
+            endTime: event.endTime,
+            location: event.location,
+            target: event.target,
+            information: event.information,
+            notes: event.notes
+        }));
+
+        setEvents(fetchedEvents);
+    } catch (error) {
+        console.error('Failed to fetch events:', error);
+    }
+};
 
     // 이벤트 핸들러
     const handleCheckNotice = () => {
@@ -212,16 +217,32 @@ export default function Home() {
     };
 
     const handleCreateMemo = async (content: string) => {
-        if (!userId) {
-            console.error('User ID is not available');
+        if (!userId || !selectedBaby) {
+            console.error('User ID or Selected Baby is not available');
             return;
         }
 
         try {
-            const newMemo = await createMemo(content);
-            if (newMemo) {
-                setMemos(prevMemos => [newMemo, ...prevMemos]);
-            }
+            const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
+                userId,
+                babyId: selectedBaby.babyId,
+                date: new Date().toISOString(),
+                content: content,
+                todayId: null,
+                bookId: null
+            });
+
+            const newMemo: Memo = {
+                memoId: response.data.memoId,
+                userId: response.data.userId,
+                babyId: selectedBaby.babyId,
+                todayId: response.data.todayId,
+                bookId: response.data.bookId,
+                date: response.data.date,
+                content: response.data.content
+            };
+
+            setMemos(prevMemos => [newMemo, ...prevMemos]);
             setIsCreateMemoModalOpen(false);
         } catch (error) {
             console.error('Failed to create memo:', error);
