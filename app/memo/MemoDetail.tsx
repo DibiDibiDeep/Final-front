@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { Memo } from '@/types/index';
 import DeleteModal from '../modal/DeleteModal';
-import axios from 'axios';
-
+import { useAuth } from '@/hooks/useAuth';
+import { fetchWithAuth } from '@/utils/api';
+import { useBottomContainer } from '@/contexts/BottomContainerContext';
+import { Memo } from '@/types/index';
 
 interface MemoDetailProps {
   memoId: number;
@@ -19,13 +21,11 @@ interface MemoDetailProps {
   onMemoUpdated: (updatedMemo: Memo) => void;
 }
 
-// 환경 변수
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-// 유틸리티 함수
 const formatDateTimeForDisplay = (dateString: string): string => {
   const date = new Date(dateString);
-  const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000)); // KST는 UTC+9
+  const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000)); // KST is UTC+9
   return kstDate.toLocaleString('ko-KR', {
     timeZone: 'Asia/Seoul',
     hour: '2-digit',
@@ -44,25 +44,49 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
   onMemoDeleted,
   onMemoUpdated
 }) => {
-  // 상태 및 모달관리
+  // State and modal management
   const { isOpen: isDeleteModalOpen, onOpen: onOpenDeleteModal, onClose: onCloseDeleteModal } = useDisclosure();
   const { isOpen: isEditModalOpen, onOpen: onOpenEditModal, onClose: onCloseEditModal } = useDisclosure();
   const [editedContent, setEditedContent] = useState(content);
+  const { token, error } = useAuth();
 
-  // 메모 삭제 핸들러
+  const { setActiveView } = useBottomContainer();
+
+  useEffect(() => {
+    if (error) {
+      console.error('Auth error:', error);
+    }
+  }, [error]);
+
+  // Memo deletion handler
   const handleDelete = async () => {
+    if (!token) {
+      console.error('No authentication token available');
+      return;
+    }
+
     try {
-      await axios.delete(`${BACKEND_API_URL}/api/memos/${memoId}`);
+      await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoId}`, token, {
+        method: 'DELETE'
+      });
       onMemoDeleted(memoId);
       onCloseDeleteModal();
     } catch (error) {
       console.error('Failed to delete memo:', error);
-      // MEMO: 사용자에게 오류 메시지 표시
     }
+
+    // setActiveView('memo'); 
+    window.location.reload();
   };
 
-  // 메모 수정 핸들러
+
+  // Memo edit handler
   const handleEdit = async () => {
+    if (!token) {
+      console.error('No authentication token available');
+      return;
+    }
+
     try {
       const updatedMemoData = {
         userId: userId,
@@ -72,19 +96,22 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
         content: editedContent
       };
 
-      const response = await axios.put(`${BACKEND_API_URL}/api/memos/${memoId}`, updatedMemoData);
-      const updatedMemo: Memo = response.data;
+      const updatedMemo: Memo = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoId}`, token, {
+        method: 'PUT',
+        body: updatedMemoData
+      });
+
       onMemoUpdated(updatedMemo);
       onCloseEditModal();
     } catch (error) {
       console.error('Failed to update memo:', error);
-      // MEMO: 사용자에게 오류 메시지 표시
+      // TODO: Display error message to user
     }
   };
 
   return (
     <div className="w-full px-4 py-2">
-      {/* 메모 내용 및 옵션 메뉴 */}
+      {/* Memo content and options menu */}
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-700">{content}</span>
         <div className="flex items-center">
@@ -109,20 +136,20 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
         </div>
       </div>
 
-      {/* 메모 메타데이터 */}
+      {/* Memo metadata */}
       <div className="text-xs text-gray-500 mt-1">
         {todayId && <span className="mr-2">Today ID: {todayId}</span>}
         {bookId && <span>Book ID: {bookId}</span>}
       </div>
 
-      {/* 삭제 확인 모달 */}
+      {/* Delete confirmation modal */}
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={onCloseDeleteModal}
         onDelete={handleDelete}
       />
 
-      {/* 수정 모달 */}
+      {/* Edit modal */}
       <Modal isOpen={isEditModalOpen} onClose={onCloseEditModal}>
         <ModalContent>
           <ModalHeader className="flex flex-col gap-1 text-gray-700">메모 수정</ModalHeader>

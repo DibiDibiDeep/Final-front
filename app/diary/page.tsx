@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, X } from 'lucide-react';
+import { Button } from '@nextui-org/button';
+import { Input } from '@nextui-org/input';
+import { Calendar } from 'lucide-react';
 import CreateDiaryModal from '../modal/CreateDiaryModal';
 import DiaryDetailModal from '../modal/DiaryDetailModal';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -12,7 +16,9 @@ interface CreateDiaryModalProps {
     isOpen: boolean;
     onClose: () => void;
     onCreateDiary: (content: string) => Promise<void>;
+    selectedDate: string;
 }
+
 
 interface NoticeData {
     alimId: number | null;
@@ -53,7 +59,15 @@ interface FairyTale {
     }[];
 }
 
-const getFormattedDateTime = (date: Date): string => {
+const getFormattedDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getFormattedDateTime = (dateString: string): string => {
+    const date = new Date(dateString);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -73,15 +87,22 @@ const Card: React.FC<DiaryEntry & { onClick: () => void; onDelete: () => void }>
     const dateObj = new Date(date);
     const formattedDate = `${dateObj.getFullYear()}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getDate().toString().padStart(2, '0')}`;
 
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();  // 이벤트 버블링 방지
+        onClick();
+    };
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();  // 이벤트 버블링 방지
+        onDelete();
+    };
+
     return (
-        <div className="bg-white/70 shadow-md rounded-lg p-4 cursor-pointer mx-4 relative" onClick={onClick}>
+        <div className="bg-white/70 shadow-md rounded-lg p-4 cursor-pointer mx-4 relative" onClick={handleClick}>
             <h2 className="font-bold text-lg mb-2">{formattedDate}</h2>
             <p>{content?.length > 100 ? `${content.substring(0, 100)}...` : content}</p>
             <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                }}
+                onClick={handleDelete}
                 className="absolute top-2 right-2 text-red-500 hover:text-red-700"
             >
                 <X size={16} />
@@ -90,50 +111,41 @@ const Card: React.FC<DiaryEntry & { onClick: () => void; onDelete: () => void }>
     );
 };
 
-
-
-
 export default function DiaryPage() {
     const [entries, setEntries] = useState<DiaryEntry[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
     const [babyId, setBabyId] = useState<number | null>(null);
-    const [diaryData, setDiaryData] = useState<DiaryData | null>(null);
     const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
-    const [noticeData, setNoticeData] = useState<NoticeData>({
-        alimId: null,
-        userId: 0,
-        babyId: 0,
-        content: '',
-        date: ''
-    });
-
-    // entries 배열의 date를 로그로 출력하는 useEffect
-    useEffect(() => {
-        entries.forEach((entry) => {
-            console.log(entry.date); // date를 로그로 출력
-        });
-    }, [entries]); // entries가 변경될 때마다 실행
-
-
-    const todayEntry = useMemo(() => {
-        // 현재 날짜를 YYYY-MM-DD 형식으로 변환
-        const today = new Date();
-        const formattedToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-        return entries.find(entry => entry.date.startsWith(formattedToday));
-    }, [entries]);
-
+    const [selectedDate, setSelectedDate] = useState<string>(getFormattedDate(new Date()));
+    const [isEntryExistForSelectedDate, setIsEntryExistForSelectedDate] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            const parsedUserId = parseInt(storedUserId, 10);
-            setUserId(parsedUserId);
-            fetchUserDiaries(parsedUserId);
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+            try {
+                const decodedToken: any = jwtDecode(storedToken);
+                setToken(storedToken);
+                setUserId(decodedToken.userId);
+                console.log('Stored token:', storedToken); // 디버깅을 위한 로그
+            } catch (error) {
+                console.error('Error decoding token:', error);
+                setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
+            }
         } else {
-            console.error('User ID not found in localStorage');
+            setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
+        }
+    })
+
+    useEffect(() => {
+        if (userId) {
+            console.log('userId', userId);
+            fetchUserDiaries(userId);
+        } else {
+            console.error('User ID not found');
         }
 
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
@@ -143,10 +155,25 @@ export default function DiaryPage() {
                 setBabyId(selectedBaby.babyId);
             }
         }
-    }, []);
+    }, [userId]);
+
+    useEffect(() => {
+        const entryExistsForDate = entries.some(entry => entry.date.startsWith(selectedDate));
+        setIsEntryExistForSelectedDate(entryExistsForDate);
+    }, [selectedDate, entries]);
+
+    useEffect(() => {
+        console.log('selectedEntry updated:', selectedEntry);  // 디버깅을 위한 로그 추가
+    }, [selectedEntry]);
 
     const fetchUserDiaries = async (userIdParam: number) => {
+        if (!userId || !babyId) {
+            console.error('User ID or Baby ID is not available');
+            return;
+        }
+
         try {
+
             const start = getKoreanISOString(new Date(0)); // 1970년 1월 1일 00:00:00 (한국 시간)
             const end = getKoreanISOString(new Date()); // 현재 날짜와 시간 (한국 시간)
 
@@ -154,14 +181,17 @@ export default function DiaryPage() {
                 params: {
                     start: start,
                     end: end
+                },
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
             console.log('Fetched diaries:', response.data);
+            console.log('Fetched diaries:', response.data);
 
             const allEntries = response.data.map((entry: any) => ({
-                // date: getFormattedDateTime(new Date(entry.date)),
-                date: entry.date,
+                date: entry.date.split('T')[0], // 날짜 부분만 사용
                 content: entry.content,
                 alimId: entry.alimId
             }));
@@ -177,14 +207,15 @@ export default function DiaryPage() {
         }
     };
 
-    const handleCreateDiary = async (content: string) => {
-        const now = new Date();
-        const formattedDate = getFormattedDateTime(now);
 
+    const handleCreateDiary = async (content: string) => {
         if (!userId || !babyId) {
             console.error('User ID or Baby ID is not available');
             return;
         }
+
+        const formattedDate = getFormattedDateTime(selectedDate);
+        console.log('formattedDate', formattedDate);
 
         const newNoticeData: NoticeData = {
             alimId: null,
@@ -196,7 +227,10 @@ export default function DiaryPage() {
 
         try {
             const response = await axios.post(`${BACKEND_API_URL}/api/alims`, newNoticeData, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             console.log('Server response:', response.data);
@@ -208,27 +242,31 @@ export default function DiaryPage() {
                 console.error('Invalid server response:', response.data);
             }
 
-            setNoticeData({
-                ...newNoticeData,
-                alimId: response.data.alimId,
-                date: formattedDate
-            });
-
             setIsModalOpen(false);
         } catch (error) {
             console.error('Failed to create diary entry:', error);
+            if (axios.isAxiosError(error) && error.response) {
+                console.error('Error response:', error.response.data);
+            }
         }
     };
 
     const handleDeleteDiary = async (alimId: number) => {
+        if (!userId || !babyId) {
+            console.error('User ID or Baby ID is not available');
+            return;
+        }
+
         try {
             await axios.delete(`${BACKEND_API_URL}/api/alims/${alimId}`, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             setEntries(prevEntries => prevEntries.filter(entry => entry.alimId !== alimId));
             if (entries.length === 1) {
-                setDiaryData(null);
                 localStorage.removeItem('diaryData');
             }
         } catch (error) {
@@ -236,53 +274,61 @@ export default function DiaryPage() {
         }
     };
 
+    const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSelectedDate(event.target.value);
+    };
+
     const addEntry = () => {
-        if (!todayEntry) {
+        if (!isEntryExistForSelectedDate) {
             setIsModalOpen(true);
         }
     };
 
     const openDetailModal = (entry: DiaryEntry) => {
+        console.log('Opening detail modal with entry:', entry);  // 디버깅을 위한 로그 추가
         setSelectedEntry(entry);
-        setNoticeData({
-            alimId: entry.alimId,
-            userId: userId,
-            babyId: babyId,
-            content: entry.content,
-            date: entry.date
-        });
         setIsDetailModalOpen(true);
     };
 
     return (
         <div className="max-w-md mx-auto min-h-screen flex flex-col">
-            <div className="flex-grow flex flex-col justify-center items-center">
-                <div className="w-full space-y-4 text-gray-700 overflow-y-auto">
-                    <div className="flex justify-center mb-4">
-                        <button
-                            className={`flex items-center justify-center w-10 h-7 rounded-full transition-colors duration-200 ${todayEntry
-                                ? 'bg-gray-200 cursor-not-allowed'
-                                : 'bg-purple-100 hover:bg-purple-200'
-                                }`}
+            <div className="flex-grow flex flex-col justify-start items-center pt-8">
+                <div className="w-full space-y-8 text-gray-700 overflow-y-auto px-4">
+                    <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                        <Input
+                            type="date"
+                            value={selectedDate}
+                            onChange={handleDateChange}
+                            className="max-w-[180px] bg-white/70 rounded-full"
+                            startContent={<Calendar className="text-default-400 pointer-events-none flex-shrink-0" />}
+                        />
+                        <Button
                             onClick={addEntry}
-                            disabled={!!todayEntry}
+                            className={`${isEntryExistForSelectedDate ? 'bg-gray-300 text-gray-500' : 'bg-purple-100 hover:bg-purple-200 text-purple-600'} rounded-full`}
+                            disabled={isEntryExistForSelectedDate}
                         >
-                            <Plus size={24} className={todayEntry ? 'text-gray-500' : 'text-purple-600'} />
-                        </button>
+                            <Plus size={24} />
+                            새 다이어리 추가
+                        </Button>
                     </div>
                     {entries.length === 0 ? (
-                        <p className="text-xl text-white text-center">알림장이 없습니다.</p>
+                        <p className="text-xl text-white text-center mt-8">알림장이 없습니다.</p>
                     ) : (
-                        entries.map((entry, index) => (
-                            <Card
-                                key={index}
-                                date={entry.date}
-                                content={entry.content}
-                                alimId={entry.alimId}
-                                onClick={() => openDetailModal(entry)}
-                                onDelete={() => handleDeleteDiary(entry.alimId)}
-                            />
-                        ))
+                        <div className="space-y-4 mt-8">
+                            {entries.map((entry, index) => (
+                                <Card
+                                    key={index}
+                                    date={entry.date}
+                                    content={entry.content}
+                                    alimId={entry.alimId}
+                                    onClick={() => {
+                                        console.log('Card clicked:', entry);  // 디버깅을 위한 로그 추가
+                                        openDetailModal(entry);
+                                    }}
+                                    onDelete={() => handleDeleteDiary(entry.alimId)}
+                                />
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>
@@ -290,10 +336,14 @@ export default function DiaryPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onCreateDiary={handleCreateDiary}
+                selectedDate={selectedDate}
             />
             <DiaryDetailModal
                 isOpen={isDetailModalOpen}
-                onClose={() => setIsDetailModalOpen(false)}
+                onClose={() => {
+                    setIsDetailModalOpen(false);
+                    setSelectedEntry(null);  // 모달을 닫을 때 selectedEntry 초기화
+                }}
                 data={selectedEntry}
                 updateEntries={(updatedEntry) => {
                     setEntries(prevEntries =>
@@ -307,7 +357,7 @@ export default function DiaryPage() {
                     userId: userId,
                     babyId: babyId,
                     content: selectedEntry?.content ?? '',
-                    date: selectedEntry ? selectedEntry.date : ''
+                    date: selectedEntry?.date ?? ''
                 }}
             />
         </div>

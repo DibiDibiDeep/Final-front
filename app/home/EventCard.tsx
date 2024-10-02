@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, FaceSmileIcon, InformationCircleIcon, TagIcon } from '@heroicons/react/24/outline';
 import DeleteModal from '../modal/DeleteModal';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -27,12 +28,13 @@ const EventCard: React.FC<EventCardProps> = ({
   startTime,
   endTime,
   location,
-  target, // 새로 추가
+  target,
   information,
   notes,
   onEventDeleted,
   selectedDate
 }) => {
+  const { token, error: authError } = useAuth();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const router = useRouter();
 
@@ -49,15 +51,21 @@ const EventCard: React.FC<EventCardProps> = ({
   }
 
   const handleDelete = async () => {
+    if (!token) return;
     try {
-      await axios.delete(`${BACKEND_API_URL}/api/calendars/${id}`, {
-        headers: { 'Content-Type': 'application/json' }
+      await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${id}`, token, {
+        method: 'DELETE'
       });
       onEventDeleted();
+      handleCloseModal();
     } catch (error) {
       console.error('Error deleting event:', error);
     }
-  }
+    window.location.reload();
+  };
+
+
+
 
   const formatDateTimeForDisplay = (dateTime: string) => {
     const date = new Date(dateTime);
