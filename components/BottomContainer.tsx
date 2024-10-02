@@ -1,5 +1,3 @@
-// components/BottomContainer.tsx
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, ClipboardList, BookHeart, User, Plus, StickyNote, Scan, Mic, Calendar } from 'lucide-react';
@@ -52,7 +50,7 @@ const BottomContainer: React.FC = () => {
         const handleClickOutside = (event: MouseEvent) => {
             const optionsContainer = document.getElementById('options-container');
             if (optionsContainer && !optionsContainer.contains(event.target as Node)) {
-                closeOptions(); // Close the options when clicked outside
+                closeOptions();
             }
         };
 
@@ -133,18 +131,13 @@ const BottomContainer: React.FC = () => {
         </div>
     );
 
-
-
-
-
-
     return (
         <div className="fixed bottom-0 left-0 right-0 w-full h-[100px] z-30">
             {/* Overlay */}
             {showOptions && (
                 <div
                     className="fixed inset-0 bg-black opacity-50 z-20"
-                    onClick={closeOptions} // Close when the overlay is clicked
+                    onClick={closeOptions}
                 />
             )}
 
@@ -153,8 +146,8 @@ const BottomContainer: React.FC = () => {
                 <div className="w-full h-full flex items-center justify-around px-4 relative">
                     <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
                     <IconButton icon={ClipboardList} onClick={() => handleButtonClick('dairy', '/diary')} style={getButtonStyle('dairy')} />
-                    {renderActionButton()} {/* Render the action button only once */}
-                    {showOptions && renderOptions()} {/* Render options only if shown */}
+                    {renderActionButton()}
+                    {showOptions && renderOptions()}
                     <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />
                     <IconButton icon={User} onClick={() => handleButtonClick('profile', '/profile')} style={getButtonStyle('profile')} />
                 </div>
