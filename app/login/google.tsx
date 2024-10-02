@@ -14,31 +14,35 @@ export default function GoogleAuthLogin(): JSX.Element {
 
   useEffect(() => {
     console.log('GoogleAuthLogin: useEffect triggered');
+    checkCurrentUser();
+  }, [router]);
 
+  const checkCurrentUser = () => {
     const currentUser = getCurrentUser();
     console.log('Current user:', currentUser);
 
     if (currentUser) {
-      setUser(currentUser);
-      // router.push('/home');
+        setUser(currentUser);
+        router.push('/home'); // 로그인된 사용자가 있을 경우 홈으로 리다이렉션
     } else {
-      setIsLoading(false); // Set loading to false when no user is found
+        setIsLoading(false); // 사용자가 없으면 로딩 상태를 해제
     }
-  }, [router]);
+  };
 
   const handleGoogleLogin = async () => {
     console.log('Initiating Google login');
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/auth/google-url`);
-      if (!response.ok) {
-        throw new Error('Failed to get Google Auth URL');
-      }
-      const data = await response.json();
-      console.log('Received Google Auth URL:', data.url);
-      window.location.href = data.url;
+        const response = await fetch(`${BACKEND_API_URL}/api/auth/google-url`);
+        if (!response.ok) {
+            throw new Error('Failed to get Google Auth URL');
+        }
+        const data = await response.json();
+        console.log('Received Google Auth URL:', data.url);
+        window.location.href = data.url;
     } catch (err) {
-      console.error('Error in initiateGoogleLogin:', err);
-      setError('Google OAuth 설정을 가져오는 데 실패했습니다.');
+        console.error('Error in handleGoogleLogin:', err);
+        setError('Google OAuth 설정을 가져오는 데 실패했습니다.');
+        setIsLoading(false);
     }
   };
 

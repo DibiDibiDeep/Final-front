@@ -19,7 +19,8 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-o
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth'; // Auth 훅 가져오기
+import { useBabySelection } from '../../hooks/useBabySelection';
 import RecordModal from '../modal/RecordModal';
 
 
@@ -52,7 +53,7 @@ export default function Home() {
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
-
+    
     const router = useRouter();
 
     const {
@@ -71,6 +72,7 @@ export default function Home() {
 
     // 아이 정보 가져오기
     useEffect(() => {
+
         if (!token) return;
         console.log('home token', token);
         console.log('home userId', userId);
@@ -79,7 +81,7 @@ export default function Home() {
         }
     }, [token]);
 
-    // selectedBaby가 변경될 때마다 fetchEvents 호출
+// selectedBaby가 변경될 때마다 fetchEvents 호출
     useEffect(() => {
         if (!token) return;
         if (userId) {
@@ -154,6 +156,7 @@ export default function Home() {
             localStorage.removeItem('selectedBaby');
         }
     };
+                    
 
     // 메모 가져오기
     useEffect(() => {
