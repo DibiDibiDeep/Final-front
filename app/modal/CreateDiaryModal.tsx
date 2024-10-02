@@ -6,8 +6,10 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Texta
 interface CreateDiaryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateDiary: (content: string) => void;
+    onCreateDiary: (content: string) => Promise<void>;
+    selectedDate: string;
 }
+
 
 const CreateDiaryModal: React.FC<CreateDiaryModalProps> = ({ isOpen, onClose, onCreateDiary }) => {
     const [content, setContent] = useState('');

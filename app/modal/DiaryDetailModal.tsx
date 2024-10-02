@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import axios from 'axios';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
+import { jwtDecode } from 'jwt-decode';
+
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -59,92 +61,112 @@ interface FairyTale {
     }[];
 }
 
+const getFormattedDateTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 19); // "YYYY-MM-DDTHH:MM:SS" format
+};
+
 const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, data, updateEntries, noticeData }) => {
     const [content, setContent] = useState('');
     const [diaryData, setDiaryData] = useState<DiaryData | null>(null);
     const [alimData, setAlimData] = useState<AlimData | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [fairyTale, setFairyTale] = useState<FairyTale | null>(null);
     const [fairyTaleGenerated, setFairyTaleGenerated] = useState<boolean>(false);
+    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        if (data) {
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+            try {
+                // const decodedToken: any = jwtDecode(storedToken);
+                setToken(storedToken);
+                // setUserId(decodedToken.userId);
+                console.log('Stored token:', storedToken); // 디버깅을 위한 로그
+            } catch (error) {
+                console.error('Error decoding token:', error);
+                setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
+            }
+        } else {
+            setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
+        }
+    })
+
+    useEffect(() => {
+        if (data && isOpen) {
             setContent(data.content);
-            console.log("alimId", data.alimId);
             fetchDiaryData(data.alimId);
         }
-    }, [data]);
-
-    useEffect(() => {
-        console.log("fairyTaleGenerated actual state:", fairyTaleGenerated);
-    }, [fairyTaleGenerated]);
-
+    }, [data, isOpen]);
 
     const fetchDiaryData = async (alimId: number) => {
         setLoading(true);
         setError(null);
-        try {
-            console.log(`Fetching diary data for alimId: ${alimId}`);
-            let diaryResponse;
-            try {
-                diaryResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`);
-            } catch (diaryError) {
-                console.log('Failed to fetch diary data:', diaryError);
-                diaryResponse = null;
-            }
 
-            if (diaryResponse && diaryResponse.data && typeof diaryResponse.data === 'object' && Object.keys(diaryResponse.data).length > 0) {
-                console.log("Diary data exists and is valid");
-                console.log('Diary API Response:', diaryResponse.data);
+        try {
+            const diaryResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (diaryResponse.data && typeof diaryResponse.data === 'object' &&
+                Object.keys(diaryResponse.data).length > 0 &&
+                (diaryResponse.data.alimInfId || diaryResponse.data.diary)) {
+                console.log('Valid diary data found');
                 setDiaryData(diaryResponse.data);
                 setAlimData(null);
-            } else {
-                console.log("일기 데이터가 없거나 유효하지 않습니다. Alim 데이터를 가져옵니다.");
-                let alimResponse;
-                try {
-                    alimResponse = await axios.get(`${BACKEND_API_URL}/api/alims/${alimId}`);
-                } catch (alimError) {
-                    console.log('Failed to fetch alim data:', alimError);
-                    throw new Error("Alim 데이터를 가져오는 데 실패했습니다.");
-                }
+                return; // 유효한 데이터를 찾았으므로 함수 종료
+            }
+            console.log('No valid diary data found, will attempt to fetch alim data');
+        } catch (diaryError) {
+            console.error('Error fetching diary data:', diaryError);
+            console.log('Will attempt to fetch alim data instead');
+        } finally {
+            setLoading(false);
+        }
 
-                if (alimResponse && alimResponse.data && typeof alimResponse.data === 'object' && Object.keys(alimResponse.data).length > 0) {
-                    console.log("Alim data fetched successfully");
-                    console.log('Alim API Response:', alimResponse.data);
-                    setAlimData(alimResponse.data);
-                    setDiaryData(null);
-                } else {
-                    throw new Error("유효한 Alim 데이터를 받지 못했습니다.");
+        // Diary 데이터 fetch 실패 또는 유효하지 않은 경우 alim 데이터 fetch 시도
+        try {
+            console.log('Attempting to fetch alim data');
+            const alimResponse = await axios.get(`${BACKEND_API_URL}/api/alims/${alimId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-            }
-        } catch (error) {
-            console.error('Failed to fetch data:', error);
-            if (axios.isAxiosError(error)) {
-                if (error.response?.status === 404) {
-                    setError('알림장 정보를 찾을 수 없습니다.');
-                    console.log('알림장 정보를 찾을 수 없습니다.');
-                } else {
-                    setError(`데이터를 가져오는 데 실패했습니다. (${error.response?.status || '알 수 없는 오류'})`);
-                }
+            });
+            console.log('Alim response received');
+            console.log('Alim response:', JSON.stringify(alimResponse.data, null, 2));
+
+            if (alimResponse.data && typeof alimResponse.data === 'object' &&
+                Object.keys(alimResponse.data).length > 0 &&
+                (alimResponse.data.alimId || alimResponse.data.content)) {
+                console.log('Valid alim data fetched');
+                setAlimData(alimResponse.data);
+                setDiaryData(null);
             } else {
-                setError('데이터를 가져오는 데 실패했습니다.');
+                console.log('No valid alim data found');
+                throw new Error("유효한 데이터를 받지 못했습니다.");
             }
+        } catch (alimError) {
+            console.error('Error fetching alim data:', alimError);
+            setError('데이터를 가져오는 데 실패했습니다.');
             setDiaryData(null);
             setAlimData(null);
         } finally {
             setLoading(false);
         }
+
         checkFairyTaleStatus(alimId);
     };
 
+
     const checkFairyTaleStatus = async (alimId: number) => {
         try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`);
-            console.log("checkFairyTaleStatus", response.data);
-            const newStatus = response.data.status === "COMPLETED";
-            setFairyTaleGenerated(newStatus);
-            console.log("fairyTaleGenerated set to:", newStatus);
+            const response = await axios.get(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setFairyTaleGenerated(response.data.status === "COMPLETED");
         } catch (error) {
             console.error('Failed to check fairy tale status:', error);
             setFairyTaleGenerated(false);
@@ -161,11 +183,16 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
 
     const handleTempSave = async () => {
         try {
+            const formattedDate = getFormattedDateTime(noticeData.date);
             await axios.put(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, {
                 userId: noticeData.userId,
                 babyId: noticeData.babyId,
                 content: content,
-                date: noticeData.date
+                date: formattedDate
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
             updateEntries({ ...data!, content: content });
             onClose();
@@ -180,27 +207,27 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         setError(null);
 
         try {
-            let alimId = data!.alimId;
-
+            const formattedDate = getFormattedDateTime(noticeData.date);
             const alimInfData = {
-                alimId: alimId,
+                alimId: data!.alimId,
                 userId: noticeData.userId,
                 babyId: noticeData.babyId,
                 content: content,
-                date: noticeData.date,
+                date: formattedDate,
                 sendToML: true,
             };
 
-            console.log("alimInfData", alimInfData);
+            await axios.post(`${BACKEND_API_URL}/api/alims`, alimInfData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-            const response = await axios.post(`${BACKEND_API_URL}/api/alims`, alimInfData);
-            console.log("Created AlimInf:", response.data);
-
-            // Fetch updated diary data
-            await fetchDiaryData(alimId);
+            // 일기 생성 후 즉시 데이터를 다시 가져옵니다.
+            await fetchDiaryData(data!.alimId);
 
             updateEntries({
-                alimId: alimId,
+                alimId: data!.alimId,
                 content: content,
                 date: noticeData.date
             });
@@ -213,25 +240,25 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     };
 
     const handleCreateFairyTale = async () => {
-        onClose();
         setLoading(true);
         setError(null);
-        setFairyTale(null);
 
         try {
-            // 동화 생성
-            const response = await axios.post<FairyTale>(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, diaryData);
-            setFairyTale(response.data);
+            await axios.post(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, diaryData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             setFairyTaleGenerated(true);
         } catch (err) {
-            setError('동화를 생성하거나 저장하는 중 오류가 발생했습니다.');
+            setError('동화를 생성하는 중 오류가 발생했습니다.');
             console.error('Error:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    if (!isOpen || !data) return null;
+    if (!isOpen) return null;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
@@ -259,7 +286,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                             value={alimData.content}
                             onChange={handleContentChange}
                             placeholder="알림장 내용"
-                            rows={4}
+                            minRows={4}
                         />
                     ) : (
                         <p>데이터를 불러오는 데 실패했습니다.</p>
@@ -268,10 +295,10 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                 <ModalFooter>
                     {!diaryData && alimData && (
                         <>
-                            <Button color="default" variant="light" onPress={handleTempSave}>
+                            <Button color="default" variant="light" onPress={handleTempSave} isDisabled={loading}>
                                 임시 저장
                             </Button>
-                            <Button color="primary" onPress={handleCreateDiary}>
+                            <Button color="primary" onPress={handleCreateDiary} isDisabled={loading}>
                                 일기 생성
                             </Button>
                         </>
@@ -282,7 +309,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                                 동화 생성됨
                             </Button>
                         ) : (
-                            <Button color="primary" onPress={handleCreateFairyTale}>
+                            <Button color="primary" onPress={handleCreateFairyTale} isDisabled={loading}>
                                 동화 생성
                             </Button>
                         )

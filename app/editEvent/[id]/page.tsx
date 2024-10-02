@@ -7,6 +7,8 @@ import Image from 'next/image';
 import Calendar from '@/app/calendarapp/Calendar';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -28,15 +30,22 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    // const [token, setToken] = useState<string | null>(null);
+    const { token, userId, error: authError } = useAuth();
 
     useEffect(() => {
+        console.log('token', token);
+        if (!token) return;
+
         const fetchEvent = async () => {
             try {
-                const response = await axios.get(`${BACKEND_API_URL}/api/calendars/${params.id}`);
-                const startTime = new Date(response.data.startTime);
-                const endTime = new Date(response.data.endTime);
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${params.id}`, token, {
+                    method: 'GET',
+                });
+                const startTime = new Date(response.startTime);
+                const endTime = new Date(response.endTime);
                 setEventData({
-                    ...response.data,
+                    ...response,
                     startTime: formatDateTimeForInput(startTime),
                     endTime: formatDateTimeForInput(endTime)
                 });
@@ -48,7 +57,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         };
 
         fetchEvent();
-    }, [params.id]);
+    }, [params.id, token]);
 
     const formatDateTimeForInput = (date: Date) => {
         // 한국 시간을 포맷팅 (YYYY-MM-DDTHH:mm)으로 변환
@@ -58,11 +67,6 @@ export default function EditEvent({ params }: { params: { id: string } }) {
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-
-    const formatDateTimeForMySQL = (dateTimeString: string) => {
-        const date = new Date(dateTimeString);
-        return date.toISOString().slice(0, 19).replace('T', ' ');
     };
 
     const toKoreanTime = (date: Date) => {
@@ -103,13 +107,17 @@ export default function EditEvent({ params }: { params: { id: string } }) {
 
 
     const handleUpdateEvent = async () => {
+        if (token == null) return;
         setIsLoading(true);
         setError('');
         try {
             const updatedEventData = {
                 ...eventData,
             };
-            await axios.put(`${BACKEND_API_URL}/api/calendars/${params.id}`, updatedEventData);
+            await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${params.id}`, token, {
+                method: 'PUT',
+                body: updatedEventData
+            });
             router.push('/home');
         } catch (error) {
             console.error('Failed to update event:', error);
@@ -121,6 +129,10 @@ export default function EditEvent({ params }: { params: { id: string } }) {
 
     const handleGoToMain = () => {
         router.push('/home');
+    }
+
+    if (token == null) {
+        return <div>Loading...</div>;
     }
 
     return (

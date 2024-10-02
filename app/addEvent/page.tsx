@@ -5,8 +5,10 @@ import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
 import Calendar from '../calendarapp/Calendar';
-import axios from 'axios';
 import { debounce } from 'lodash';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
+
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -17,8 +19,6 @@ interface Baby {
 
 export default function AddPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [userId, setUserId] = useState<number | null>(null);
-    const [babyId, setBabyId] = useState<number | null>(null);
     const [title, setTitle] = useState<string>('');
     const [startTime, setStartTime] = useState<string>('');
     const [endTime, setEndTime] = useState<string>('');
@@ -26,35 +26,8 @@ export default function AddPage() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-
-    useEffect(() => {
-        // localStorage에서 userId를 가져오기
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId, 10));
-
-        }
-
-        // console.log("jwt id", storedUserId);
-        // console.log("jwt email", localStorage.getItem('userEmail'));
-        // console.log("jwt name", localStorage.getItem('userName'));
-
-        // localStorage에서 선택된 아이 가져오기
-        const storedSelectedBaby = localStorage.getItem('selectedBaby');
-        if (storedSelectedBaby) {
-            const selectedBaby = JSON.parse(storedSelectedBaby);
-
-            if (selectedBaby != null) {
-                setBabyId(selectedBaby.babyId);
-                console.log("selectedBaby", selectedBaby);
-            } else {
-                console.log("No baby information found.");
-            }
-        } else {
-            console.log("No stored baby information found.");
-        }
-
-    }, []);
+    const { token, userId, error: authError } = useAuth();
+    const { babyId } = useBabySelection();
 
     useEffect(() => {
         updateDateTimes(new Date());
@@ -123,6 +96,9 @@ export default function AddPage() {
     const debouncedSubmit = debounce(handleSubmit, 300); // 일정 시간 내 중복 클릭 방지 (중복 제출 방지)
 
     const handleSubmitData = async () => {
+        console.log(token);
+        if (token == null) return;
+
         setError(null);
 
         const eventData = {
@@ -137,10 +113,13 @@ export default function AddPage() {
         console.log("eventData", eventData);
 
         try {
-            const response = await axios.post(`${BACKEND_API_URL}/api/calendars`, eventData, {
-                headers: { 'Content-Type': 'application/json' }
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars`, token, {
+                method: 'POST',
+                body: eventData
             });
-            console.log(response.data);
+
+
+            console.log(response);  // fetchWithAuth는 이미 response.json()을 수행했으므로 .data가 필요 없습니다
             router.push('/home');
         } catch (error) {
             console.error('Error sending event data:', error);

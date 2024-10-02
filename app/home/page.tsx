@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import axios from 'axios';
-import { Search, MessageCircle, ChevronLeft} from 'lucide-react';
+import { Search, MessageCircle, ChevronLeft } from 'lucide-react';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
@@ -17,6 +17,8 @@ import CreateMemoModal from '../modal/CreateModal';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 import RecordModal from '../modal/RecordModal';
 
 
@@ -42,11 +44,13 @@ export default function Home() {
     const [isExpanded, setIsExpanded] = useState(true);
     const [calendarVisible, setCalendarVisible] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [userId, setUserId] = useState<number | null>(null);
+    // const [userId, setUserId] = useState<number | null>(null);
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
+    const { token, userId, error: authError } = useAuth();
+    const { babyId } = useBabySelection();
 
     const router = useRouter();
 
@@ -65,48 +69,47 @@ export default function Home() {
     } = useBottomContainer();
 
 
-    // 사용자 ID 로드
-    useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId, 10));
-        }
-    }, []);
-
     // 아이 정보 가져오기
     useEffect(() => {
+        if (token == null) return;
+        console.log('home token', token);
+        console.log('home userId', userId);
         if (userId) {
             fetchBabiesInfo(userId);
         }
-    }, [userId]);
+    }, [token]);
 
     useEffect(() => {
+        if (token == null) return;
         if (userId) {
             fetchEvents();
         }
-    }, [userId]);
+    }, [userId, token]);
 
     const fetchBabiesInfo = async (userId: number) => {
+        if (!token) return;
         try {
-            const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
-            if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-                const fetchedBabies: Baby[] = await Promise.all(userResponse.data.map(async (baby: any) => {
-                    const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+                method: 'GET'
+            });
+            if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
+                const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+                        method: 'GET',
+                    });
                     return {
                         userId: baby.userId,
                         babyId: baby.babyId,
                         babyName: baby.babyName,
-                        photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
+                        photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
                     };
                 }));
 
                 setBabies(fetchedBabies);
 
                 // localStorage에서 저장된 선택된 아이 정보 확인
-                const storedSelectedBaby = localStorage.getItem('selectedBaby');
-                if (storedSelectedBaby) {
-                    const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
-                    const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
+                if (babyId) {
+                    const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
                     if (foundBaby) {
                         setSelectedBaby(foundBaby);
                         setBabyPhoto(foundBaby.photoUrl);
@@ -135,17 +138,17 @@ export default function Home() {
     // 메모 가져오기
     useEffect(() => {
         const fetchMemos = async () => {
-            if (!userId) return;
+            if (!token) return;
 
             try {
                 const formattedDate = formatDateForBackend(selectedDate);
                 console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
-                const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, {
-                    headers: { 'Content-Type': 'application/json' }
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, token, {
+                    method: 'GET',
                 });
-                console.log('Backend response for Memos:', response.data);
-                if (Array.isArray(response.data)) {
-                    const fetchedMemos: Memo[] = response.data.map((memo: any) => ({
+                console.log('Backend response for Memos:', response);
+                if (Array.isArray(response)) {
+                    const fetchedMemos: Memo[] = response.map((memo: any) => ({
                         memoId: memo.memoId,
                         userId: memo.userId,
                         todayId: memo.todayId,
@@ -155,7 +158,7 @@ export default function Home() {
                     }));
                     setMemos(fetchedMemos);
                 } else {
-                    console.error('Unexpected response format for memos:', response.data);
+                    console.error('Unexpected response format for memos:', response);
                     setMemos([]);
                 }
             } catch (error) {
@@ -168,13 +171,13 @@ export default function Home() {
 
     // 이벤트 가져오기
     const fetchEvents = async () => {
-        if (!userId) return;
+        if (!token) return;
         try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/calendars/user/${userId}`, {
-                headers: { 'Content-Type': 'application/json' }
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}`, token, {
+                method: 'GET',
             });
-            console.log('Backend response:', response.data);
-            const fetchedEvents: Event[] = response.data.map((event: any) => ({
+            console.log('Backend response:', response);
+            const fetchedEvents: Event[] = response.map((event: any) => ({
                 id: event.calendarId,
                 title: event.title,
                 startTime: event.startTime,
@@ -283,10 +286,10 @@ export default function Home() {
 
         const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
         const matchesSearch =
-        (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||  // Safely access title
-        (event.location?.toLowerCase().includes(searchTerm.toLowerCase()) || '');  // Safely access location
+            (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||  // Safely access title
+            (event.location?.toLowerCase().includes(searchTerm.toLowerCase()) || '');  // Safely access location
 
-    return (isOverlapping || searchTerm !== '') && matchesSearch;
+        return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
 
     // UI 관련 효과
@@ -299,15 +302,8 @@ export default function Home() {
     // 렌더링
     return (
         <div className="h-screen flex flex-col items-center">
-            <div className="w-full max-w-md mt-8 flex justify-between items-center px-4">
+            <div className="w-full max-w-md mt-8 flex justify-between items-center px-4 gap-4">
                 <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
-                    {/* 뒤로 가기 버튼 */}
-                    <button
-                    onClick={handleBackClick}
-                    className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
-                    >
-                    <ChevronLeft size={24} color="#6B46C1" />
-                    </button>
                     <Dropdown>
                         <DropdownTrigger>
                             <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
@@ -316,10 +312,11 @@ export default function Home() {
                                     alt="Baby Photo"
                                     width={45}
                                     height={45}
-                                    className="rounded-full object-cover object-center"
+                                    className="rounded-full object-cover object-center w-[45px] h-[45px]"
                                 />
                             </button>
                         </DropdownTrigger>
+
                         <DropdownMenu aria-label="Baby Selection">
                             {babies.map((baby) => (
                                 <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
@@ -351,11 +348,12 @@ export default function Home() {
                         <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
                     </div>
                 </div>
+
                 <button
                     className="w-[45px] h-[45px] rounded-full overflow-hidden"
                     onClick={handleCheckNotice}
                 >
-                    <Image src="/img/button/notice.png" alt='공지 확인' width={45} height={45} className="w-full h-full object-cover" />
+                    <Image src="/img/button/notice.png" alt="공지 확인" width={45} height={45} className="w-full h-full object-cover" />
                 </button>
             </div>
             {calendarVisible && (
@@ -366,7 +364,7 @@ export default function Home() {
                         className="fixed bottom-100 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"
                     >
                         <MessageCircle size={24} />
-            </button>
+                    </button>
                 </div>
             )}
             <MainContainer
