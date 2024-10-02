@@ -1,52 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Home, ClipboardList, Scan, BookHeart, User, Plus, LucideIcon } from 'lucide-react';
-import { useBottomContainer } from '@/contexts/BottomContainerContext';
-import axios from 'axios';
+// components/BottomContainer.tsx
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+import React, { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Home, ClipboardList, BookHeart, User, Plus, StickyNote, Scan, Mic, Calendar } from 'lucide-react';
+import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 interface IconButtonProps {
-    icon: LucideIcon;
+    icon: React.ElementType;
     onClick: () => void;
     style: string;
     size?: number;
     color?: string;
-    onLongPress?: () => void;
 }
 
-const IconButton: React.FC<IconButtonProps> = React.memo(({ icon: Icon, onClick, style, size = 24, color, onLongPress }) => {
-    const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-
-    const handleMouseDown = () => {
-        if (onLongPress) {
-            const timer = setTimeout(() => {
-                onLongPress();
-            }, 500); // 500ms for long press
-            setPressTimer(timer);
-        }
-    };
-
-    const handleMouseUp = () => {
-        if (pressTimer) {
-            clearTimeout(pressTimer);
-            setPressTimer(null);
-        }
-    };
-
-    return (
-        <button
-            className={style}
-            onClick={onClick}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onTouchStart={handleMouseDown}
-            onTouchEnd={handleMouseUp}
-        >
-            <Icon size={size} color={color} />
-        </button>
-    );
-});
+const IconButton: React.FC<IconButtonProps> = React.memo(({ icon: Icon, onClick, style, size = 24, color }) => (
+    <button className={style} onClick={onClick}>
+        <Icon size={size} color={color} />
+    </button>
+));
 
 IconButton.displayName = 'IconButton';
 
@@ -57,169 +28,136 @@ const BottomContainer: React.FC = () => {
         setActiveView,
         handleAddSchedule,
         handleCreateMemo,
-        handleVoiceRecord
+        handleVoiceRecord,
+        handleScanButtonClick
     } = useBottomContainer();
-    const [userId, setUserId] = useState<number | null>(null);
-    const [babyId, setBabyId] = useState<number | null>(null);
 
-    useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId, 10));
-        }
-
-        const storedSelectedBaby = localStorage.getItem('selectedBaby');
-        if (storedSelectedBaby) {
-            const selectedBaby = JSON.parse(storedSelectedBaby);
-            if (selectedBaby != null) {
-                setBabyId(selectedBaby.babyId);
-            }
-        }
-    }, []);
+    const [showOptions, setShowOptions] = useState(false);
 
     const handleButtonClick = useCallback((buttonName: string, path: string) => {
-        setActiveView(buttonName as 'home' | 'todo' | 'memo' | 'dairy' | 'story' | 'profile');
+        setActiveView(buttonName as 'home' | 'dairy' | 'story' | 'profile');
         router.push(path);
     }, [router, setActiveView]);
 
-    const handleScanButtonClick = useCallback(() => {
-        if (userId && babyId) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.style.display = 'none';
-            input.onchange = async (event: Event) => {
-                const target = event.target as HTMLInputElement;
-                const files = target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    console.log('선택된 파일:', file.name);
-                    await uploadImage(file, userId, babyId);
-                }
-            };
-            document.body.appendChild(input);
-            input.click();
-            document.body.removeChild(input);
-        }
-    }, [userId, babyId]);
-
-
-
-    const uploadImage = async (file: File, userId: number, babyId: number) => {
-        const formData = new FormData();
-
-        formData.append('file', file);
-        formData.append('userId', userId.toString());
-        formData.append('babyId', babyId.toString());
-
-        // ISO 8601 형식으로 현재 날짜 및 시간 추가
-        const currentDate = new Date().toISOString();
-        formData.append('date', currentDate);
-        try {
-            console.log('Sending request with formData:', Object.fromEntries(formData));
-            const response = await axios.post(`${BACKEND_API_URL}/api/calendar-photos`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-
-            console.log('서버 응답:', response);
-
-            if (response.data && response.data.filePath) {
-                console.log('이미지 업로드 성공:', response.data);
-                const imageUrl = response.data.filePath;
-                console.log('이미지 URL:', imageUrl);
-
-                // const result = await processImage({ imageUrl, userId, babyId });
-                // console.log("결과 : ", result);
-
-                // 결과를 로컬 스토리지에 저장
-                localStorage.setItem('calendarData', JSON.stringify(imageUrl));
-
-                // 결과 페이지로 이동
-                // router.push('/calendarResult');
-            } else {
-                console.error('서버 응답에 filePath가 없습니다:', response.data);
-                throw new Error('Invalid server response');
-            }
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                // console.error('Axios 에러:', error.response?.data || error.message);
-                // if (error.response) {
-                //     console.error('에러 상태:', error.response.status);
-                //     console.error('에러 데이터:', error.response.data);
-                // }
-            } else {
-                console.error('알 수 없는 에러:', error);
-            }
-            throw error; // 에러를 상위로 전파
-        }
-
+    const toggleOptions = () => {
+        setShowOptions(!showOptions);
     };
+
+    const closeOptions = () => {
+        setShowOptions(false);
+    };
+
+    // Effect for closing the options when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const optionsContainer = document.getElementById('options-container');
+            if (optionsContainer && !optionsContainer.contains(event.target as Node)) {
+                closeOptions(); // Close the options when clicked outside
+            }
+        };
+
+        if (showOptions) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showOptions]);
 
     const getButtonStyle = useCallback((buttonName: string): string => {
         if (buttonName === 'action') {
             return `p-4 rounded-full bg-purple-600 absolute -top-8 shadow-lg`;
         }
-
-        if (buttonName === 'home' && (activeView === 'todo' || activeView === 'memo')) {
-            return "p-2 rounded-full bg-purple-600 text-white"; // Active style for home icon
-        }
-
         return activeView === buttonName
             ? "p-2 rounded-full bg-purple-600 text-white"
             : "p-2 text-primary";
     }, [activeView]);
 
-    const renderActionButton = () => {
-        switch (activeView) {
-            case 'home':
-            case 'dairy':
-            case 'story':
-            case 'profile':
-                return (
+    const renderActionButton = () => (
+        <IconButton
+            icon={Plus}
+            onClick={toggleOptions}
+            style={getButtonStyle('action')}
+            size={32}
+            color="white"
+        />
+    );
+
+    const renderOptions = () => (
+        <div
+            id="options-container"
+            className={`absolute bottom-10 left-1/2 transform -translate-x-1/2 w-[200px] h-[200px] bg-white rounded-full shadow-lg flex justify-center items-center p-8 transition-transform transition-opacity duration-300 ease-out 
+        ${showOptions ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+        >
+            <div className="relative w-[160px] h-[160px]">
+                <div className="flex flex-col items-center absolute top-0 left-1/2 transform -translate-x-1/2">
                     <IconButton
                         icon={Scan}
-                        onClick={handleScanButtonClick}
-                        style={getButtonStyle('action')}
-                        size={32}
-                        color="white"
+                        onClick={() => { handleScanButtonClick(); setShowOptions(false); }}
+                        style="p-2 rounded-full bg-violet-400 text-white"
+                        size={24}
                     />
-                );
-            case 'todo':
-                return (
+                    <span className="text-xs text-center text-gray-700 mt-1">스캔</span>
+                </div>
+                <div className="flex flex-col items-center absolute top-1/2 left-0 transform -translate-y-1/2 -translate-x-1/2">
                     <IconButton
-                        icon={Plus}
-                        onClick={handleAddSchedule}
-                        style={getButtonStyle('action')}
-                        size={32}
-                        color="white"
+                        icon={Calendar}
+                        onClick={() => { handleAddSchedule(); setShowOptions(false); }}
+                        style="p-2 rounded-full bg-violet-500 text-white"
+                        size={24}
                     />
-                );
-            case 'memo':
-                return (
+                    <span className="text-xs text-center text-gray-700 mt-1">일정</span>
+                </div>
+                <div className="flex flex-col items-center absolute bottom-0 left-1/2 transform -translate-x-1/2">
                     <IconButton
-                        icon={Plus}
-                        onClick={handleCreateMemo}
-                        onLongPress={handleVoiceRecord}
-                        style={getButtonStyle('action')}
-                        size={32}
-                        color="white"
+                        icon={StickyNote}
+                        onClick={() => { handleCreateMemo(); setShowOptions(false); }} // Trigger handleCreateMemo but no navigation
+                        style="p-2 rounded-full bg-purple-400 text-white"
+                        size={24}
                     />
-                );
-            default:
-                return null;
-        }
-    };
+                    <span className="text-xs text-center text-gray-700 mt-1">메모</span>
+                </div>
+                <div className="flex flex-col items-center absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2">
+                    <IconButton
+                        icon={Mic}
+                        onClick={() => { handleVoiceRecord(); setShowOptions(false); }}
+                        style="p-2 rounded-full bg-purple-500 text-white"
+                        size={24}
+                    />
+                    <span className="text-xs text-center text-gray-700 mt-1">음성 메모</span>
+                </div>
+            </div>
+        </div>
+    );
+
+
+
+
+
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 w-full h-[100px] bg-white bg-opacity-40 backdrop-blur-md border-t-2 border-white shadow-md rounded-[40px] z-30">
-            <div className="w-full h-full flex items-center justify-around px-4 relative">
-                <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
-                <IconButton icon={ClipboardList} onClick={() => handleButtonClick('dairy', '/diary')} style={getButtonStyle('dairy')} />
-                {renderActionButton()}
-                <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />
-                <IconButton icon={User} onClick={() => handleButtonClick('profile', '/profile')} style={getButtonStyle('profile')} />
+        <div className="fixed bottom-0 left-0 right-0 w-full h-[100px] z-30">
+            {/* Overlay */}
+            {showOptions && (
+                <div
+                    className="fixed inset-0 bg-black opacity-50 z-20"
+                    onClick={closeOptions} // Close when the overlay is clicked
+                />
+            )}
+
+            {/* Bottom Container */}
+            <div className="relative w-full h-full bg-white bg-opacity-40 backdrop-blur-md border-t-2 border-white shadow-md rounded-[40px] z-30">
+                <div className="w-full h-full flex items-center justify-around px-4 relative">
+                    <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
+                    <IconButton icon={ClipboardList} onClick={() => handleButtonClick('dairy', '/diary')} style={getButtonStyle('dairy')} />
+                    {renderActionButton()} {/* Render the action button only once */}
+                    {showOptions && renderOptions()} {/* Render options only if shown */}
+                    <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />
+                    <IconButton icon={User} onClick={() => handleButtonClick('profile', '/profile')} style={getButtonStyle('profile')} />
+                </div>
             </div>
         </div>
     );

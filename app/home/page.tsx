@@ -9,6 +9,7 @@ import { Search, MessageCircle, ChevronLeft } from 'lucide-react';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
+import BottomContainer from '@/components/BottomContainer';
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
 import Calendar from '../calendarapp/Calendar';
@@ -64,13 +65,13 @@ export default function Home() {
         handleAddSchedule: contextHandleAddSchedule,
         handleCreateMemo: contextHandleCreateMemo,
         handleVoiceRecord: contextHandleVoiceRecord,
-        saveVoiceRecord
+        handleScanButtonClick
     } = useBottomContainer();
 
 
     // 아이 정보 가져오기
     useEffect(() => {
-        if (token == null) return;
+        if (!token) return;
         console.log('home token', token);
         console.log('home userId', userId);
         if (userId) {
@@ -80,14 +81,33 @@ export default function Home() {
 
     // selectedBaby가 변경될 때마다 fetchEvents 호출
     useEffect(() => {
-        if (token == null) return;
+        if (!token) return;
         if (userId) {
             fetchEvents();
         }
-    }, [userId, token]);
+    }, [userId, token, selectedBaby]);
+
+    const isTokenValid = (token: string): boolean => {
+        if (!token) return false;
+
+        // 토큰의 두 번째 부분(페이로드)을 디코딩
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        // 토큰 페이로드 파싱
+        const { exp } = JSON.parse(jsonPayload);
+
+        // 현재 시간이 만료 시간보다 적으면 유효
+        const currentTime = Math.floor(Date.now() / 1000);
+        return exp > currentTime;
+    };
 
     const fetchBabiesInfo = async (userId: number) => {
         if (!token) return;
+        console.log('isTokenValid', isTokenValid(token));
         try {
             const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
                 method: 'GET'
@@ -138,12 +158,11 @@ export default function Home() {
     // 메모 가져오기
     useEffect(() => {
         const fetchMemos = async () => {
-            if (!token) return;
-
+            if (!token || !userId || !selectedBaby) return;
             try {
                 const formattedDate = formatDateForBackend(selectedDate);
                 console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
-                const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                     method: 'GET',
                 });
                 console.log('Backend response for Memos:', response);
@@ -172,7 +191,8 @@ export default function Home() {
 
     // 이벤트 가져오기
     const fetchEvents = async () => {
-        if (!token) return;
+        if (!token || !userId || !selectedBaby) return;
+        console.log(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`);
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                 method: 'GET',
@@ -194,8 +214,9 @@ export default function Home() {
         } catch (error) {
             console.error('Failed to fetch events:', error);
         }
-    };
-    }, [selectedDate, userId, selectedBaby]);
+    }
+
+    // }, [selectedDate, userId, selectedBaby]);
 
     // 이벤트 핸들러
     const handleCheckNotice = () => {
@@ -311,6 +332,13 @@ export default function Home() {
 
         return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
+
+    const saveVoiceRecord = (audioBlob: Blob) => {
+        console.log('Audio recorded:', audioBlob);
+        console.log('userId', userId, 'babyId', babyId);
+        setIsVoiceRecordModalOpen(false);
+        // 저장 로직 구현 필요
+    };
 
     // UI 관련 효과
     useEffect(() => {
@@ -463,6 +491,8 @@ export default function Home() {
                     )}
                 </div>
             </MainContainer>
+            <BottomContainer />
+
             <CreateMemoModal
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}
