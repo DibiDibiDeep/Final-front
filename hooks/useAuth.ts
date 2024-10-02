@@ -3,12 +3,16 @@ import { jwtDecode } from 'jwt-decode';
 
 interface DecodedToken {
     userId: number;
-    // 필요한 다른 토큰 필드들을 여기에 추가하세요
+    email: string;
+    name: string;
 }
 
 interface SelectedBaby {
     babyId: number;
-    // 필요한 다른 아기 정보 필드들을 여기에 추가하세요
+    babyName: string;
+    userId: number;
+    gender: string
+    birth: number;
 }
 
 export const useAuth = () => {

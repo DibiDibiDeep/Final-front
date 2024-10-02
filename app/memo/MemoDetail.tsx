@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
-import { Memo } from '@/types/index';
 import DeleteModal from '../modal/DeleteModal';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchWithAuth } from '@/utils/api';

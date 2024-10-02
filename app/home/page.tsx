@@ -18,7 +18,8 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-o
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth'; // Auth 훅 가져오기
+import { useBabySelection } from '../../hooks/useBabySelection';
 import RecordModal from '../modal/RecordModal';
 
 
@@ -51,7 +52,7 @@ export default function Home() {
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
-
+    
     const router = useRouter();
 
     const {
@@ -70,80 +71,98 @@ export default function Home() {
 
     // 아이 정보 가져오기
     useEffect(() => {
-        if (token == null) return;
+        // if (token == null) return;
         console.log('home token', token);
         console.log('home userId', userId);
         if (userId) {
             fetchBabiesInfo(userId);
         }
-    }, [token]);
-
-    // selectedBaby가 변경될 때마다 fetchEvents 호출
-    useEffect(() => {
-        if (token == null) return;
-        if (userId) {
-            fetchEvents();
-        }
     }, [userId, token]);
 
-    const fetchBabiesInfo = async (userId: number) => {
-        if (!token) return;
-        try {
-            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
-                method: 'GET'
-            });
-            if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
-                const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
-                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
-                        method: 'GET',
-                    });
-                    return {
-                        userId: baby.userId,
-                        babyId: baby.babyId,
-                        babyName: baby.babyName,
-                        photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
-                    };
-                }));
+   // selectedBaby가 변경될 때마다 fetchEvents 호출
+   useEffect(() => {
+    if (!token) return;
+    if (userId) {
+        fetchEvents();
+    }
+}, [userId, token, selectedBaby]);
 
-                setBabies(fetchedBabies);
+const isTokenValid = (token: string): boolean => {
+    if (!token) return false;
 
-                // localStorage에서 저장된 선택된 아이 정보 확인
-                if (babyId) {
-                    const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
-                    if (foundBaby) {
-                        setSelectedBaby(foundBaby);
-                        setBabyPhoto(foundBaby.photoUrl);
-                    } else {
-                        // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
-                        setSelectedBaby(fetchedBabies[0]);
-                        setBabyPhoto(fetchedBabies[0].photoUrl);
-                        localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
-                    }
+    // 토큰의 두 번째 부분(페이로드)을 디코딩
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    // 토큰 페이로드 파싱
+    const { exp } = JSON.parse(jsonPayload);
+
+    // 현재 시간이 만료 시간보다 적으면 유효
+    const currentTime = Math.floor(Date.now() / 1000);
+    return exp > currentTime;
+};
+
+const fetchBabiesInfo = async (userId: number) => {
+    if (!token) return;
+    console.log('isTokenValid', isTokenValid(token));
+    try {
+        const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+            method: 'GET'
+        });
+        if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
+            const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
+                const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+                    method: 'GET',
+                });
+                return {
+                    userId: baby.userId,
+                    babyId: baby.babyId,
+                    babyName: baby.babyName,
+                    photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
+                };
+            }));
+
+            setBabies(fetchedBabies);
+
+            // localStorage에서 저장된 선택된 아이 정보 확인
+            if (babyId) {
+                const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
+                if (foundBaby) {
+                    setSelectedBaby(foundBaby);
+                    setBabyPhoto(foundBaby.photoUrl);
                 } else {
-                    // 저장된 선택 정보가 없으면 첫 번째 아이 선택
+                    // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
                     setSelectedBaby(fetchedBabies[0]);
                     setBabyPhoto(fetchedBabies[0].photoUrl);
                     localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
                 }
             } else {
-                console.log("No baby information found for this user.");
-                localStorage.removeItem('selectedBaby');
+                // 저장된 선택 정보가 없으면 첫 번째 아이 선택
+                setSelectedBaby(fetchedBabies[0]);
+                setBabyPhoto(fetchedBabies[0].photoUrl);
+                localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
             }
-        } catch (error) {
-            console.error('Failed to fetch baby information:', error);
+        } else {
+            console.log("No baby information found for this user.");
             localStorage.removeItem('selectedBaby');
         }
-    };
+    } catch (error) {
+        console.error('Failed to fetch baby information:', error);
+        localStorage.removeItem('selectedBaby');
+    }
+};
 
     // 메모 가져오기
     useEffect(() => {
         const fetchMemos = async () => {
-            if (!token) return;
-
+            if (!token || !userId || !selectedBaby) return;
             try {
                 const formattedDate = formatDateForBackend(selectedDate);
                 console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
-                const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                     method: 'GET',
                 });
                 console.log('Backend response for Memos:', response);
@@ -172,7 +191,8 @@ export default function Home() {
 
     // 이벤트 가져오기
     const fetchEvents = async () => {
-        if (!token) return;
+        if (!token || !userId || !selectedBaby) return;
+        console.log(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`);
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                 method: 'GET',
@@ -194,8 +214,9 @@ export default function Home() {
         } catch (error) {
             console.error('Failed to fetch events:', error);
         }
-    };
-    }, [selectedDate, userId, selectedBaby]);
+    }
+
+    // }, [selectedDate, userId, selectedBaby]);
 
     // 이벤트 핸들러
     const handleCheckNotice = () => {
