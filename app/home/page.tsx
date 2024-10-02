@@ -9,6 +9,7 @@ import { Search, MessageCircle, ChevronLeft } from 'lucide-react';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
+import BottomContainer from '@/components/BottomContainer';
 import DetailedContainer from "@/components/DetailedContainer";
 import EventCard from "./EventCard";
 import Calendar from '../calendarapp/Calendar';
@@ -65,95 +66,97 @@ export default function Home() {
         handleAddSchedule: contextHandleAddSchedule,
         handleCreateMemo: contextHandleCreateMemo,
         handleVoiceRecord: contextHandleVoiceRecord,
-        saveVoiceRecord
+        handleScanButtonClick
     } = useBottomContainer();
 
 
     // 아이 정보 가져오기
     useEffect(() => {
-        // if (token == null) return;
+
+        if (!token) return;
         console.log('home token', token);
         console.log('home userId', userId);
         if (userId) {
             fetchBabiesInfo(userId);
         }
-    }, [userId, token]);
+    }, [token]);
 
-   // selectedBaby가 변경될 때마다 fetchEvents 호출
-   useEffect(() => {
-    if (!token) return;
-    if (userId) {
-        fetchEvents();
-    }
-}, [userId, token, selectedBaby]);
+// selectedBaby가 변경될 때마다 fetchEvents 호출
+    useEffect(() => {
+        if (!token) return;
+        if (userId) {
+            fetchEvents();
+        }
+    }, [userId, token, selectedBaby]);
 
-const isTokenValid = (token: string): boolean => {
-    if (!token) return false;
+    const isTokenValid = (token: string): boolean => {
+        if (!token) return false;
 
-    // 토큰의 두 번째 부분(페이로드)을 디코딩
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+        // 토큰의 두 번째 부분(페이로드)을 디코딩
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
 
-    // 토큰 페이로드 파싱
-    const { exp } = JSON.parse(jsonPayload);
+        // 토큰 페이로드 파싱
+        const { exp } = JSON.parse(jsonPayload);
 
-    // 현재 시간이 만료 시간보다 적으면 유효
-    const currentTime = Math.floor(Date.now() / 1000);
-    return exp > currentTime;
-};
+        // 현재 시간이 만료 시간보다 적으면 유효
+        const currentTime = Math.floor(Date.now() / 1000);
+        return exp > currentTime;
+    };
 
-const fetchBabiesInfo = async (userId: number) => {
-    if (!token) return;
-    console.log('isTokenValid', isTokenValid(token));
-    try {
-        const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
-            method: 'GET'
-        });
-        if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
-            const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
-                const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
-                    method: 'GET',
-                });
-                return {
-                    userId: baby.userId,
-                    babyId: baby.babyId,
-                    babyName: baby.babyName,
-                    photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
-                };
-            }));
+    const fetchBabiesInfo = async (userId: number) => {
+        if (!token) return;
+        console.log('isTokenValid', isTokenValid(token));
+        try {
+            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+                method: 'GET'
+            });
+            if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
+                const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+                        method: 'GET',
+                    });
+                    return {
+                        userId: baby.userId,
+                        babyId: baby.babyId,
+                        babyName: baby.babyName,
+                        photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
+                    };
+                }));
 
-            setBabies(fetchedBabies);
+                setBabies(fetchedBabies);
 
-            // localStorage에서 저장된 선택된 아이 정보 확인
-            if (babyId) {
-                const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
-                if (foundBaby) {
-                    setSelectedBaby(foundBaby);
-                    setBabyPhoto(foundBaby.photoUrl);
+                // localStorage에서 저장된 선택된 아이 정보 확인
+                if (babyId) {
+                    const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
+                    if (foundBaby) {
+                        setSelectedBaby(foundBaby);
+                        setBabyPhoto(foundBaby.photoUrl);
+                    } else {
+                        // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
+                        setSelectedBaby(fetchedBabies[0]);
+                        setBabyPhoto(fetchedBabies[0].photoUrl);
+                        localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                    }
                 } else {
-                    // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
+                    // 저장된 선택 정보가 없으면 첫 번째 아이 선택
                     setSelectedBaby(fetchedBabies[0]);
                     setBabyPhoto(fetchedBabies[0].photoUrl);
                     localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
                 }
             } else {
-                // 저장된 선택 정보가 없으면 첫 번째 아이 선택
-                setSelectedBaby(fetchedBabies[0]);
-                setBabyPhoto(fetchedBabies[0].photoUrl);
-                localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                console.log("No baby information found for this user.");
+                localStorage.removeItem('selectedBaby');
             }
-        } else {
-            console.log("No baby information found for this user.");
+        } catch (error) {
+            console.error('Failed to fetch baby information:', error);
             localStorage.removeItem('selectedBaby');
         }
-    } catch (error) {
-        console.error('Failed to fetch baby information:', error);
-        localStorage.removeItem('selectedBaby');
-    }
-};
+    };
+                    
 
     // 메모 가져오기
     useEffect(() => {
@@ -333,6 +336,13 @@ const fetchBabiesInfo = async (userId: number) => {
         return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
 
+    const saveVoiceRecord = (audioBlob: Blob) => {
+        console.log('Audio recorded:', audioBlob);
+        console.log('userId', userId, 'babyId', babyId);
+        setIsVoiceRecordModalOpen(false);
+        // 저장 로직 구현 필요
+    };
+
     // UI 관련 효과
     useEffect(() => {
         setCalendarVisible(isExpanded);
@@ -484,6 +494,8 @@ const fetchBabiesInfo = async (userId: number) => {
                     )}
                 </div>
             </MainContainer>
+            <BottomContainer />
+
             <CreateMemoModal
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}
