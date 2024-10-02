@@ -64,7 +64,6 @@ export default function Home() {
         handleAddSchedule: contextHandleAddSchedule,
         handleCreateMemo: contextHandleCreateMemo,
         handleVoiceRecord: contextHandleVoiceRecord,
-        createMemo,
         saveVoiceRecord
     } = useBottomContainer();
 
@@ -79,6 +78,7 @@ export default function Home() {
         }
     }, [token]);
 
+    // selectedBaby가 변경될 때마다 fetchEvents 호출
     useEffect(() => {
         if (token == null) return;
         if (userId) {
@@ -142,8 +142,8 @@ export default function Home() {
 
             try {
                 const formattedDate = formatDateForBackend(selectedDate);
-                console.log('Fetching memos for date:', formattedDate, 'and userId:', userId);
-                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/date/${formattedDate}`, token, {
+                console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
+                const response = await axios.get(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                     method: 'GET',
                 });
                 console.log('Backend response for Memos:', response);
@@ -151,6 +151,7 @@ export default function Home() {
                     const fetchedMemos: Memo[] = response.map((memo: any) => ({
                         memoId: memo.memoId,
                         userId: memo.userId,
+                        babyId: selectedBaby.babyId,
                         todayId: memo.todayId,
                         bookId: memo.bookId,
                         date: memo.date,
@@ -173,12 +174,14 @@ export default function Home() {
     const fetchEvents = async () => {
         if (!token) return;
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                 method: 'GET',
             });
             console.log('Backend response:', response);
             const fetchedEvents: Event[] = response.map((event: any) => ({
                 id: event.calendarId,
+                babyId: selectedBaby.babyId,
+                userId: userId,
                 title: event.title,
                 startTime: event.startTime,
                 endTime: event.endTime,
@@ -192,6 +195,7 @@ export default function Home() {
             console.error('Failed to fetch events:', error);
         }
     };
+    }, [selectedDate, userId, selectedBaby]);
 
     // 이벤트 핸들러
     const handleCheckNotice = () => {
@@ -215,16 +219,32 @@ export default function Home() {
     };
 
     const handleCreateMemo = async (content: string) => {
-        if (!userId) {
-            console.error('User ID is not available');
+        if (!userId || !selectedBaby) {
+            console.error('User ID or Selected Baby is not available');
             return;
         }
 
         try {
-            const newMemo = await createMemo(content);
-            if (newMemo) {
-                setMemos(prevMemos => [newMemo, ...prevMemos]);
-            }
+            const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
+                userId,
+                babyId: selectedBaby.babyId,
+                date: new Date().toISOString(),
+                content: content,
+                todayId: null,
+                bookId: null
+            });
+
+            const newMemo: Memo = {
+                memoId: response.data.memoId,
+                userId: response.data.userId,
+                babyId: selectedBaby.babyId,
+                todayId: response.data.todayId,
+                bookId: response.data.bookId,
+                date: response.data.date,
+                content: response.data.content
+            };
+
+            setMemos(prevMemos => [newMemo, ...prevMemos]);
             setIsCreateMemoModalOpen(false);
         } catch (error) {
             console.error('Failed to create memo:', error);

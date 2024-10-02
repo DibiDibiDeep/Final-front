@@ -3,20 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { Memo } from '@/types/index';
 import DeleteModal from '../modal/DeleteModal';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchWithAuth } from '@/utils/api';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
-
-
-type Memo = {
-  memoId: number;
-  userId: number;
-  todayId: number | null;
-  bookId: number | null;
-  date: string;
-  content: string;
-};
+import { Memo } from '@/types/index';
 
 interface MemoDetailProps {
   memoId: number;
