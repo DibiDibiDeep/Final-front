@@ -20,7 +20,6 @@ interface BottomContainerContextType {
     setIsCreateMemoModalOpen: (isOpen: boolean) => void;
     isVoiceRecordModalOpen: boolean;
     setIsVoiceRecordModalOpen: (isOpen: boolean) => void;
-    createMemo: (content: string) => Promise<Memo | null>;
     saveVoiceRecord: (audioBlob: Blob) => void;
 }
 
@@ -44,6 +43,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
     const [isVoiceRecordModalOpen, setIsVoiceRecordModalOpen] = useState(false);
     const [userId, setUserId] = useState<number | null>(null);
     const [babyId, setBabyId] = useState<number | null>(null);
+    const [selectedBaby, setSelectedBaby] = useState<{ babyId: number } | null>(null);
 
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -53,13 +53,12 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
 
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
         if (storedSelectedBaby) {
-            const selectedBaby = JSON.parse(storedSelectedBaby);
-
-            if (selectedBaby != null) {
-                setBabyId(selectedBaby.babyId);
-                console.log("selectedBaby", selectedBaby);
+            const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
+            if (parsedSelectedBaby && parsedSelectedBaby.babyId) {
+                setSelectedBaby(parsedSelectedBaby);
+                console.log("selectedBaby", parsedSelectedBaby);
             } else {
-                console.log("No baby information found.");
+                console.log("No valid baby information found.");
             }
         } else {
             console.log("No stored baby information found.");
@@ -95,28 +94,6 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
         router.push('/profile');
     };
 
-    const createMemo = async (content: string): Promise<Memo | null> => {
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-            console.error('User ID is not available');
-            return null;
-        }
-
-        try {
-            const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
-                userId: parseInt(userId),
-                date: new Date().toISOString(),
-                content: content,
-                todayId: null,
-                bookId: null
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Failed to create memo:', error);
-            return null;
-        }
-    };
-
     const saveVoiceRecord = (audioBlob: Blob) => {
         console.log('Audio recorded:', audioBlob);
         console.log('userId', userId, 'babyId', babyId);
@@ -139,7 +116,6 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
                 setIsCreateMemoModalOpen,
                 isVoiceRecordModalOpen,
                 setIsVoiceRecordModalOpen,
-                createMemo,
                 saveVoiceRecord,
             }}
         >

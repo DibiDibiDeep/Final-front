@@ -3,18 +3,10 @@
 import React, { useState } from 'react';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { Memo } from '@/types/index';
 import DeleteModal from '../modal/DeleteModal';
 import axios from 'axios';
 
-// Memo 타입 정의
-type Memo = {
-  memoId: number;
-  userId: number;
-  todayId: number | null;
-  bookId: number | null;
-  date: string;
-  content: string;
-};
 
 interface MemoDetailProps {
   memoId: number;
