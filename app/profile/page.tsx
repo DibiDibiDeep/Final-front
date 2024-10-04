@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, Baby, Minus } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { removeAuthToken } from '@/utils/authUtils';
+import DeleteBabyModal from '../modal/DeleteBaby';
 
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection  } from '@/hooks/useAuth';
@@ -27,6 +28,9 @@ const MyPage: React.FC = () => {
     const [currentBabyIndex, setCurrentBabyIndex] = useState(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [token, setToken] = useState<string | null>(null);
+    const [isDeleteBabyModalOpen, setDeleteBabyModalOpen] = useState(false);
+    const [selectedBabyForDelete, setSelectedBabyForDelete] = useState<Baby | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -91,6 +95,41 @@ const MyPage: React.FC = () => {
         router.push(`/initialSettings`);
     };
 
+    // 아이 삭제
+    const handleDelete = (baby: Baby) => {
+        setSelectedBabyForDelete(baby);
+        setDeleteBabyModalOpen(true);
+    }
+
+    const handleDeleteBaby = async () => {
+        if(!userId || !selectedBabyForDelete) {
+            console.log('User ID or Baby ID is not available');
+            return;
+        }
+        try {
+            await axios.delete(`${BACKEND_API_URL}/api/baby/${selectedBabyForDelete.babyId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            setBabies((prevBabies: Baby[]) => {
+                const newBabies = prevBabies.filter(baby => baby.babyId !== selectedBabyForDelete.babyId);
+                if (newBabies.length > 0 && currentBabyIndex >= newBabies.length) {
+                    setCurrentBabyIndex(newBabies.length - 1);
+                }
+                return newBabies;
+            });
+            setDeleteBabyModalOpen(false);
+        } catch (error) {
+            console.log("아이정보 삭제 실패", error);
+            alert('아이 정보 삭제에 실패했습니다. 다시 시도해 주세요.');
+        }
+    }
+
+
+    // 로그아웃
     const handleLogout = () => {
         removeAuthToken();
         router.push('/login');
@@ -172,20 +211,25 @@ const MyPage: React.FC = () => {
                                 <ChevronRight size={24} />
                             </button>
                         </div>
-                    ) : (
-                        <p className="text-center text-gray-500">No child profiles found.</p>
-                    )}
-                </div>
+                        ) : (
+                            <p className="text-center text-gray-500">No child profiles found.</p>
+                        )}
+                        <DeleteBabyModal
+                            isOpen={isDeleteBabyModalOpen}
+                            onClose={() => setDeleteBabyModalOpen(false)}
+                            onDelete={handleDeleteBaby}
+                        />
+                    </div>
 
-                <div className="mt-4 w-full">
-                    <button
-                        onClick={handleAddBaby}
-                        className="flex items-center justify-center w-full py-2 px-4 border border-primary rounded-lg transition-colors duration-300 ease-in-out hover:bg-primary group"
-                    >
-                        <span className="text-primary group-hover:text-white">아이 추가하기</span>
-                    </button>
-                </div>
 
+                    <div className="mt-4 w-full">
+                        <button
+                            onClick={handleAddBaby}
+                            className="flex items-center justify-center w-full py-2 px-4 border border-primary rounded-lg transition-colors duration-300 ease-in-out hover:bg-primary group"
+                        >
+                            <span className="text-primary group-hover:text-white">아이 추가하기</span>
+                        </button>
+                    </div>
                 <div className="mt-4 w-full">
                     <button
                         onClick={handleLogout}
