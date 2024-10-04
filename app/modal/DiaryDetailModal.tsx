@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import axios from 'axios';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
-import { jwtDecode } from 'jwt-decode';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection  } from '@/hooks/useAuth';
+
+const { token, userId, error: authError } = useAuth();
+const { babyId } = useBabySelection();
 
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
@@ -104,11 +107,8 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         setError(null);
 
         try {
-            const diaryResponse = await axios.get(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            if (!token) return;
+            const diaryResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, token, {method: 'GET'});
             if (diaryResponse.data && typeof diaryResponse.data === 'object' &&
                 Object.keys(diaryResponse.data).length > 0 &&
                 (diaryResponse.data.alimInfId || diaryResponse.data.diary)) {
@@ -128,11 +128,8 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         // Diary 데이터 fetch 실패 또는 유효하지 않은 경우 alim 데이터 fetch 시도
         try {
             console.log('Attempting to fetch alim data');
-            const alimResponse = await axios.get(`${BACKEND_API_URL}/api/alims/${alimId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            if (!token) return;
+            const alimResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, {method: 'GET'});
             console.log('Alim response received');
             console.log('Alim response:', JSON.stringify(alimResponse.data, null, 2));
 
@@ -161,11 +158,8 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
 
     const checkFairyTaleStatus = async (alimId: number) => {
         try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            if (!token) return;
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, token, {method: 'GET'});
             setFairyTaleGenerated(response.data.status === "COMPLETED");
         } catch (error) {
             console.error('Failed to check fairy tale status:', error);
@@ -184,15 +178,15 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     const handleTempSave = async () => {
         try {
             const formattedDate = getFormattedDateTime(noticeData.date);
-            await axios.put(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, {
-                userId: noticeData.userId,
-                babyId: noticeData.babyId,
-                content: content,
-                date: formattedDate
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            if (!token) return;
+            await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, token, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    userId: noticeData.userId,
+                    babyId: noticeData.babyId,
+                    content: content,
+                    date: formattedDate
+                }),
             });
             updateEntries({ ...data!, content: content });
             onClose();
@@ -217,10 +211,10 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                 sendToML: true,
             };
 
-            await axios.post(`${BACKEND_API_URL}/api/alims`, alimInfData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            if (!token) return;
+            await fetchWithAuth(`${BACKEND_API_URL}/api/alims`, token, {
+                method: 'POST',
+                body: JSON.stringify(alimInfData),
             });
 
             // 일기 생성 후 즉시 데이터를 다시 가져옵니다.
@@ -244,10 +238,10 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         setError(null);
 
         try {
-            await axios.post(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, diaryData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            if (!token) return;
+            await fetchWithAuth(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, token, {
+                method: 'POST',
+                body: JSON.stringify(diaryData),
             });
             setFairyTaleGenerated(true);
         } catch (err) {

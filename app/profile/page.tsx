@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import Image from 'next/image';
 import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { removeAuthToken } from '@/utils/authUtils';
+
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection  } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -19,7 +21,8 @@ interface Baby {
 }
 
 const MyPage: React.FC = () => {
-    const [userId, setUserId] = useState<number | null>(null);
+    const { token, userId, error: authError } = useAuth();
+    const { babyId } = useBabySelection();
     const [babies, setBabies] = useState<Baby[]>([]);
     const [currentBabyIndex, setCurrentBabyIndex] = useState(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -27,20 +30,13 @@ const MyPage: React.FC = () => {
     const router = useRouter();
 
     useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId, 10));
-        } else {
-            setError('User ID not found. Please log in again.');
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
         if (userId) {
             fetchBabiesInfo(userId);
+        } else if (authError) {
+            setError('User authentication failed. Please log in again.');
+            setIsLoading(false);
         }
-    }, [userId]);
+    }, [userId, authError]);
 
     const formatBirthDate = (dateString: string): string => {
         const date = new Date(dateString);
@@ -54,10 +50,11 @@ const MyPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
+            if (!token) return;
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {method: 'GET'});
             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(response.data.map(async (baby: any) => {
-                    const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {method: 'GET'});
                     return {
                         userId: baby.userId,
                         babyId: baby.babyId,
@@ -96,7 +93,6 @@ const MyPage: React.FC = () => {
 
     const handleLogout = () => {
         removeAuthToken();
-        localStorage.removeItem('userId');
         router.push('/login');
     };
 

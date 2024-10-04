@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import Image from 'next/image';
 import Calendar from '@/app/calendarapp/Calendar';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
