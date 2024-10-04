@@ -84,12 +84,6 @@ const DummyChatInterface: React.FC = () => {
     }
 
     try {
-      // await axios.post(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {}, {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-
       await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, token, {
         method: 'POST',
       });

@@ -8,7 +8,6 @@ import { Calendar } from 'lucide-react';
 import CreateDiaryModal from '../modal/CreateDiaryModal';
 import DiaryDetailModal from '../modal/DiaryDetailModal';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
