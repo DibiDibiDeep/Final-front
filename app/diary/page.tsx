@@ -9,6 +9,8 @@ import CreateDiaryModal from '../modal/CreateDiaryModal';
 import DiaryDetailModal from '../modal/DiaryDetailModal';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -115,30 +117,19 @@ export default function DiaryPage() {
     const [entries, setEntries] = useState<DiaryEntry[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [userId, setUserId] = useState<number | null>(null);
-    const [babyId, setBabyId] = useState<number | null>(null);
     const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(getFormattedDate(new Date()));
     const [isEntryExistForSelectedDate, setIsEntryExistForSelectedDate] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const { token, userId, error: authError } = useAuth();
+    const { babyId } = useBabySelection();
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken) {
-            try {
-                const decodedToken: any = jwtDecode(storedToken);
-                setToken(storedToken);
-                setUserId(decodedToken.userId);
-                console.log('Stored token:', storedToken); // 디버깅을 위한 로그
-            } catch (error) {
-                console.error('Error decoding token:', error);
-                setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
-            }
-        } else {
-            setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
-        }
-    })
+        if (!token) return;
+        console.log('chatbot page token: ', token);
+        console.log('chatbot page userId: ', userId);
+        console.log('chatbot page babyId:', babyId);
+    }, [token]);
 
     useEffect(() => {
         if (userId) {
@@ -146,14 +137,6 @@ export default function DiaryPage() {
             fetchUserDiaries(userId);
         } else {
             console.error('User ID not found');
-        }
-
-        const storedSelectedBaby = localStorage.getItem('selectedBaby');
-        if (storedSelectedBaby) {
-            const selectedBaby = JSON.parse(storedSelectedBaby);
-            if (selectedBaby != null) {
-                setBabyId(selectedBaby.babyId);
-            }
         }
     }, [userId]);
 
@@ -167,8 +150,8 @@ export default function DiaryPage() {
     }, [selectedEntry]);
 
     const fetchUserDiaries = async (userIdParam: number) => {
-        if (!userId || !babyId) {
-            console.error('User ID or Baby ID is not available');
+        if (!token || !userId || !babyId) {
+            console.error('Token or User ID or Baby ID is not available');
             return;
         }
 
@@ -177,20 +160,24 @@ export default function DiaryPage() {
             const start = getKoreanISOString(new Date(0)); // 1970년 1월 1일 00:00:00 (한국 시간)
             const end = getKoreanISOString(new Date()); // 현재 날짜와 시간 (한국 시간)
 
-            const response = await axios.get(`${BACKEND_API_URL}/api/alims/user/${userIdParam}`, {
-                params: {
-                    start: start,
-                    end: end
-                },
-                headers: {
-                    'Authorization': `Bearer ${token}`
+            const url = new URL(`${BACKEND_API_URL}/api/alims/user/${userIdParam}`);
+            url.searchParams.append('start', start);
+            url.searchParams.append('end', end);
+            console.log('Request URL:', url.toString()); // URL 확인을 위한 로그
+
+            const response = await fetchWithAuth(
+                url.toString(),
+                token,
+                {
+                    method: 'GET',
+                    timeout: 10000, // 10초 타임아웃 설정 (필요에 따라 조정 가능)
                 }
-            });
+            );
 
-            console.log('Fetched diaries:', response.data);
-            console.log('Fetched diaries:', response.data);
 
-            const allEntries = response.data.map((entry: any) => ({
+            console.log('Fetched diaries:', response);
+
+            const allEntries = response.map((entry: any) => ({
                 date: entry.date.split('T')[0], // 날짜 부분만 사용
                 content: entry.content,
                 alimId: entry.alimId
@@ -209,7 +196,7 @@ export default function DiaryPage() {
 
 
     const handleCreateDiary = async (content: string) => {
-        if (!userId || !babyId) {
+        if (!token || !userId || !babyId) {
             console.error('User ID or Baby ID is not available');
             return;
         }
@@ -226,43 +213,37 @@ export default function DiaryPage() {
         };
 
         try {
-            const response = await axios.post(`${BACKEND_API_URL}/api/alims`, newNoticeData, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/alims`, token, {
+                method: 'POST',
+                body: newNoticeData
             });
 
-            console.log('Server response:', response.data);
+            console.log('Server response:', response);
 
-            if (response.data && response.data.alimId) {
+            if (response && response.alimId) {
                 await fetchUserDiaries(userId);
                 setIsModalOpen(false);
             } else {
-                console.error('Invalid server response:', response.data);
+                console.error('Invalid server response:', response);
             }
 
             setIsModalOpen(false);
         } catch (error) {
             console.error('Failed to create diary entry:', error);
             if (axios.isAxiosError(error) && error.response) {
-                console.error('Error response:', error.response.data);
+                console.error('Error response:', error.response);
             }
         }
     };
 
     const handleDeleteDiary = async (alimId: number) => {
-        if (!userId || !babyId) {
+        if (!token || !userId || !babyId) {
             console.error('User ID or Baby ID is not available');
             return;
         }
-
         try {
-            await axios.delete(`${BACKEND_API_URL}/api/alims/${alimId}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+            await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, {
+                method: 'DELETE'
             });
 
             setEntries(prevEntries => prevEntries.filter(entry => entry.alimId !== alimId));
@@ -272,6 +253,7 @@ export default function DiaryPage() {
         } catch (error) {
             console.error('Failed to delete diary entry:', error);
         }
+        window.location.reload();
     };
 
     const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -19,8 +19,7 @@ import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-o
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '../../hooks/useAuth'; // Auth 훅 가져오기
-import { useBabySelection } from '../../hooks/useBabySelection';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 import RecordModal from '../modal/RecordModal';
 
 
@@ -30,10 +29,6 @@ const formatDateForBackend = (date: Date) => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-};
-
-const formatDateTimeForDisplay = (date: Date): string => {
-    return date.toISOString().slice(0, 19).replace('Z', '');
 };
 
 // 환경 변수

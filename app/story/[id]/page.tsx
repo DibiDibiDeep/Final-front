@@ -139,7 +139,7 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
 
     return (
         <div className="flex flex-col min-h-screen p-8 pb-32">
-            <h1 className="text-xl font-bold text-center text-white mb-4">{storyData.title}</h1>
+            <h1 className="text-xl font-bold text-center text-gray-700 mb-4">{storyData.title}</h1>
 
             <div className="flex-grow flex flex-col justify-center items-center">
                 <div className={`transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>

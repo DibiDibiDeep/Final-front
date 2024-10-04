@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import StoryCard from './StoryCard';
 import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -90,6 +92,7 @@ export default function StoryCardGrid() {
     const [books, setBooks] = useState<Book[] | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const user = getCurrentUser();
@@ -137,11 +140,19 @@ export default function StoryCardGrid() {
     }
 
     return (
-        <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
-            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">Your Favorite Stories</h1>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
-                <StoryCardList books={books} onDelete={handleDelete} />
+        <div>
+            <div className="fixed top-[37px] left-0 w-full">
+                <div className="flex items-center w-full max-w-[90%] sm:max-w-md p-4 mx-auto">
+                    <h1 className="text-2xl font-bold text-gray-700 text-center flex-grow mb-0"> {/* Ensure no bottom margin */}
+                        내 동화
+                    </h1>
+                </div>
             </div>
-        </main>
+            <main className="container mb-[100px]"> {/* Set padding top and bottom to 0 */}
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
+                    <StoryCardList books={books} onDelete={handleDelete} />
+                </div>
+            </main>
+        </div>
     );
 }
