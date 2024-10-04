@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Image from 'next/image';
-import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, Baby, Minus } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import CommonContainer from '@/components/CommonContainer';
 import { removeAuthToken } from '@/utils/authUtils';
+import DeleteBabyModal from '../modal/DeleteBaby';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -25,6 +26,9 @@ const MyPage: React.FC = () => {
     const [currentBabyIndex, setCurrentBabyIndex] = useState(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [token, setToken] = useState<string | null>(null);
+    const [isDeleteBabyModalOpen, setDeleteBabyModalOpen] = useState(false);
+    const [selectedBabyForDelete, setSelectedBabyForDelete] = useState<Baby | null>(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -96,6 +100,41 @@ const MyPage: React.FC = () => {
         router.push(`/initialSettings`);
     };
 
+    // 아이 삭제
+    const handleDelete = (baby: Baby) => {
+        setSelectedBabyForDelete(baby);
+        setDeleteBabyModalOpen(true);
+    }
+
+    const handleDeleteBaby = async () => {
+        if(!userId || !selectedBabyForDelete) {
+            console.log('User ID or Baby ID is not available');
+            return;
+        }
+        try {
+            await axios.delete(`${BACKEND_API_URL}/api/baby/${selectedBabyForDelete.babyId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            setBabies((prevBabies: Baby[]) => {
+                const newBabies = prevBabies.filter(baby => baby.babyId !== selectedBabyForDelete.babyId);
+                if (newBabies.length > 0 && currentBabyIndex >= newBabies.length) {
+                    setCurrentBabyIndex(newBabies.length - 1);
+                }
+                return newBabies;
+            });
+            setDeleteBabyModalOpen(false);
+        } catch (error) {
+            console.log("아이정보 삭제 실패", error);
+            alert('아이 정보 삭제에 실패했습니다. 다시 시도해 주세요.');
+        }
+    }
+
+
+    // 로그아웃
     const handleLogout = () => {
         console.log('Logging out...');
         removeAuthToken(); // Clear the auth token
@@ -149,7 +188,6 @@ const MyPage: React.FC = () => {
                                 </button>
                                 <div
                                     className="flex-shrink-0 w-40 flex flex-col items-center cursor-pointer mx-12"
-                                    onClick={() => handleChildClick(currentBaby)}
                                 >
                                     <div className="w-40 h-40 bg-transparent rounded-full overflow-hidden border-2 border-white mb-3">
                                         <Image
@@ -158,7 +196,18 @@ const MyPage: React.FC = () => {
                                             width={160}
                                             height={160}
                                             className="object-cover w-full h-full rounded-full"
+                                            onClick={() => handleChildClick(currentBaby)}
                                         />
+                                        
+                                        <button
+                                            className="absolute top-32 right-10 w-8 h-8 bg-violet-500 backdrop-blur-xl shadow-lg border-1 border-white rounded-full flex items-center justify-center cursor-pointer"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(currentBaby);
+                                            }}
+                                        >
+                                            <Minus size={16} className="text-white text-xl"/>
+                                        </button>
                                     </div>
                                     <p className="text-lg font-bold text-center text-gray-600">{currentBaby.babyName}</p>
                                     <p className="text-md text-center text-gray-600 mt-4">{formatBirthDate(currentBaby.birth)}</p>
@@ -174,6 +223,11 @@ const MyPage: React.FC = () => {
                         ) : (
                             <p className="text-center text-gray-500">No child profiles found.</p>
                         )}
+                        <DeleteBabyModal
+                            isOpen={isDeleteBabyModalOpen}
+                            onClose={() => setDeleteBabyModalOpen(false)}
+                            onDelete={handleDeleteBaby}
+                        />
                     </div>
 
 
