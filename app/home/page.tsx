@@ -5,22 +5,23 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import axios from 'axios';
-import { Search, MessageCircle, ChevronLeft } from 'lucide-react';
+import { Search, MessageCircle } from 'lucide-react';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
 import BottomContainer from '@/components/BottomContainer';
 import DetailedContainer from "@/components/DetailedContainer";
+import Calendar from '@/app/calendarapp/Calendar';
+import MemoDetail from '@/app/memo/MemoDetail';
+import CreateMemoModal from '@/app/modal/CreateModal';
+import RecordModal from '@/app/modal/RecordModal';
 import EventCard from "./EventCard";
-import Calendar from '../calendarapp/Calendar';
-import MemoDetail from '../memo/MemoDetail';
-import CreateMemoModal from '../modal/CreateModal';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
-import RecordModal from '../modal/RecordModal';
+
 
 
 // 유틸리티 함수
@@ -41,7 +42,6 @@ export default function Home() {
     const [isExpanded, setIsExpanded] = useState(true);
     const [calendarVisible, setCalendarVisible] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    // const [userId, setUserId] = useState<number | null>(null);
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
@@ -413,7 +413,11 @@ export default function Home() {
             </div>
             {calendarVisible && (
                 <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
-                    <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+                    <Calendar
+                        selectedDate={selectedDate}
+                        onDateSelect={handleDateSelect}
+                        events={events}  // 여기에 events prop 추가
+                    />
                     <button
                         onClick={handleChatbotClick}
                         className="fixed bottom-100 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"

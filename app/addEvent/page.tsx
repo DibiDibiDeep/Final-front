@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
-import Calendar from '../calendarapp/Calendar';
+import Calendar from '@/components/Calendar';
 import { debounce } from 'lodash';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
