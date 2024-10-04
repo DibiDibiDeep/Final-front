@@ -8,7 +8,6 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Baby } from '@/types/index';
-import { jwtDecode } from 'jwt-decode';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
 

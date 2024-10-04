@@ -33,7 +33,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = React.memo(({ day, isCurre
     >
         {day}
         {hasEvent && (
-            <span className="absolute bottom-[-8px] text-fuchsia-700 text-xl">
+            <span className={`absolute bottom-[-8px] text-xl ${isToday ? 'text-white' : 'text-fuchsia-700'}`}>
                 •
             </span>
         )}
@@ -68,7 +68,6 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onD
         return events.some(event => {
             const startDate = new Date(event.startTime);
             const endDate = new Date(event.endTime);
-            // 시작 날짜와 종료 날짜를 포함하여 체크
             return (date >= startDate && date <= endDate) ||
                 (date.getDate() === startDate.getDate() &&
                     date.getMonth() === startDate.getMonth() &&

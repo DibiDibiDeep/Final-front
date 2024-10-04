@@ -502,8 +502,6 @@ export default function Home() {
                     )}
                 </div>
             </MainContainer>
-            <BottomContainer />
-
             <CreateMemoModal
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}
