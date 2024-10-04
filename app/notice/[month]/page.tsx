@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+import Image from 'next/image';
+import { useAuth } from '@/hooks/useAuth';
+import { fetchWithAuth } from '@/utils/api';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
 
@@ -36,16 +38,18 @@ const NoticeDetailPage: React.FC = () => {
     const params = useParams();
     const month = params?.month as string;
     const [inferenceResult, setInferenceResult] = useState<InferenceResult | null>(null);
+    const { token, userId, error: authError } = useAuth();
 
     useEffect(() => {
         const fetchCalendarData = async () => {
             try {
-                const response = await axios.get<CalendarData[]>(`${BACKEND_API_URL}/api/calendar-photo-inf`);
-                if (response.status !== 200) {
-                    throw new Error(`Failed to fetch calendar data. Status: ${response.status}`);
-                }
+                if (!token) return;
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photo-inf`, token, {
+                    method: 'GET'
+                });
 
-                const relevantData = response.data.find(data => {
+                // Assuming the response is an array of CalendarData
+                const relevantData = response.find((data: CalendarData) => {
                     const parsedResult: InferenceResult = JSON.parse(data.inferenceResult);
                     return parsedResult.month === month;
                 });
@@ -61,7 +65,7 @@ const NoticeDetailPage: React.FC = () => {
         };
 
         fetchCalendarData();
-    }, [month]);
+    }, [month, token]); // Add token to the dependency array if it's used within the effect
 
     if (!inferenceResult) {
         return <div>Loading...</div>;
@@ -69,10 +73,19 @@ const NoticeDetailPage: React.FC = () => {
 
     return (
         <div className="min-h-screen p-4 mb-[120px]">
-            <Link href="/notice" className="text-blue-500 hover:underline mb-4 inline-block">
-                &larr; 목록으로 돌아가기
-            </Link>
-            <h1 className="text-2xl text-center font-bold mb-6">{`${inferenceResult.month}월 상세 일정`}</h1>
+            <div className="flex items-center mb-6 h-12"> {/* Set a specific height for vertical alignment */}
+                <Link href="/notice" className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center">
+                    <Image
+                        src="/img/button/back.png"
+                        alt='Back'
+                        width={50}
+                        height={50}
+                    />
+                </Link>
+                <div className="flex-grow text-center">
+                    <h1 className="text-2xl text-gray-700 font-bold leading-10">{`${inferenceResult.month}월 상세 일정`}</h1> {/* Adjust leading for vertical alignment */}
+                </div>
+            </div>
             <div className="space-y-4">
                 {inferenceResult.events.map((event, index) => (
                     <div key={index} className="bg-white/40 rounded-[15px] shadow-md p-4 border-2 border-white">
@@ -91,6 +104,10 @@ const NoticeDetailPage: React.FC = () => {
             </div>
         </div>
     );
+
+
+
+
 };
 
 export default NoticeDetailPage;

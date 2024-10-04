@@ -67,7 +67,7 @@ const BottomContainer: React.FC = () => {
 
     const getButtonStyle = useCallback((buttonName: string): string => {
         if (buttonName === 'action') {
-            return `p-4 rounded-full bg-purple-600 absolute -top-8 shadow-lg`;
+            return `p-4 rounded-full bg-purple-600 absolute -top-8`; // shadow-lg 제거
         }
         return activeView === buttonName
             ? "p-2 rounded-full bg-purple-600 text-white"
@@ -142,7 +142,7 @@ const BottomContainer: React.FC = () => {
             )}
 
             {/* Bottom Container */}
-            <div className="relative w-full h-full bg-white bg-opacity-40 backdrop-blur-md border-t-2 border-white shadow-md rounded-[40px] z-30">
+            <div className="relative w-full h-full bg-white bg-opacity-40 backdrop-blur-md border-t border-gray-200 shadow-md rounded-[40px] z-30">
                 <div className="w-full h-full flex items-center justify-around px-4 relative">
                     <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
                     <IconButton icon={ClipboardList} onClick={() => handleButtonClick('dairy', '/diary')} style={getButtonStyle('dairy')} />

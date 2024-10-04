@@ -1,11 +1,12 @@
-// utils/api.ts
+// 옵션 1: node-abort-controller 대신 전역 AbortController 사용
+// import { AbortController } from 'node-abort-controller';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 interface FetchOptions extends Omit<RequestInit, 'method' | 'body'> {
     method: HttpMethod;
     body?: BodyInit | Record<string, any> | null;
-    timeout?: number; // 타임아웃 옵션 추가
+    timeout?: number;
 }
 
 export async function fetchWithAuth(url: string, token: string, options: FetchOptions) {
@@ -14,26 +15,41 @@ export async function fetchWithAuth(url: string, token: string, options: FetchOp
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000); // 기본 10초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${token}`);
-    headers.set('Content-Type', 'application/json');
+
+    let bodyToSend: BodyInit | null | undefined;
+    if (options.body) {
+        if (options.body instanceof FormData) {
+            bodyToSend = options.body;
+            // FormData를 사용할 때는 Content-Type 헤더를 설정하지 않습니다.
+            headers.delete('Content-Type');
+        } else if (options.body instanceof URLSearchParams || typeof options.body === 'string') {
+            bodyToSend = options.body;
+        } else if (typeof options.body === 'object') {
+            bodyToSend = JSON.stringify(options.body);
+            if (!headers.has('Content-Type')) {
+                headers.set('Content-Type', 'application/json');
+            }
+        } else {
+            throw new Error('Unsupported body type');
+        }
+    }
 
     const fetchOptions: RequestInit = {
         ...options,
         headers,
-        body: options.body instanceof Object ? JSON.stringify(options.body) : options.body,
+        body: bodyToSend,
         signal: controller.signal,
     };
 
     try {
         const response = await fetch(url, fetchOptions);
-
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
         return await response.json();
     } catch (error) {
         if (error instanceof Error) {
@@ -52,18 +68,3 @@ export async function fetchWithAuth(url: string, token: string, options: FetchOp
         clearTimeout(timeoutId);
     }
 }
-
-// 사용 예시:
-// import { fetchWithAuth } from '@/utils/api';
-//
-// async function postEventData(token: string, eventData: { userId: number | null; babyId: number | null; title: string; startTime: string; endTime: string; location: string; }) {
-//   try {
-//     const data = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars`, token, { 
-//       method: 'POST', 
-//       body: eventData 
-//     });
-//     console.log(data);
-//   } catch (error) {
-//     console.error('Error posting event data:', error);
-//   }
-// }

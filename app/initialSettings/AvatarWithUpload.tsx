@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Avatar } from '@nextui-org/react';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 interface AvatarWithUploadProps {
-    onImageSelect: (file: File | null, imageSrc: string) => void;
+    onImageSelect: (file: File | null, imageSrc: string, token: string) => void;
 }
 
 const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageSelect }) => {
     const [avatarSrc, setAvatarSrc] = useState<string>("/img/mg-logoback.png");
+    const { token } = useAuth();
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!token) return;
         const file = event.target.files?.[0];
         if (file) {
             if (file.type !== "image/jpeg" && file.type !== "image/png") {
@@ -19,12 +22,12 @@ const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageSelect }) =>
             reader.onload = () => {
                 const newAvatarSrc = reader.result as string;
                 setAvatarSrc(newAvatarSrc);
-                onImageSelect(file, newAvatarSrc);
+                onImageSelect(file, newAvatarSrc, token);
             };
             reader.readAsDataURL(file);
         } else {
             setAvatarSrc("/img/mg-logoback.png");
-            onImageSelect(null, "/img/mg-logoback.png");
+            onImageSelect(null, "/img/mg-logoback.png", token);
         }
     };
 
