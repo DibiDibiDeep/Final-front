@@ -9,6 +9,9 @@ import { useRouter } from 'next/navigation';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Baby } from '@/types/index';
 import { jwtDecode } from 'jwt-decode';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth } from '../../hooks/useAuth'; // Auth 훅 가져오기
+import { useBabySelection } from '../../hooks/useBabySelection';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -28,13 +31,12 @@ const DummyChatInterface: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [babyPhoto, setBabyPhoto] = useState<string>("/img/mg-logoback.png");
-  const [userId, setUserId] = useState<number | null>(null);
-  const [babyId, setBabyId] = useState<number | null>(null);
   const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
   const [babies, setBabies] = useState<Baby[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const { token, userId, error: authError } = useAuth();
+  const { babyId } = useBabySelection();
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -60,23 +62,23 @@ const DummyChatInterface: React.FC = () => {
 
   const confirmResetChat = async () => {
     if (!token || userId === null || babyId === null) {
-        setError('사용자 정보나 인증 토큰이 없습니다.');
-        return;
+      setError('사용자 정보나 인증 토큰이 없습니다.');
+      return;
     }
 
     try {
-        await axios.post(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {}, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        setMessages([]);
-        setIsResetModalOpen(false);
+      await axios.post(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setMessages([]);
+      setIsResetModalOpen(false);
     } catch (error) {
-        console.error('Error resetting chat history:', error);
-        setError('채팅 내역 초기화에 실패했습니다.');
+      console.error('Error resetting chat history:', error);
+      setError('채팅 내역 초기화에 실패했습니다.');
     }
-};
+  };
 
   useEffect(scrollToBottom, [messages]);
 
@@ -90,7 +92,7 @@ const DummyChatInterface: React.FC = () => {
         const element = el as HTMLElement;
         const html = element.innerText.replace(regex, '<mark style="background-color: yellow; color: black;">$1</mark>');
         element.innerHTML = html;
-        
+
         if (!firstMatch && html !== element.innerText) {
           firstMatch = element;
         }
@@ -102,107 +104,124 @@ const DummyChatInterface: React.FC = () => {
     }
   }, [searchTerm]);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-      try {
-        const decodedToken: any = jwtDecode(storedToken);
-        const currentTime = Date.now() / 1000;
-        setToken(storedToken);
-        setUserId(decodedToken.userId);
-        console.log('Stored token:', storedToken); // 디버깅을 위한 로그
-      } catch (error) {
-        console.error('Error decoding token:', error);
-        setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
-      }
-    } else {
-      setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
-    }
-  
-    const storedUserId = localStorage.getItem('userId');
-    if (storedUserId) {
-      const parsedUserId = JSON.parse(storedUserId);
-      setUserId(parsedUserId);
-    }
+  // useEffect(() => {
+  //   const storedToken = localStorage.getItem('authToken');
+  //   if (storedToken) {
+  //     try {
+  //       const decodedToken: any = jwtDecode(storedToken);
+  //       const currentTime = Date.now() / 1000;
+  //       setToken(storedToken);
+  //       setUserId(decodedToken.userId);
+  //       console.log('Stored token:', storedToken); // 디버깅을 위한 로그
+  //     } catch (error) {
+  //       console.error('Error decoding token:', error);
+  //       setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
+  //     }
+  //   } else {
+  //     setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
+  //   }
 
-    const storedSelectedBaby = localStorage.getItem('selectedBaby');
-    if (storedSelectedBaby) {
-      const selectedBabyObj = JSON.parse(storedSelectedBaby);
-      setBabyId(selectedBabyObj.babyId);
-      setSelectedBaby(selectedBabyObj);
+  //   const storedUserId = localStorage.getItem('userId');
+  //   if (storedUserId) {
+  //     const parsedUserId = JSON.parse(storedUserId);
+  //     setUserId(parsedUserId);
+  //   }
+
+  //   const storedSelectedBaby = localStorage.getItem('selectedBaby');
+  //   if (storedSelectedBaby) {
+  //     const selectedBabyObj = JSON.parse(storedSelectedBaby);
+  //     setBabyId(selectedBabyObj.babyId);
+  //     setSelectedBaby(selectedBabyObj);
+  //   }
+  // }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    console.log('chatbot page token: ', token);
+    console.log('chatbot page userId: ', userId);
+    if (userId) {
+      fetchBabiesInfo(userId).then(() => {
+        console.log('Babies fetched and set');
+      });
     }
-  }, []);
+  }, [token]);
 
   // userId나 babyId가 변경될 때 메시지를 가져오는 useEffect 추가
   useEffect(() => {
-    if (userId !== null && babyId !== null && token) {
+    if (userId && babyId && token) {
+      console.log('babyId', babyId);
       fetchMessages();
     }
   }, [userId, babyId, token]);
 
-    // 아이 정보 가져오기
-    useEffect(() => {
-      if (userId) {
-          fetchBabiesInfo(userId);
-      }
+  // 아이 정보 가져오기
+  useEffect(() => {
+    if (userId) {
+      fetchBabiesInfo(userId);
+    }
   }, [userId]);
 
   const fetchBabiesInfo = async (userId: number) => {
+    if (!token) return;
     try {
-        const userResponse = await axios.get(`${BACKEND_API_URL}/api/baby/user/${userId}`);
-        if (userResponse.data && Array.isArray(userResponse.data) && userResponse.data.length > 0) {
-            const fetchedBabies: Baby[] = await Promise.all(userResponse.data.map(async (baby: any) => {
-                const photoResponse = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`);
-                return {
-                    userId: baby.userId,
-                    babyId: baby.babyId,
-                    babyName: baby.babyName,
-                    photoUrl: photoResponse.data[0]?.filePath || "/img/mg-logoback.png"
-                };
-            }));
+      const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+        method: 'GET',
+      });
 
-            setBabies(fetchedBabies);
+      if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
 
-            // localStorage에서 저장된 선택된 아이 정보 확인
-            const storedSelectedBaby = localStorage.getItem('selectedBaby');
-            if (storedSelectedBaby) {
-                const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
-                const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
-                if (foundBaby) {
-                    setSelectedBaby(foundBaby);
-                } else {
-                    // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
-                    setSelectedBaby(fetchedBabies[0]);
-                    localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
-                }
-            } else {
-                // 저장된 선택 정보가 없으면 첫 번째 아이 선택
-                setSelectedBaby(fetchedBabies[0]);
-                localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
-            }
+        const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
+          const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+            method: 'GET',
+          });
+          return {
+            userId: baby.userId,
+            babyId: baby.babyId,
+            babyName: baby.babyName,
+            photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
+          };
+        }));
+
+        setBabies(fetchedBabies);
+
+        // localStorage에서 저장된 선택된 아이 정보 확인
+        const storedSelectedBaby = localStorage.getItem('selectedBaby');
+        if (storedSelectedBaby) {
+          const parsedSelectedBaby = JSON.parse(storedSelectedBaby);
+          const foundBaby = fetchedBabies.find(baby => baby.babyId === parsedSelectedBaby.babyId);
+          if (foundBaby) {
+            setSelectedBaby(foundBaby);
+          } else {
+            // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
+            setSelectedBaby(fetchedBabies[0]);
+            localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+          }
         } else {
-            console.log("No baby information found for this user.");
-            localStorage.removeItem('selectedBaby');
+          // 저장된 선택 정보가 없으면 첫 번째 아이 선택
+          setSelectedBaby(fetchedBabies[0]);
+          localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
         }
-    } catch (error) {
-        console.error('Failed to fetch baby information:', error);
+      } else {
+        console.log("No baby information found for this user.");
         localStorage.removeItem('selectedBaby');
+      }
+    } catch (error) {
+      console.error('Failed to fetch baby information:', error);
+      localStorage.removeItem('selectedBaby');
     }
-};
+  };
 
   const fetchMessages = async () => {
     if (!token || userId === null || babyId === null) {
       setError('사용자 정보나 인증 토큰이 없습니다.');
       return;
     }
-  
+
     try {
-      const response = await axios.get(`${BACKEND_API_URL}/api/chat/history/${userId}/${babyId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/history/${userId}/${babyId}`, token, {
+        method: 'GET',
       });
-      const formattedMessages = response.data.map((msg: any) => ({
+      const formattedMessages = response.map((msg: any) => ({
         id: msg.id,
         text: msg.content,
         sender: msg.sender,
@@ -225,7 +244,7 @@ const DummyChatInterface: React.FC = () => {
     }
 
     console.log('Sending token:', token);
-  
+
     const newMessage: Message = {
       userId: userId,
       babyId: babyId,
@@ -234,60 +253,65 @@ const DummyChatInterface: React.FC = () => {
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-      setMessages([...messages, newMessage]);
-      setInputMessage('');
-      
-      try {
-        const response = await axios.post(`${BACKEND_API_URL}/api/chat/send`, {
+    setMessages([...messages, newMessage]);
+    setInputMessage('');
+
+    try {
+      if (!token) return;
+      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/send`, token, {
+        method: 'POST',
+        body: {
           userId: userId,
           babyId: babyId,
           content: inputMessage,
           sender: 'user',
-          timestamp: new Date().toISOString()
-        }, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        console.log('Server response:', response.data);
+          timestamp: new Date().toISOString(),
+        },
+      });
 
-        if (response.data && response.data.content) {
-          const botResponse: Message = {
-            userId: userId,
-            babyId: babyId,
-            id: Date.now(),
-            text: response.data.content,
-            sender: 'bot',
-            timestamp: new Date(response.data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
-          setMessages(prevMessages => [...prevMessages, botResponse]);
-        } else {
-          console.error('Unexpected response format:', response.data);
-          throw new Error('Unexpected response format from server');
-        }
+      console.log('Server response:', response);
 
-      } catch (error) {
-        console.error('Error sending message:', error);
-        if (axios.isAxiosError(error)) {
-          console.error('Response data:', error.response?.data);
-          console.error('Response status:', error.response?.status);
-        }
-        setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      if (response && response.content) {
+        const botResponse: Message = {
+          userId: userId,
+          babyId: babyId,
+          id: Date.now(),
+          text: response.content,
+          sender: 'bot',
+          timestamp: new Date(response.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages(prevMessages => [...prevMessages, botResponse]);
+      } else {
+        console.error('Unexpected response format:', response);
+        throw new Error('Unexpected response format from server');
       }
-    
-      setTimeout(scrollToBottom, 100);
-    };
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Response data:', error.response);
+        console.error('Response status:', error.response?.status);
+      }
+      setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    }
+
+    setTimeout(scrollToBottom, 100);
+  };
 
   return (
     <div className="h-screen flex flex-col items-center">
-      <div className="w-full max-w-md mt-8 flex justify-between items-center px-4">
-      <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
+      <div className="w-full max-w-md mt-8 flex justify-between items-center px-4 gap-4">
+        <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
           <button
             onClick={handleBackClick}
             className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
           >
-            <ChevronLeft size={24} color="#6B46C1" />
+            <Image
+              src="/img/button/back.png"
+              alt='Back'
+              width={50}
+              height={50}
+            />
           </button>
           <Dropdown>
             <DropdownTrigger>
@@ -333,20 +357,20 @@ const DummyChatInterface: React.FC = () => {
         </div>
         {/* 채팅 초기화 아이콘 */}
         <button
-                    onClick={handleResetChat}
-                    className="ml-2 p-2 rounded-full hover:bg-gray-200 transition duration-200"
-                    aria-label="채팅 초기화"
-                >
-                    <Trash2 size={20} color="#6B46C1" />
-                </button>
+          onClick={handleResetChat}
+          className="ml-2 p-2 rounded-full hover:bg-gray-200 transition duration-200"
+          aria-label="채팅 초기화"
+        >
+          <Trash2 size={20} color="#6B46C1" />
+        </button>
       </div>
       {error && (
         <div className="text-red-500 text-center my-2">
           {error}
         </div>
       )}
-      <div 
-        ref={chatContainerRef} 
+      <div
+        ref={chatContainerRef}
         className="flex-1 overflow-hidden scrollbar-hide w-full"
         style={{
           marginTop: '10px',
@@ -362,9 +386,8 @@ const DummyChatInterface: React.FC = () => {
               className={`mb-4 flex ${message.sender === 'user' ? 'justify-end text-gray-800' : 'justify-start text-gray-800'}`}
             >
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-white'
-                }`}
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.sender === 'user' ? 'bg-purple-500 text-white' : 'bg-white'
+                  }`}
               >
                 <p className="message-text">{message.text}</p>
                 <span className="text-xs text-gray-400 mt-1 block">
@@ -378,10 +401,10 @@ const DummyChatInterface: React.FC = () => {
         )}
         <div ref={messagesEndRef} />
         <ResetChatModal
-                isOpen={isResetModalOpen}
-                onClose={() => setIsResetModalOpen(false)}
-                onReset={confirmResetChat}
-            />
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          onReset={confirmResetChat}
+        />
       </div>
       <div className="fixed bottom-32 left-5 right-5 p-4 flex items-center">
         <div className="flex items-center max-w-screen-lg mx-auto w-full">
