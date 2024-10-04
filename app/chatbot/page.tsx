@@ -8,10 +8,8 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Baby } from '@/types/index';
-import { jwtDecode } from 'jwt-decode';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '../../hooks/useAuth'; // Auth 훅 가져오기
-import { useBabySelection } from '../../hooks/useBabySelection';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -35,8 +33,27 @@ const DummyChatInterface: React.FC = () => {
   const [babies, setBabies] = useState<Baby[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [composing, setComposing] = useState(false);
   const { token, userId, error: authError } = useAuth();
   const { babyId } = useBabySelection();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputMessage(e.target.value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !composing) {
+      handleSendMessage();
+    }
+  };
+
+  const handleCompositionStart = () => {
+    setComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setComposing(false);
+  };
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -67,10 +84,8 @@ const DummyChatInterface: React.FC = () => {
     }
 
     try {
-      await axios.post(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, token, {
+        method: 'POST',
       });
       setMessages([]);
       setIsResetModalOpen(false);
@@ -257,39 +272,39 @@ const DummyChatInterface: React.FC = () => {
     setInputMessage('');
 
     try {
-      const response = await axios.post(`${BACKEND_API_URL}/api/chat/send`, {
-        userId: userId,
-        babyId: babyId,
-        content: inputMessage,
-        sender: 'user',
-        timestamp: new Date().toISOString()
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      if (!token) return;
+      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/send`, token, {
+        method: 'POST',
+        body: {
+          userId: userId,
+          babyId: babyId,
+          content: inputMessage,
+          sender: 'user',
+          timestamp: new Date().toISOString(),
+        },
       });
 
-      console.log('Server response:', response.data);
+      console.log('Server response:', response);
 
-      if (response.data && response.data.content) {
+      if (response && response.content) {
         const botResponse: Message = {
           userId: userId,
           babyId: babyId,
           id: Date.now(),
-          text: response.data.content,
+          text: response.content,
           sender: 'bot',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          timestamp: new Date(response.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prevMessages => [...prevMessages, botResponse]);
       } else {
-        console.error('Unexpected response format:', response.data);
+        console.error('Unexpected response format:', response);
         throw new Error('Unexpected response format from server');
       }
 
     } catch (error) {
       console.error('Error sending message:', error);
       if (axios.isAxiosError(error)) {
-        console.error('Response data:', error.response?.data);
+        console.error('Response data:', error.response);
         console.error('Response status:', error.response?.status);
       }
       setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
@@ -300,13 +315,18 @@ const DummyChatInterface: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col items-center">
-      <div className="w-full max-w-md mt-8 flex justify-between items-center px-4">
-        <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
+      <div className="w-full max-w-md mt-8 flex justify-between items-center px-4 gap-4">
+        <div className="w-[50px] h-[50px] rounded-full overflow-hidden">
           <button
             onClick={handleBackClick}
             className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
           >
-            <ChevronLeft size={24} color="#6B46C1" />
+            <Image
+              src="/img/button/back.png"
+              alt='Back'
+              width={50}
+              height={50}
+            />
           </button>
           <Dropdown>
             <DropdownTrigger>
@@ -316,7 +336,7 @@ const DummyChatInterface: React.FC = () => {
                   alt="Baby Photo"
                   width={45}
                   height={45}
-                  className="rounded-full object-cover object-center"
+                  className="rounded-full object-cover object-center w-[45px] h-[45px]"
                 />
               </button>
             </DropdownTrigger>
@@ -406,10 +426,12 @@ const DummyChatInterface: React.FC = () => {
           <input
             type="text"
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
             placeholder="메시지를 입력하세요..."
-            className="flex-1 py-2 px-4 rounded-full border-2 border-purple-300 focus:outline-none focus:border-purple-500"
+            className="flex-1 py-2 px-4 rounded-full border-2 border-purple-300 focus:outline-none focus:border-purple-500 text-gray-700"
           />
           <button
             onClick={handleSendMessage}

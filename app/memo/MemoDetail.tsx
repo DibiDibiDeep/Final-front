@@ -7,6 +7,7 @@ import DeleteModal from '../modal/DeleteModal';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchWithAuth } from '@/utils/api';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
+import { Memo } from '@/types/index';
 
 interface MemoDetailProps {
   memoId: number;

@@ -6,6 +6,10 @@ import axios from 'axios';
 import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import { Input } from '@nextui-org/react';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection  } from '@/hooks/useAuth';
+
+const { token, error: authError } = useAuth();
 
 type Memo = {
     memoId: number;
@@ -24,7 +28,8 @@ export default function EditEvent({ params }: { params: { memoId: string } }) {
     useEffect(() => {
         const fetchMemo = async () => {
             try {
-                const response = await axios.get(`${BACKEND_API_URL}/api/memos/${params.memoId}`);
+                if (!token) return;
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${params.memoId}`, token, {method: 'GET'});
                 setMemoData(response.data);
             } catch (error) {
                 console.error('Failed to fetch memo:', error);
@@ -45,7 +50,8 @@ export default function EditEvent({ params }: { params: { memoId: string } }) {
         setIsLoading(true);
         setError('');
         try {
-            await axios.put(`${BACKEND_API_URL}/api/memos/${memoData.memoId}`, memoData);
+            if (!token) return;
+            await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoData.memoId}`, token, {method: 'PUT', body: memoData});
             router.push('/home');
         } catch (error) {
             console.error('Failed to update memo:', error);

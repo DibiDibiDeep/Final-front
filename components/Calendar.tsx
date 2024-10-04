@@ -11,16 +11,15 @@ interface CalendarButtonProps {
     isCurrentMonth: boolean;
     isToday: boolean;
     isSelected: boolean;
-    hasEvent: boolean;
     onClick: () => void;
 }
 
-const CalendarButton: React.FC<CalendarButtonProps> = React.memo(({ day, isCurrentMonth, isToday, isSelected, hasEvent, onClick }) => (
+const CalendarButton: React.FC<CalendarButtonProps> = React.memo(({ day, isCurrentMonth, isToday, isSelected, onClick }) => (
     <Button
         size="sm"
         variant={isToday ? "solid" : isSelected ? "bordered" : "light"}
         className={`
-      min-w-[30px] h-[30px] p-0 rounded-full relative flex justify-center items-center
+      min-w-[30px] h-[30px] p-0 rounded-full
       ${isToday
                 ? 'bg-primary text-white hover:bg-primary-600'
                 : isSelected
@@ -28,15 +27,10 @@ const CalendarButton: React.FC<CalendarButtonProps> = React.memo(({ day, isCurre
                     : isCurrentMonth
                         ? 'bg-transparent text-gray-700 hover:bg-gray-100'
                         : 'bg-transparent text-gray-400 hover:bg-gray-100'}
-      `}
+    `}
         onClick={onClick}
     >
         {day}
-        {hasEvent && (
-            <span className={`absolute bottom-[-8px] text-xl ${isToday ? 'text-white' : 'text-fuchsia-700'}`}>
-                •
-            </span>
-        )}
     </Button>
 ));
 
@@ -45,10 +39,9 @@ CalendarButton.displayName = 'CalendarButton';
 interface CalendarProps {
     selectedDate: Date | null;
     onDateSelect: (date: Date) => void;
-    events: { startTime: string; endTime: string }[];
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onDateSelect, events }) => {
+const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onDateSelect }) => {
     const today = useMemo(() => new Date(), []);
     const [currentDate, setCurrentDate] = useState(() => today);
     const [selectedDate, setSelectedDate] = useState(() => propSelectedDate || today);
@@ -60,20 +53,6 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onD
     const getFirstDayOfMonth = useCallback((date: Date): number => {
         return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
     }, []);
-
-    const hasEventOnDay = useCallback((day: number) => {
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
-        const date = new Date(currentYear, currentMonth, day);
-        return events.some(event => {
-            const startDate = new Date(event.startTime);
-            const endDate = new Date(event.endTime);
-            return (date >= startDate && date <= endDate) ||
-                (date.getDate() === startDate.getDate() &&
-                    date.getMonth() === startDate.getMonth() &&
-                    date.getFullYear() === startDate.getFullYear());
-        });
-    }, [currentDate, events]);
 
     const calendarDays = useMemo(() => {
         const daysInMonth = getDaysInMonth(currentDate);
@@ -141,7 +120,6 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onD
                         const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), day || 1);
                         const isToday = isCurrentMonth && isSameDay(currentDay, today);
                         const isSelected = selectedDate !== null && isCurrentMonth && isSameDay(currentDay, selectedDate);
-                        const hasEvent = isCurrentMonth && day !== null && hasEventOnDay(day);
                         return (
                             <CalendarButton
                                 key={index}
@@ -149,13 +127,17 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate: propSelectedDate, onD
                                 isCurrentMonth={isCurrentMonth}
                                 isToday={isToday}
                                 isSelected={isSelected}
-                                hasEvent={hasEvent}
                                 onClick={() => handleDateClick(day || 0, isCurrentMonth)}
                             />
                         );
                     })}
                 </div>
             </div>
+            {/* {selectedDate && (
+                <div className="mt-3 text-center text-gray-700 text-sm">
+                    Selected Date: {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                </div>
+            )} */}
         </Card>
     );
 };

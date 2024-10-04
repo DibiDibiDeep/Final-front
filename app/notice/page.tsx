@@ -77,7 +77,7 @@ const NoticePage: React.FC = () => {
     return (
         <>
             <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
-                <h1 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">일정 목록</h1>
+                <h1 className="text-2xl sm:text-3xl text-gray-700 font-bold text-center mb-8 sm:mb-12">일정 목록</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* {calendarData.map((data) => { */}
                     {Array.isArray(calendarData) && calendarData.map((data) => { // API 호출이 실패한 경우나 예상치 못한 상황에서 calendarData가 배열이 아닌 값으로 설정된 경우 에러 방지

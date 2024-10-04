@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import Image from 'next/image';
-import Calendar from '@/app/calendarapp/Calendar';
+import Calendar from '@/components/Calendar';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
+import { useAuth } from '@/hooks/useAuth';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -30,7 +30,6 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    // const [token, setToken] = useState<string | null>(null);
     const { token, userId, error: authError } = useAuth();
 
     useEffect(() => {

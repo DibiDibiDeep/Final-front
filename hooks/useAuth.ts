@@ -44,18 +44,27 @@ export const useBabySelection = () => {
     const [babyId, setBabyId] = useState<number | null>(null);
 
     useEffect(() => {
-        const storedSelectedBaby = localStorage.getItem('selectedBaby');
-        if (storedSelectedBaby) {
-            const selectedBaby: SelectedBaby | null = JSON.parse(storedSelectedBaby);
-            if (selectedBaby != null) {
-                setBabyId(selectedBaby.babyId);
-                console.log("selectedBaby", selectedBaby);
+        const checkSelectedBaby = () => {
+            const storedSelectedBaby = localStorage.getItem('selectedBaby');
+            if (storedSelectedBaby) {
+                const selectedBaby: SelectedBaby | null = JSON.parse(storedSelectedBaby);
+                if (selectedBaby != null) {
+                    setBabyId(selectedBaby.babyId);
+                    console.log("selectedBaby", selectedBaby);
+                } else {
+                    console.log("No baby information found.");
+                }
             } else {
-                console.log("No baby information found.");
+                console.log("No stored baby information found.");
             }
-        } else {
-            console.log("No stored baby information found.");
-        }
+        };
+
+        checkSelectedBaby();
+        window.addEventListener('storage', checkSelectedBaby);
+
+        return () => {
+            window.removeEventListener('storage', checkSelectedBaby);
+        };
     }, []);
 
     return { babyId };

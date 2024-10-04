@@ -5,23 +5,23 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import axios from 'axios';
-import { Search, MessageCircle, ChevronLeft } from 'lucide-react';
+import { Search, MessageCircle } from 'lucide-react';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
 import BottomContainer from '@/components/BottomContainer';
 import DetailedContainer from "@/components/DetailedContainer";
+import Calendar from '@/app/calendarapp/Calendar';
+import MemoDetail from '@/app/memo/MemoDetail';
+import CreateMemoModal from '@/app/modal/CreateModal';
+import RecordModal from '@/app/modal/RecordModal';
 import EventCard from "./EventCard";
-import Calendar from '../calendarapp/Calendar';
-import MemoDetail from '../memo/MemoDetail';
-import CreateMemoModal from '../modal/CreateModal';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '../../hooks/useAuth'; // Auth 훅 가져오기
-import { useBabySelection } from '../../hooks/useBabySelection';
-import RecordModal from '../modal/RecordModal';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
+
 
 
 // 유틸리티 함수
@@ -30,10 +30,6 @@ const formatDateForBackend = (date: Date) => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-};
-
-const formatDateTimeForDisplay = (date: Date): string => {
-    return date.toISOString().slice(0, 19).replace('Z', '');
 };
 
 // 환경 변수
@@ -46,14 +42,13 @@ export default function Home() {
     const [isExpanded, setIsExpanded] = useState(true);
     const [calendarVisible, setCalendarVisible] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    // const [userId, setUserId] = useState<number | null>(null);
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
-    
+
     const router = useRouter();
 
     const {
@@ -72,16 +67,17 @@ export default function Home() {
 
     // 아이 정보 가져오기
     useEffect(() => {
-
         if (!token) return;
-        console.log('home token', token);
-        console.log('home userId', userId);
+        console.log('homepage token: ', token);
+        console.log('homepage userId: ', userId);
         if (userId) {
-            fetchBabiesInfo(userId);
+            fetchBabiesInfo(userId).then(() => {
+                console.log('Babies fetched and set');
+            });
         }
     }, [token]);
 
-// selectedBaby가 변경될 때마다 fetchEvents 호출
+    // selectedBaby가 변경될 때마다 fetchEvents 호출
     useEffect(() => {
         if (!token) return;
         if (userId) {
@@ -89,31 +85,27 @@ export default function Home() {
         }
     }, [userId, token, selectedBaby]);
 
-    const isTokenValid = (token: string): boolean => {
-        if (!token) return false;
-
-        // 토큰의 두 번째 부분(페이로드)을 디코딩
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-
-        // 토큰 페이로드 파싱
-        const { exp } = JSON.parse(jsonPayload);
-
-        // 현재 시간이 만료 시간보다 적으면 유효
-        const currentTime = Math.floor(Date.now() / 1000);
-        return exp > currentTime;
+    const isTokenExpired = (token: string) => {
+        const payload = JSON.parse(atob(token.split('.')[1])); // 토큰의 payload 부분을 디코딩
+        const currentTime = Math.floor(Date.now() / 1000); // 현재 시간(초 단위)
+        return payload.exp < currentTime; // 만료 시간이 현재 시간보다 과거인지 확인
     };
 
     const fetchBabiesInfo = async (userId: number) => {
         if (!token) return;
-        console.log('isTokenValid', isTokenValid(token));
+        if (isTokenExpired(token)) {
+            console.log("토큰이 만료되었습니다.");
+            // 토큰을 재발급하는 로직 추가
+        } else {
+            console.log("토큰이 유효합니다.");
+        }
+
+        console.log('Fetching babies info for user:', userId);
         try {
             const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
-                method: 'GET'
+                method: 'GET',
             });
+            console.log('User response:', userResponse);
             if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
                     const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
@@ -128,6 +120,14 @@ export default function Home() {
                 }));
 
                 setBabies(fetchedBabies);
+
+                // 여기 추가
+                if (fetchedBabies.length > 0) {
+                    setSelectedBaby(fetchedBabies[0]);
+                    setBabyPhoto(fetchedBabies[0].photoUrl);
+                    localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                    console.log('Baby information saved:', fetchedBabies[0]);
+                }
 
                 // localStorage에서 저장된 선택된 아이 정보 확인
                 if (babyId) {
@@ -153,10 +153,14 @@ export default function Home() {
             }
         } catch (error) {
             console.error('Failed to fetch baby information:', error);
-            localStorage.removeItem('selectedBaby');
+            if (error instanceof TypeError) {
+                console.error('Network error:', error.message);
+            } else if (error instanceof Response) {
+                console.error('HTTP error:', error.status, error.statusText);
+            }
         }
     };
-                    
+
 
     // 메모 가져오기
     useEffect(() => {
@@ -195,7 +199,7 @@ export default function Home() {
     // 이벤트 가져오기
     const fetchEvents = async () => {
         if (!token || !userId || !selectedBaby) return;
-        console.log(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`);
+
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, token, {
                 method: 'GET',
@@ -409,7 +413,11 @@ export default function Home() {
             </div>
             {calendarVisible && (
                 <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
-                    <Calendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
+                    <Calendar
+                        selectedDate={selectedDate}
+                        onDateSelect={handleDateSelect}
+                        events={events}  // 여기에 events prop 추가
+                    />
                     <button
                         onClick={handleChatbotClick}
                         className="fixed bottom-100 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"
@@ -494,8 +502,6 @@ export default function Home() {
                     )}
                 </div>
             </MainContainer>
-            <BottomContainer />
-
             <CreateMemoModal
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}

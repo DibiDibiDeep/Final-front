@@ -1,7 +1,10 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
 import Image from 'next/image';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth } from '@/hooks/useAuth';
+
+const { token, error: authError } = useAuth();
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -55,7 +58,8 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
                 if (storedData) {
                     setStoryData(JSON.parse(storedData));
                 } else {
-                    const response = await axios.get(`${BACKEND_API_URL}/api/books/${id}`);
+                    if (!token) return;
+                    const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, token, {method: 'GET'});
                     setStoryData(response.data);
                     localStorage.setItem(`storyPages_${id}`, JSON.stringify(response.data));
                 }
@@ -139,7 +143,7 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
 
     return (
         <div className="flex flex-col min-h-screen p-8 pb-32">
-            <h1 className="text-xl font-bold text-center text-white mb-4">{storyData.title}</h1>
+            <h1 className="text-xl font-bold text-center text-gray-700 mb-4">{storyData.title}</h1>
 
             <div className="flex-grow flex flex-col justify-center items-center">
                 <div className={`transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
