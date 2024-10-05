@@ -6,9 +6,10 @@ import { LogOut, ChevronLeft, ChevronRight, Baby, Minus } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { removeAuthToken } from '@/utils/authUtils';
 import DeleteBabyModal from '../modal/DeleteBaby';
+import axios from 'axios';
 
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection  } from '@/hooks/useAuth';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -28,7 +29,6 @@ const MyPage: React.FC = () => {
     const [currentBabyIndex, setCurrentBabyIndex] = useState(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [token, setToken] = useState<string | null>(null);
     const [isDeleteBabyModalOpen, setDeleteBabyModalOpen] = useState(false);
     const [selectedBabyForDelete, setSelectedBabyForDelete] = useState<Baby | null>(null);
     const router = useRouter();
@@ -55,10 +55,10 @@ const MyPage: React.FC = () => {
         setError(null);
         try {
             if (!token) return;
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {method: 'GET'});
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, { method: 'GET' });
             if (response.data && Array.isArray(response.data) && response.data.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(response.data.map(async (baby: any) => {
-                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {method: 'GET'});
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, { method: 'GET' });
                     return {
                         userId: baby.userId,
                         babyId: baby.babyId,
@@ -102,7 +102,7 @@ const MyPage: React.FC = () => {
     }
 
     const handleDeleteBaby = async () => {
-        if(!userId || !selectedBabyForDelete) {
+        if (!userId || !selectedBabyForDelete) {
             console.log('User ID or Baby ID is not available');
             return;
         }
@@ -211,25 +211,25 @@ const MyPage: React.FC = () => {
                                 <ChevronRight size={24} />
                             </button>
                         </div>
-                        ) : (
-                            <p className="text-center text-gray-500">No child profiles found.</p>
-                        )}
-                        <DeleteBabyModal
-                            isOpen={isDeleteBabyModalOpen}
-                            onClose={() => setDeleteBabyModalOpen(false)}
-                            onDelete={handleDeleteBaby}
-                        />
-                    </div>
+                    ) : (
+                        <p className="text-center text-gray-500">No child profiles found.</p>
+                    )}
+                    <DeleteBabyModal
+                        isOpen={isDeleteBabyModalOpen}
+                        onClose={() => setDeleteBabyModalOpen(false)}
+                        onDelete={handleDeleteBaby}
+                    />
+                </div>
 
 
-                    <div className="mt-4 w-full">
-                        <button
-                            onClick={handleAddBaby}
-                            className="flex items-center justify-center w-full py-2 px-4 border border-primary rounded-lg transition-colors duration-300 ease-in-out hover:bg-primary group"
-                        >
-                            <span className="text-primary group-hover:text-white">아이 추가하기</span>
-                        </button>
-                    </div>
+                <div className="mt-4 w-full">
+                    <button
+                        onClick={handleAddBaby}
+                        className="flex items-center justify-center w-full py-2 px-4 border border-primary rounded-lg transition-colors duration-300 ease-in-out hover:bg-primary group"
+                    >
+                        <span className="text-primary group-hover:text-white">아이 추가하기</span>
+                    </button>
+                </div>
                 <div className="mt-4 w-full">
                     <button
                         onClick={handleLogout}

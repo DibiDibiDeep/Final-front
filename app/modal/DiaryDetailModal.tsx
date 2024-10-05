@@ -2,11 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection  } from '@/hooks/useAuth';
-
-const { token, userId, error: authError } = useAuth();
-const { babyId } = useBabySelection();
-
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -76,24 +72,10 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [fairyTaleGenerated, setFairyTaleGenerated] = useState<boolean>(false);
-    const [token, setToken] = useState<string | null>(null);
 
-    useEffect(() => {
-        const storedToken = localStorage.getItem('authToken');
-        if (storedToken) {
-            try {
-                // const decodedToken: any = jwtDecode(storedToken);
-                setToken(storedToken);
-                // setUserId(decodedToken.userId);
-                console.log('Stored token:', storedToken); // 디버깅을 위한 로그
-            } catch (error) {
-                console.error('Error decoding token:', error);
-                setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
-            }
-        } else {
-            setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
-        }
-    })
+    const { token, userId, error: authError } = useAuth();
+    const { babyId } = useBabySelection();
+
 
     useEffect(() => {
         if (data && isOpen) {
@@ -108,7 +90,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
 
         try {
             if (!token) return;
-            const diaryResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, token, {method: 'GET'});
+            const diaryResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, token, { method: 'GET' });
             if (diaryResponse.data && typeof diaryResponse.data === 'object' &&
                 Object.keys(diaryResponse.data).length > 0 &&
                 (diaryResponse.data.alimInfId || diaryResponse.data.diary)) {
@@ -129,7 +111,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         try {
             console.log('Attempting to fetch alim data');
             if (!token) return;
-            const alimResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, {method: 'GET'});
+            const alimResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, { method: 'GET' });
             console.log('Alim response received');
             console.log('Alim response:', JSON.stringify(alimResponse.data, null, 2));
 
@@ -159,7 +141,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     const checkFairyTaleStatus = async (alimId: number) => {
         try {
             if (!token) return;
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, token, {method: 'GET'});
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, token, { method: 'GET' });
             setFairyTaleGenerated(response.data.status === "COMPLETED");
         } catch (error) {
             console.error('Failed to check fairy tale status:', error);
