@@ -31,7 +31,7 @@ const DeleteBabyModal: React.FC<DeleteBabyModalProps> = ({ isOpen, onClose, onDe
                 <ModalContent className="m-auto">
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">채팅 내역 초기화</ModalHeader>
+                            <ModalHeader className="flex flex-col gap-1 text-gray-700">아이 정보 삭제</ModalHeader>
                             <ModalBody className="flex flex-col items-center text-center">
                                 <p className="text-black">
                                     아이의 정보를 삭제하시겠습니까?

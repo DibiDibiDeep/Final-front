@@ -316,16 +316,16 @@ const DummyChatInterface: React.FC = () => {
   return (
     <div className="h-screen flex flex-col items-center">
       <div className="w-full max-w-md mt-8 flex justify-between items-center px-4 gap-4">
-        <div className="w-[50px] h-[50px] rounded-full overflow-hidden">
+        <div className="flex items-center gap-2 lg:w-1/5">
           <button
             onClick={handleBackClick}
-            className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center"
+            className="w-10 h-10 flex items-center justify-center lg:absolute lg:left-4"
           >
             <Image
               src="/img/button/back.png"
               alt='Back'
-              width={50}
-              height={50}
+              width={40}
+              height={40}
             />
           </button>
           <Dropdown>
@@ -358,22 +358,21 @@ const DummyChatInterface: React.FC = () => {
             </DropdownMenu>
           </Dropdown>
         </div>
-        <div className="flex justify-center items-center">
-          <div className="relative w-full max-w-md">
+        <div className="flex-1 flex justify-center items-center">
+          <div className="relative w-full max-w-[300px]">
             <input
               type="text"
               placeholder="검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-56 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
+              className="w-full p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
             />
             <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
           </div>
         </div>
-        {/* 채팅 초기화 아이콘 */}
         <button
           onClick={handleResetChat}
-          className="ml-2 p-2 rounded-full hover:bg-gray-200 transition duration-200"
+          className="p-2 rounded-full hover:bg-gray-200 transition duration-200"
           aria-label="채팅 초기화"
         >
           <Trash2 size={20} color="#6B46C1" />

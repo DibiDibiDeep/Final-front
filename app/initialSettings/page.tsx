@@ -157,6 +157,8 @@ const InitialSettings: React.FC = () => {
                 formData.append("babyId", babyId.toString());
                 formData.append("userId", userId.toString());
 
+                console.log(`update photo: ${BACKEND_API_URL}/api/baby-photos/${babyInfo.babyId}`);
+
                 const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/${babyInfo.babyId}`, token, {
                     method: 'PUT',
                     body: formData,
@@ -189,7 +191,7 @@ const InitialSettings: React.FC = () => {
             if (axios.isAxiosError(err) && err.response) {
                 setError(`Error: ${err.response.data.message || 'Unknown error occurred'}`);
             } else {
-                setError('An error occurred while saving the information. Please try again.');
+                setError(`An error occurred while saving the information. Please try again. ${err}`);
             }
             console.error('Error saving baby info:', err);
         } finally {
