@@ -1,6 +1,3 @@
-// 옵션 1: node-abort-controller 대신 전역 AbortController 사용
-// import { AbortController } from 'node-abort-controller';
-
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 interface FetchOptions extends Omit<RequestInit, 'method' | 'body'> {

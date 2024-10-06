@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import axios from 'axios';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
+
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -72,10 +74,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [fairyTaleGenerated, setFairyTaleGenerated] = useState<boolean>(false);
-
     const { token, userId, error: authError } = useAuth();
-    const { babyId } = useBabySelection();
-
 
     useEffect(() => {
         if (data && isOpen) {
@@ -85,17 +84,19 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     }, [data, isOpen]);
 
     const fetchDiaryData = async (alimId: number) => {
+        if (!token) return;
         setLoading(true);
         setError(null);
 
         try {
-            if (!token) return;
-            const diaryResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, token, { method: 'GET' });
-            if (diaryResponse.data && typeof diaryResponse.data === 'object' &&
-                Object.keys(diaryResponse.data).length > 0 &&
-                (diaryResponse.data.alimInfId || diaryResponse.data.diary)) {
+            const diaryResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, token, {
+                method: 'GET'
+            });
+            if (diaryResponse && typeof diaryResponse === 'object' &&
+                Object.keys(diaryResponse).length > 0 &&
+                (diaryResponse.alimInfId || diaryResponse.diary)) {
                 console.log('Valid diary data found');
-                setDiaryData(diaryResponse.data);
+                setDiaryData(diaryResponse);
                 setAlimData(null);
                 return; // 유효한 데이터를 찾았으므로 함수 종료
             }
@@ -110,16 +111,17 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         // Diary 데이터 fetch 실패 또는 유효하지 않은 경우 alim 데이터 fetch 시도
         try {
             console.log('Attempting to fetch alim data');
-            if (!token) return;
-            const alimResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, { method: 'GET' });
+            const alimResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, {
+                method: 'GET'
+            });
             console.log('Alim response received');
-            console.log('Alim response:', JSON.stringify(alimResponse.data, null, 2));
+            console.log('Alim response:', JSON.stringify(alimResponse, null, 2));
 
-            if (alimResponse.data && typeof alimResponse.data === 'object' &&
-                Object.keys(alimResponse.data).length > 0 &&
-                (alimResponse.data.alimId || alimResponse.data.content)) {
+            if (alimResponse && typeof alimResponse === 'object' &&
+                Object.keys(alimResponse).length > 0 &&
+                (alimResponse.alimId || alimResponse.content)) {
                 console.log('Valid alim data fetched');
-                setAlimData(alimResponse.data);
+                setAlimData(alimResponse);
                 setDiaryData(null);
             } else {
                 console.log('No valid alim data found');
@@ -139,10 +141,12 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
 
 
     const checkFairyTaleStatus = async (alimId: number) => {
+        if (!token) return;
         try {
-            if (!token) return;
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, token, { method: 'GET' });
-            setFairyTaleGenerated(response.data.status === "COMPLETED");
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, token, {
+                method: 'GET'
+            });
+            setFairyTaleGenerated(response.status === "COMPLETED");
         } catch (error) {
             console.error('Failed to check fairy tale status:', error);
             setFairyTaleGenerated(false);
@@ -158,18 +162,21 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     };
 
     const handleTempSave = async () => {
+        if (!token) return;
         try {
             const formattedDate = getFormattedDateTime(noticeData.date);
-            if (!token) return;
+            const newData = {
+                userId: noticeData.userId,
+                babyId: noticeData.babyId,
+                content: content,
+                date: formattedDate
+            };
+
             await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, token, {
                 method: 'PUT',
-                body: JSON.stringify({
-                    userId: noticeData.userId,
-                    babyId: noticeData.babyId,
-                    content: content,
-                    date: formattedDate
-                }),
+                body: newData,
             });
+
             updateEntries({ ...data!, content: content });
             onClose();
         } catch (error) {
@@ -179,6 +186,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     };
 
     const handleCreateDiary = async () => {
+        if (!token) return;
         setLoading(true);
         setError(null);
 
@@ -193,10 +201,9 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                 sendToML: true,
             };
 
-            if (!token) return;
             await fetchWithAuth(`${BACKEND_API_URL}/api/alims`, token, {
                 method: 'POST',
-                body: JSON.stringify(alimInfData),
+                body: alimInfData
             });
 
             // 일기 생성 후 즉시 데이터를 다시 가져옵니다.
@@ -216,14 +223,14 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     };
 
     const handleCreateFairyTale = async () => {
+        if (!token) return;
         setLoading(true);
         setError(null);
 
         try {
-            if (!token) return;
             await fetchWithAuth(`${BACKEND_API_URL}/api/books/generate_fairytale/${diaryData?.alimInfId}`, token, {
                 method: 'POST',
-                body: JSON.stringify(diaryData),
+                body: diaryData
             });
             setFairyTaleGenerated(true);
         } catch (err) {
