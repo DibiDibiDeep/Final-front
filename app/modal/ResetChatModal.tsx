@@ -31,7 +31,7 @@ const ResetChatModal: React.FC<ResetChatModalProps> = ({ isOpen, onClose, onRese
                 <ModalContent className="m-auto">
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">채팅 내역 초기화</ModalHeader>
+                            <ModalHeader className="flex flex-col gap-1 text-gray-700">채팅 내역 초기화</ModalHeader>
                             <ModalBody className="flex flex-col items-center text-center">
                                 <p className="text-black">
                                     모든 채팅을 초기화하시겠습니까?

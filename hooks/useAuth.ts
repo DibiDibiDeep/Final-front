@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
@@ -16,9 +17,9 @@ interface SelectedBaby {
 }
 
 export const useAuth = () => {
-    const [token, setToken] = useState<string | null>(null);
-    const [userId, setUserId] = useState<number | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [token, setToken] = useState && useState<string | null>(null);
+    const [userId, setUserId] = useState && useState<number | null>(null);
+    const [error, setError] = useState && useState<string | null>(null);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('authToken');
