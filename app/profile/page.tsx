@@ -130,7 +130,8 @@ const MyPage: React.FC = () => {
 
     const handleLogout = () => {
         removeAuthToken();
-        localStorage.removeItem('userId');
+        // localStorage.removeItem('userId');
+        localStorage.clear();
         router.push('/login');
     };
 

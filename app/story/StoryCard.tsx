@@ -3,6 +3,8 @@
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -18,30 +20,33 @@ export default function StoryCard({ id, title, coverPath, priority = false, onDe
     const [imageSrc, setImageSrc] = useState<string>(coverPath);
     const [hasError, setHasError] = useState<boolean>(false);
     const router = useRouter();
+    const { token } = useAuth();
 
     const handleClick = useCallback(async () => {
+        console.log('click', id);
+        if (!token) return;
         try {
-            const response = await fetch(`${BACKEND_API_URL}/api/books/${id}`);
-            if (!response.ok) {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, token, {
+                method: 'GET',
+            });
+            if (!response) {
                 throw new Error('Failed to fetch story data');
             }
-            const data = await response.json();
-            localStorage.setItem(`storyPages_${id}`, JSON.stringify(data));
+            localStorage.setItem(`storyPages_${id}`, JSON.stringify(response));
             router.push(`/story/${id}`);
         } catch (error) {
             console.error('Failed to fetch story data:', error);
-            // Error handling - you might want to show a user-friendly error message here
         }
-    }, [id, router]);
+    }, [id, token, router]);
 
     const handleImageError = useCallback(() => {
         setHasError(true);
-        setImageSrc('/img/storyThumbnail/fallback.jpg'); // Path to fallback image
+        setImageSrc('/img/storyThumbnail/fallback.jpg');
     }, []);
 
     const handleDelete = useCallback((e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent the click event from triggering the story view
-        onDelete(id); // Call the onDelete function passed in as a prop
+        e.stopPropagation(); // Prevents the click from propagating to the parent card
+        onDelete(id);
     }, [id, onDelete]);
 
     return (

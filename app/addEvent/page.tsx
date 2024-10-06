@@ -8,6 +8,7 @@ import Calendar from '@/components/Calendar';
 import { debounce } from 'lodash';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
@@ -28,6 +29,7 @@ export default function AddPage() {
     const router = useRouter();
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
+    const { setActiveView } = useBottomContainer();
 
     useEffect(() => {
         updateDateTimes(new Date());
@@ -84,6 +86,7 @@ export default function AddPage() {
 
     const handleGoToMain = () => {
         router.push('/home');
+        setActiveView('home')
     }
 
     const handleSubmit = (e: React.MouseEvent) => {
