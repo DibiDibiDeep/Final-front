@@ -1,5 +1,4 @@
 import { jwtDecode } from "jwt-decode";
-import Cookies from 'js-cookie';
 
 interface User {
     userId: number;
@@ -31,25 +30,19 @@ export function decodeToken(token: string): User {
     }
 }
 
-export const setAuthToken = (token: string) => {
-    console.log('Setting auth token in cookie');
-    Cookies.set('authToken', token, {
-        expires: 7, // 7일 후 만료
-        path: '/', // 모든 경로에서 접근 가능
-        sameSite: 'strict',
-        secure: window.location.protocol === 'https:' // HTTPS에서만 사용 (개발 환경에서는 false가 될 수 있음)
-    });
-    console.log('Auth token set:', token);
-};
+export function setAuthToken(token: string) {
+    console.log('Setting auth token in localStorage');
+    localStorage.setItem('authToken', token);
+}
 
 export function getAuthToken(): string | null {
-    console.log('Getting auth token from cookie');
-    return Cookies.get('authToken') || null;
+    console.log('Getting auth token from localStorage');
+    return localStorage.getItem('authToken');
 }
 
 export function removeAuthToken() {
-    console.log('Removing auth token from cookie');
-    Cookies.remove('authToken');
+    console.log('Removing auth token from localStorage');
+    localStorage.removeItem('authToken');
 }
 
 export function getCurrentUser(): User | null {
