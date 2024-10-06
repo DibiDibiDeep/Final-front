@@ -81,6 +81,7 @@ export default function Home() {
     useEffect(() => {
         if (!token) return;
         if (userId) {
+            fetchMemos();
             fetchEvents();
         }
     }, [userId, token, selectedBaby]);
@@ -163,38 +164,35 @@ export default function Home() {
 
 
     // 메모 가져오기
-    useEffect(() => {
-        const fetchMemos = async () => {
-            if (!token || !userId || !selectedBaby) return;
-            try {
-                const formattedDate = formatDateForBackend(selectedDate);
-                console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
-                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
-                    method: 'GET',
-                });
-                console.log('Backend response for Memos:', response);
-                if (Array.isArray(response)) {
-                    const fetchedMemos: Memo[] = response.map((memo: any) => ({
-                        memoId: memo.memoId,
-                        userId: memo.userId,
-                        babyId: selectedBaby.babyId,
-                        todayId: memo.todayId,
-                        bookId: memo.bookId,
-                        date: memo.date,
-                        content: memo.content
-                    }));
-                    setMemos(fetchedMemos);
-                } else {
-                    console.error('Unexpected response format for memos:', response);
-                    setMemos([]);
-                }
-            } catch (error) {
-                console.error('Failed to fetch memos:', error);
+    const fetchMemos = async () => {
+        if (!token || !userId || !selectedBaby) return;
+        try {
+            const formattedDate = formatDateForBackend(selectedDate);
+            console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+                method: 'GET',
+            });
+            console.log('Backend response for Memos:', response);
+            if (Array.isArray(response)) {
+                const fetchedMemos: Memo[] = response.map((memo: any) => ({
+                    memoId: memo.memoId,
+                    userId: memo.userId,
+                    babyId: selectedBaby.babyId,
+                    todayId: memo.todayId,
+                    bookId: memo.bookId,
+                    date: memo.date,
+                    content: memo.content
+                }));
+                setMemos(fetchedMemos);
+            } else {
+                console.error('Unexpected response format for memos:', response);
                 setMemos([]);
             }
-        };
-        fetchMemos();
-    }, [selectedDate, userId]);
+        } catch (error) {
+            console.error('Failed to fetch memos:', error);
+            setMemos([]);
+        }
+    };
 
     // 이벤트 가져오기
     const fetchEvents = async () => {
@@ -247,37 +245,60 @@ export default function Home() {
     };
 
     const handleCreateMemo = async (content: string) => {
-        if (!userId || !selectedBaby) {
-            console.error('User ID or Selected Baby is not available');
-            return;
-        }
+    if (!token || !userId || !selectedBaby) {
+        console.error('User ID or Selected Baby is not available');
+        return;
+    }
 
-        try {
-            const response = await axios.post(`${BACKEND_API_URL}/api/memos`, {
-                userId,
-                babyId: selectedBaby.babyId,
-                date: new Date().toISOString(),
-                content: content,
-                todayId: null,
-                bookId: null
+    const newMemoData: Omit<Memo, 'memoId'> = {
+        userId: userId,
+        babyId: selectedBaby.babyId,
+        todayId: null,
+        bookId: null,
+        date: new Date().toISOString(),
+        content: content
+    };
+
+    try {
+        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, token, {
+            method: 'POST',
+            body: JSON.stringify(newMemoData)
+        });
+
+        console.log('Server response for creating memo:', response);
+
+        if (response && typeof response.memoId === 'number') {
+            // Fetch all memos after successful creation
+            const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+                method: 'GET',
             });
 
-            const newMemo: Memo = {
-                memoId: response.data.memoId,
-                userId: response.data.userId,
-                babyId: selectedBaby.babyId,
-                todayId: response.data.todayId,
-                bookId: response.data.bookId,
-                date: response.data.date,
-                content: response.data.content
-            };
+            console.log('Backend response for fetching Memos:', fetchResponse);
 
-            setMemos(prevMemos => [newMemo, ...prevMemos]);
+            if (Array.isArray(fetchResponse)) {
+                const fetchedMemos: Memo[] = fetchResponse.map((memo: any) => ({
+                    memoId: memo.memoId,
+                    userId: memo.userId,
+                    babyId: selectedBaby.babyId,
+                    todayId: memo.todayId,
+                    bookId: memo.bookId,
+                    date: memo.date,
+                    content: memo.content
+                }));
+                setMemos(fetchedMemos);
+            } else {
+                console.error('Unexpected response format for memos:', fetchResponse);
+                setMemos([]);
+            }
+
             setIsCreateMemoModalOpen(false);
-        } catch (error) {
-            console.error('Failed to create memo:', error);
+        } else {
+            console.error('Invalid response from server when creating memo:', response);
         }
-    };
+    } catch (error) {
+        console.error('Failed to create memo or fetch memos:', error);
+    }
+};
 
     const handleMemoDeleted = (deletedMemoId: number) => {
         setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
@@ -447,7 +468,7 @@ export default function Home() {
                         </button>
                     </div>
                     <p className="text-2xl text-black mb-[33px]">
-                        {selectedDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                        {selectedDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                     </p>
                     {(activeView === 'home' || activeView === 'todo') && (
                         <>
