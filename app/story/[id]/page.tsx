@@ -57,8 +57,7 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
                 if (storedData) {
                     setStoryData(JSON.parse(storedData));
                 } else {
-                    if (!token) return;
-                    const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, token, { method: 'GET' });
+                    const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, { method: 'GET' });
                     setStoryData(response);
                     localStorage.setItem(`storyPages_${id}`, JSON.stringify(response));
                 }

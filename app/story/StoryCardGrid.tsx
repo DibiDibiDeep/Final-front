@@ -53,12 +53,8 @@ function LoginRequired() {
 }
 
 async function getUserBooks(userId: number, token: string): Promise<Book[]> {
-    if (!token) {
-        throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
-    }
-
     try {
-        const books = await fetchWithAuth(`${BACKEND_API_URL}/api/books/user/${userId}`, token, {
+        const books = await fetchWithAuth(`${BACKEND_API_URL}/api/books/user/${userId}`, {
             method: 'GET'
         });
         if (!books) {
@@ -79,12 +75,8 @@ async function getUserBooks(userId: number, token: string): Promise<Book[]> {
 
 
 async function deleteUserBook(bookId: number, token: string): Promise<void> {
-    if (!token) {
-        throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
-    }
-
     try {
-        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${bookId}`, token, {
+        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${bookId}`, {
             method: 'DELETE'
         });
 

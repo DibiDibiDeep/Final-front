@@ -149,7 +149,7 @@ export default function DiaryPage() {
     }, [selectedEntry]);
 
     const fetchUserDiaries = async (userIdParam: number) => {
-        if (!token || !userId || !babyId) {
+        if (!userId || !babyId) {
             console.error('Token or User ID or Baby ID is not available');
             return;
         }
@@ -166,10 +166,8 @@ export default function DiaryPage() {
 
             const response = await fetchWithAuth(
                 url.toString(),
-                token,
                 {
-                    method: 'GET',
-                    timeout: 10000, // 10초 타임아웃 설정 (필요에 따라 조정 가능)
+                    method: 'GET'
                 }
             );
 
@@ -195,7 +193,7 @@ export default function DiaryPage() {
 
 
     const handleCreateDiary = async (content: string) => {
-        if (!token || !userId || !babyId) {
+        if (!userId || !babyId) {
             console.error('User ID or Baby ID is not available');
             return;
         }
@@ -212,7 +210,7 @@ export default function DiaryPage() {
         };
 
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/alims`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/alims`, {
                 method: 'POST',
                 body: newNoticeData
             });
@@ -241,7 +239,7 @@ export default function DiaryPage() {
             return;
         }
         try {
-            await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, token, {
+            await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, {
                 method: 'DELETE'
             });
 

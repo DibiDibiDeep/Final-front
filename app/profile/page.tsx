@@ -22,7 +22,6 @@ interface Baby {
 
 const MyPage: React.FC = () => {
     const { token, userId, error: authError } = useAuth();
-    const { babyId } = useBabySelection();
     const [babies, setBabies] = useState<Baby[]>([]);
     const [currentBabyIndex, setCurrentBabyIndex] = useState(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -52,13 +51,12 @@ const MyPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            if (!token) return;
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, {
                 method: 'GET'
             });
             if (response && Array.isArray(response) && response.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(response.map(async (baby: any) => {
-                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, {
                         method: 'GET'
                     });
                     return {
@@ -104,12 +102,12 @@ const MyPage: React.FC = () => {
     }
 
     const handleDeleteBaby = async () => {
-        if (!token || !userId || !selectedBabyForDelete) {
+        if (!userId || !selectedBabyForDelete) {
             console.log('User ID or Baby ID is not available');
             return;
         }
         try {
-            await fetchWithAuth(`${BACKEND_API_URL}/api/baby/${selectedBabyForDelete.babyId}`, token, {
+            await fetchWithAuth(`${BACKEND_API_URL}/api/baby/${selectedBabyForDelete.babyId}`, {
                 method: 'DELETE'
             });
 

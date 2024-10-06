@@ -99,9 +99,6 @@ export default function AddPage() {
     const debouncedSubmit = debounce(handleSubmit, 300); // 일정 시간 내 중복 클릭 방지 (중복 제출 방지)
 
     const handleSubmitData = async () => {
-        console.log(token);
-        if (token == null) return;
-
         setError(null);
 
         const eventData = {
@@ -116,7 +113,7 @@ export default function AddPage() {
         console.log("eventData", eventData);
 
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars`, {
                 method: 'POST',
                 body: eventData
             });

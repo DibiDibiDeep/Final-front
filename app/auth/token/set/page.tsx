@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { setAuthToken, decodeToken } from '@/utils/authUtils';
+import { setAuthToken, decodeToken, getCurrentUser } from '@/utils/authUtils';
+import Cookies from 'js-cookie';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -10,7 +11,6 @@ export default function SetToken() {
     const searchParams = useSearchParams();
     const token = searchParams?.get('token');
     const [message, setMessage] = useState('Processing login...');
-    
 
     useEffect(() => {
         console.log('SetToken: useEffect triggered');
@@ -21,12 +21,13 @@ export default function SetToken() {
                 const user = decodeToken(token);
                 console.log('Decoded user:', user);
                 setAuthToken(token);
-                console.log('Token set in local storage');
+                console.log('Token set in cookie');
 
-                localStorage.setItem('userId', user.userId.toString());
-                localStorage.setItem('userEmail', user.email);
-                localStorage.setItem('userName', user.name);
-                console.log('User info saved in local storage');
+
+                Cookies.set('userId', user.userId.toString(), { expires: 7, secure: true, sameSite: 'strict' });
+                Cookies.set('userEmail', user.email, { expires: 7, secure: true, sameSite: 'strict' });
+                Cookies.set('userName', user.name, { expires: 7, secure: true, sameSite: 'strict' });
+                console.log('User info saved in cookies');
 
                 setMessage('Login successful. Checking user data...');
 
@@ -53,7 +54,6 @@ export default function SetToken() {
                         setMessage('Error occurred. Redirecting to login page...');
                         setTimeout(() => router.push('/login?error=api_error'), 1500);
                     });
-
             } catch (error) {
                 console.error('Failed to process token:', error);
                 setMessage('Login failed. Redirecting to login page...');

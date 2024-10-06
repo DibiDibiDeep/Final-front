@@ -4,12 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
-import axios from 'axios';
 import { Search, MessageCircle } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
-import BottomContainer from '@/components/BottomContainer';
 import DetailedContainer from "@/components/DetailedContainer";
 import Calendar from '@/app/calendarapp/Calendar';
 import MemoDetail from '@/app/memo/MemoDetail';
@@ -21,8 +20,6 @@ import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
-
-
 
 // 유틸리티 함수
 const formatDateForBackend = (date: Date) => {
@@ -64,7 +61,6 @@ export default function Home() {
         handleScanButtonClick
     } = useBottomContainer();
 
-
     // 아이 정보 가져오기
     useEffect(() => {
         if (!token) return;
@@ -79,12 +75,17 @@ export default function Home() {
 
     // selectedBaby가 변경될 때마다 fetchEvents 호출
     useEffect(() => {
+        console.log('selectedBaby', selectedBaby);
         if (!token) return;
         if (userId) {
             fetchMemos();
             fetchEvents();
         }
     }, [userId, token, selectedBaby]);
+
+    useEffect(() => {
+        console.log('cookie', Cookies.get('selectedBaby'));
+    }, [selectedBaby])
 
     const isTokenExpired = (token: string) => {
         const payload = JSON.parse(atob(token.split('.')[1])); // 토큰의 payload 부분을 디코딩
@@ -93,23 +94,15 @@ export default function Home() {
     };
 
     const fetchBabiesInfo = async (userId: number) => {
-        if (!token) return;
-        if (isTokenExpired(token)) {
-            console.log("토큰이 만료되었습니다.");
-            // 토큰을 재발급하는 로직 추가
-        } else {
-            console.log("토큰이 유효합니다.");
-        }
-
         console.log('Fetching babies info for user:', userId);
         try {
-            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, {
                 method: 'GET',
             });
             console.log('User response:', userResponse);
             if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
-                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, {
                         method: 'GET',
                     });
                     return {
@@ -122,15 +115,14 @@ export default function Home() {
 
                 setBabies(fetchedBabies);
 
-                // 여기 추가
                 if (fetchedBabies.length > 0) {
                     setSelectedBaby(fetchedBabies[0]);
                     setBabyPhoto(fetchedBabies[0].photoUrl);
-                    localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                    Cookies.set('selectedBaby', JSON.stringify(fetchedBabies[0]), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
                     console.log('Baby information saved:', fetchedBabies[0]);
                 }
 
-                // localStorage에서 저장된 선택된 아이 정보 확인
+                // 쿠키에서 저장된 선택된 아이 정보 확인
                 if (babyId) {
                     const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
                     if (foundBaby) {
@@ -140,17 +132,17 @@ export default function Home() {
                         // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
                         setSelectedBaby(fetchedBabies[0]);
                         setBabyPhoto(fetchedBabies[0].photoUrl);
-                        localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                        Cookies.set('selectedBaby', JSON.stringify(fetchedBabies[0]), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
                     }
                 } else {
                     // 저장된 선택 정보가 없으면 첫 번째 아이 선택
                     setSelectedBaby(fetchedBabies[0]);
                     setBabyPhoto(fetchedBabies[0].photoUrl);
-                    localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
+                    Cookies.set('selectedBaby', JSON.stringify(fetchedBabies[0]), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
                 }
             } else {
                 console.log("No baby information found for this user.");
-                localStorage.removeItem('selectedBaby');
+                Cookies.remove('selectedBaby');
             }
         } catch (error) {
             console.error('Failed to fetch baby information:', error);
@@ -162,14 +154,13 @@ export default function Home() {
         }
     };
 
-
     // 메모 가져오기
     const fetchMemos = async () => {
-        if (!token || !userId || !selectedBaby) return;
+        if (userId || !selectedBaby) return;
         try {
             const formattedDate = formatDateForBackend(selectedDate);
             console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
                 method: 'GET',
             });
             console.log('Backend response for Memos:', response);
@@ -196,10 +187,10 @@ export default function Home() {
 
     // 이벤트 가져오기
     const fetchEvents = async () => {
-        if (!token || !userId || !selectedBaby) return;
+        if (!userId || !selectedBaby) return;
 
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, {
                 method: 'GET',
             });
             console.log('Backend response:', response);
@@ -221,8 +212,6 @@ export default function Home() {
         }
     }
 
-    // }, [selectedDate, userId, selectedBaby]);
-
     // 이벤트 핸들러
     const handleCheckNotice = () => {
         router.push('/notice');
@@ -241,64 +230,64 @@ export default function Home() {
     const handleBabySelect = (baby: Baby) => {
         setSelectedBaby(baby);
         setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
-        localStorage.setItem('selectedBaby', JSON.stringify(baby));
+        Cookies.set('selectedBaby', JSON.stringify(baby), { expires: 7, secure: true, sameSite: 'strict' });
     };
 
     const handleCreateMemo = async (content: string) => {
-    if (!token || !userId || !selectedBaby) {
-        console.error('User ID or Selected Baby is not available');
-        return;
-    }
+        if (!userId || !selectedBaby) {
+            console.error('User ID or Selected Baby is not available');
+            return;
+        }
 
-    const newMemoData: Omit<Memo, 'memoId'> = {
-        userId: userId,
-        babyId: selectedBaby.babyId,
-        todayId: null,
-        bookId: null,
-        date: new Date().toISOString(),
-        content: content
-    };
+        const newMemoData: Omit<Memo, 'memoId'> = {
+            userId: userId,
+            babyId: selectedBaby.babyId,
+            todayId: null,
+            bookId: null,
+            date: new Date().toISOString(),
+            content: content
+        };
 
-    try {
-        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, token, {
-            method: 'POST',
-            body: JSON.stringify(newMemoData)
-        });
-
-        console.log('Server response for creating memo:', response);
-
-        if (response && typeof response.memoId === 'number') {
-            // Fetch all memos after successful creation
-            const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
-                method: 'GET',
+        try {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, {
+                method: 'POST',
+                body: JSON.stringify(newMemoData)
             });
 
-            console.log('Backend response for fetching Memos:', fetchResponse);
+            console.log('Server response for creating memo:', response);
 
-            if (Array.isArray(fetchResponse)) {
-                const fetchedMemos: Memo[] = fetchResponse.map((memo: any) => ({
-                    memoId: memo.memoId,
-                    userId: memo.userId,
-                    babyId: selectedBaby.babyId,
-                    todayId: memo.todayId,
-                    bookId: memo.bookId,
-                    date: memo.date,
-                    content: memo.content
-                }));
-                setMemos(fetchedMemos);
+            if (response && typeof response.memoId === 'number') {
+                // Fetch all memos after successful creation
+                const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
+                    method: 'GET',
+                });
+
+                console.log('Backend response for fetching Memos:', fetchResponse);
+
+                if (Array.isArray(fetchResponse)) {
+                    const fetchedMemos: Memo[] = fetchResponse.map((memo: any) => ({
+                        memoId: memo.memoId,
+                        userId: memo.userId,
+                        babyId: selectedBaby.babyId,
+                        todayId: memo.todayId,
+                        bookId: memo.bookId,
+                        date: memo.date,
+                        content: memo.content
+                    }));
+                    setMemos(fetchedMemos);
+                } else {
+                    console.error('Unexpected response format for memos:', fetchResponse);
+                    setMemos([]);
+                }
+
+                setIsCreateMemoModalOpen(false);
             } else {
-                console.error('Unexpected response format for memos:', fetchResponse);
-                setMemos([]);
+                console.error('Invalid response from server when creating memo:', response);
             }
-
-            setIsCreateMemoModalOpen(false);
-        } else {
-            console.error('Invalid response from server when creating memo:', response);
+        } catch (error) {
+            console.error('Failed to create memo or fetch memos:', error);
         }
-    } catch (error) {
-        console.error('Failed to create memo or fetch memos:', error);
-    }
-};
+    };
 
     const handleMemoDeleted = (deletedMemoId: number) => {
         setMemos(prevMemos => prevMemos.filter(memo => memo.memoId !== deletedMemoId));
@@ -355,8 +344,8 @@ export default function Home() {
 
         const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
         const matchesSearch =
-            (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||  // Safely access title
-            (event.location?.toLowerCase().includes(searchTerm.toLowerCase()) || '');  // Safely access location
+            (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
+            (event.location?.toLowerCase().includes(searchTerm.toLowerCase()) || '');
 
         return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
@@ -437,7 +426,7 @@ export default function Home() {
                     <Calendar
                         selectedDate={selectedDate}
                         onDateSelect={handleDateSelect}
-                        events={events}  // 여기에 events prop 추가
+                        events={events}
                     />
                     <button
                         onClick={handleChatbotClick}

@@ -82,10 +82,9 @@ const InitialSettings: React.FC = () => {
 
     const fetchBabyPhoto = async (babyId: number) => {
         try {
-            if (!token) return;
             // const response = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`);
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`, token, {
-                method: 'GET',
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`, {
+                method: 'GET'
             });
             console.log('fetch Photo:', response);
 
@@ -128,7 +127,6 @@ const InitialSettings: React.FC = () => {
         setError(null);
 
         try {
-            if (!token) return;
             const formattedBabyInfo = {
                 ...babyInfo,
                 birth: new Date(babyInfo.birth + 'T00:00:00').toISOString(),
@@ -138,13 +136,13 @@ const InitialSettings: React.FC = () => {
             let response;
             if (formattedBabyInfo.babyId) {
                 // 기존 아기 정보 업데이트
-                response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/${formattedBabyInfo.babyId}`, token, {
+                response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/${formattedBabyInfo.babyId}`, {
                     method: 'PUT',
                     body: formattedBabyInfo,
                 });
             } else {
                 // 새 아기 정보 생성
-                response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby`, token, {
+                response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby`, {
                     method: 'POST',
                     body: formattedBabyInfo,
                 });
@@ -152,39 +150,33 @@ const InitialSettings: React.FC = () => {
 
             const babyId = response.babyId;
 
-            // baby-photo 로직
+            // 항상 사진 업로드 로직 실행
+            const formData = new FormData();
             if (selectedFile) {
-                const formData = new FormData();
                 formData.append("file", selectedFile);
-                formData.append("babyId", babyId.toString());
-                formData.append("userId", userId.toString());
+            }
+            formData.append("babyId", babyId.toString());
+            formData.append("userId", userId.toString());
 
-                console.log(`update photo: ${BACKEND_API_URL}/api/baby-photos/${babyInfo.babyId}`);
+            const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/${babyId}`, {
+                method: 'PUT',
+                body: formData,
+            });
 
-                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/${babyInfo.babyId}`, token, {
-                    method: 'PUT',
-                    body: formData,
-                });
+            console.log('Baby photo uploaded successfully:', photoResponse);
+            const newPhotoUrl = photoResponse.filePath;
 
-                // console.log('Baby photo uploaded successfully:', response);
-                // const newPhotoUrl = response.filePath;
+            // 상태 업데이트
+            setBabyInfo(prevState => ({
+                ...prevState,
+                photoUrl: newPhotoUrl
+            }));
 
-                // // Update the babyInfo state with the new photo URL
-                // setBabyInfo(prevState => ({
-                //     ...prevState,
-                //     photoUrl: newPhotoUrl
-                // }));
-
-                // // Update the selected baby in state and localStorage
-                // if (selectedBaby) {
-                //     const updatedBaby: BabyInfo = { ...selectedBaby, photoUrl: newPhotoUrl };
-                //     setSelectedBaby(updatedBaby);
-                //     localStorage.setItem('selectedBaby', JSON.stringify(updatedBaby));
-                // } else {
-                //     console.warn('No baby is currently selected');
-                // }
-
-                // ... 나머지 코드 ...
+            // 선택된 아기 정보 업데이트
+            if (selectedBaby) {
+                const updatedBaby: BabyInfo = { ...selectedBaby, photoUrl: newPhotoUrl };
+                setSelectedBaby(updatedBaby);
+                localStorage.setItem('selectedBaby', JSON.stringify(updatedBaby));
             }
 
             console.log('Baby information and photo saved successfully');
