@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import ResetChatModal from '../modal/ResetChatModal';
-import { Search, ChevronLeft, Trash2 } from 'lucide-react';
+import { Search, ChevronLeft, Trash2, ChevronUp, ChevronDown, X } from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
@@ -33,9 +33,18 @@ const DummyChatInterface: React.FC = () => {
   const [babies, setBabies] = useState<Baby[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [searchMatches, setSearchMatches] = useState<number[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(-1);
   const [composing, setComposing] = useState(false);
   const { token, userId, error: authError } = useAuth();
   const { babyId } = useBabySelection();
+  
+  const router = useRouter();
+
+  const handleSearchFocus = () => setIsSearchFocused(true);
+
+  const handleSearchBlur = () => setIsSearchFocused(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputMessage(e.target.value);
@@ -61,7 +70,89 @@ const DummyChatInterface: React.FC = () => {
     }
   };
 
-  const router = useRouter();
+  const scrollToMatch = (index: number) => {
+    if (chatContainerRef.current && index >= 0 && index < searchMatches.length) {
+      const elements = chatContainerRef.current.getElementsByClassName('message-text');
+      const element = elements[searchMatches[index]] as HTMLElement;
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handlePrevMatch = () => {
+    if (currentMatchIndex > 0) {
+      const newIndex = currentMatchIndex - 1;
+      setCurrentMatchIndex(newIndex);
+      scrollToMatch(newIndex);
+    }
+  };
+
+  const handleNextMatch = () => {
+    if (currentMatchIndex < searchMatches.length - 1) {
+      const newIndex = currentMatchIndex + 1;
+      setCurrentMatchIndex(newIndex);
+      scrollToMatch(newIndex);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setSearchMatches([]);
+    setCurrentMatchIndex(-1);
+    clearHighlights();
+  };
+
+  const handleSearch = useCallback(() => {
+    if (searchTerm && chatContainerRef.current) {
+      const regex = new RegExp(searchTerm, 'gi');
+      const elements = chatContainerRef.current.getElementsByClassName('message-text');
+      const newMatches: number[] = [];
+
+      Array.from(elements).forEach((el, index) => {
+        const element = el as HTMLElement;
+        if (regex.test(element.innerText)) {
+          newMatches.push(index);
+        }
+      });
+
+      setSearchMatches(newMatches);
+      setCurrentMatchIndex(newMatches.length > 0 ? 0 : -1);
+
+      if (newMatches.length > 0) {
+        scrollToMatch(0);
+      }
+
+      highlightMatches();
+    } else {
+      setSearchMatches([]);
+      setCurrentMatchIndex(-1);
+      clearHighlights();
+    }
+  }, [searchTerm]);
+
+  const highlightMatches = () => {
+    if (chatContainerRef.current) {
+      const elements = chatContainerRef.current.getElementsByClassName('message-text');
+      Array.from(elements).forEach((el, index) => {
+        const element = el as HTMLElement;
+        if (searchMatches.includes(index)) {
+          const regex = new RegExp(`(${searchTerm})`, 'gi');
+          element.innerHTML = element.innerText.replace(regex, '<mark style="background-color: yellow; color: black;">$1</mark>');
+        } else {
+          element.innerHTML = element.innerText;
+        }
+      });
+    }
+  };
+
+  const clearHighlights = () => {
+    if (chatContainerRef.current) {
+      const elements = chatContainerRef.current.getElementsByClassName('message-text');
+      Array.from(elements).forEach((el) => {
+        const element = el as HTMLElement;
+        element.innerHTML = element.innerText;
+      });
+    }
+  };
 
   const handleBackClick = () => {
     router.back();
@@ -77,23 +168,44 @@ const DummyChatInterface: React.FC = () => {
     setIsResetModalOpen(true);
   };
 
-  const confirmResetChat = async () => {
-    if (!token || userId === null || babyId === null) {
-      setError('사용자 정보나 인증 토큰이 없습니다.');
-      return;
-    }
+  // const confirmResetChat = async () => {
+  //   if (!token || userId === null || babyId === null) {
+  //     setError('사용자 정보나 인증 토큰이 없습니다.');
+  //     return;
+  //   }
 
-    try {
-      await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, token, {
-        method: 'POST',
-      });
-      setMessages([]);
-      setIsResetModalOpen(false);
-    } catch (error) {
-      console.error('Error resetting chat history:', error);
-      setError('채팅 내역 초기화에 실패했습니다.');
+  //   try {
+  //     await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, token, {
+  //       method: 'DELETE',
+  //     });
+  //     setMessages([]);
+  //     setIsResetModalOpen(false);
+  //   } catch (error) {
+  //     console.error('Error resetting chat history:', error);
+  //     setError('채팅 내역 초기화에 실패했습니다.');
+  //   }
+  // };
+
+  const confirmResetChat = () => {
+    // 화면에 표시된 메시지 초기화
+    setMessages([]);
+    
+    // 로컬 스토리지에서 채팅 캐시 삭제
+    if (userId !== null && babyId !== null) {
+      localStorage.removeItem(`chatCache_${userId}_${babyId}`);
     }
+    
+    // 모달 닫기
+    // setIsResetModalOpen(false);
+    
+    // 사용자에게 초기화 완료 메시지 표시 (선택사항)
+    setError('채팅 내역이 초기화되었습니다.');
+    setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
   };
+
+  useEffect(() => {
+    handleSearch();
+  }, [handleSearch, searchTerm]);
 
   useEffect(scrollToBottom, [messages]);
 
@@ -358,18 +470,44 @@ const DummyChatInterface: React.FC = () => {
             </DropdownMenu>
           </Dropdown>
         </div>
-        <div className="flex-1 flex justify-center items-center">
-          <div className="relative w-full max-w-[300px]">
+         <div className="w-full max-w-md px-4">
+        <div className="relative">
+          <div className={`flex items-center bg-white rounded-full transition-all duration-300 ${isSearchFocused ? 'shadow-lg' : 'shadow'}`}>
+            <div className="pl-4">
+              <Search className="text-gray-400" size={20} />
+            </div>
             <input
               type="text"
               placeholder="검색"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+              className="w-full py-2 px-3 rounded-full focus:outline-none"
             />
-            <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
+            {searchTerm && (
+              <div className="flex items-center pr-4">
+                {searchMatches.length > 0 && (
+                  <>
+                    <button onClick={handlePrevMatch} className="p-1 mx-1" aria-label="이전 검색 결과">
+                      <ChevronUp size={16} className="text-gray-500" />
+                    </button>
+                    <span className="text-sm text-gray-500">
+                      {currentMatchIndex + 1}/{searchMatches.length}
+                    </span>
+                    <button onClick={handleNextMatch} className="p-1 mx-1" aria-label="다음 검색 결과">
+                      <ChevronDown size={16} className="text-gray-500" />
+                    </button>
+                  </>
+                )}
+                <button onClick={handleClearSearch} className="p-1 ml-2" aria-label="검색 초기화">
+                  <X size={16} className="text-gray-500" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
+      </div>
         <button
           onClick={handleResetChat}
           className="p-2 rounded-full hover:bg-gray-200 transition duration-200"

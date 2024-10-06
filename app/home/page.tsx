@@ -37,6 +37,7 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export default function Home() {
     const [selectedDate, setSelectedDate] = useState(() => new Date());
+
     const [memos, setMemos] = useState<Memo[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [isExpanded, setIsExpanded] = useState(true);
@@ -81,8 +82,8 @@ export default function Home() {
     useEffect(() => {
         if (!token) return;
         if (userId) {
-            fetchMemos();
             fetchEvents();
+            fetchMemos();
         }
     }, [userId, token, selectedBaby]);
 
@@ -236,7 +237,11 @@ export default function Home() {
         router.back();
     };
 
-    const handleDateSelect = (date: Date) => setSelectedDate(date);
+    const handleDateSelect = (date: Date) => {
+        setSelectedDate(date);
+        setDisplayDate(date);
+        setSearchTerm('');
+    };
 
     const handleBabySelect = (baby: Baby) => {
         setSelectedBaby(baby);
@@ -361,6 +366,30 @@ export default function Home() {
         return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
 
+    const handleSearch = (term: string) => {
+        setSearchTerm(term);
+        if (term === '') {
+            setDisplayDate(selectedDate);
+        }
+    };
+
+    useEffect(() => {
+        if (searchTerm) {
+            const allDates = [
+                ...filteredEvents.map(event => new Date(event.startTime)),
+                ...filteredMemos.map(memo => new Date(memo.date))
+            ];
+            if (allDates.length > 0) {
+                const earliestDate = new Date(Math.min(...allDates.map(date => date.getTime())));
+                setDisplayDate(earliestDate);
+            } else {
+                setDisplayDate(selectedDate);
+            }
+        } else {
+            setDisplayDate(selectedDate);
+        }
+    }, [searchTerm, filteredEvents, filteredMemos, selectedDate]);
+
     const saveVoiceRecord = (audioBlob: Blob) => {
         console.log('Audio recorded:', audioBlob);
         console.log('userId', userId, 'babyId', babyId);
@@ -418,7 +447,7 @@ export default function Home() {
                             type="text"
                             placeholder="검색"
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => handleSearch(e.target.value)}
                             className="w-52 p-2 pr-10 rounded-full bg-white bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-md"
                         />
                         <Search className="absolute right-3 top-2.5 text-gray-400" size={20} />
@@ -468,7 +497,7 @@ export default function Home() {
                         </button>
                     </div>
                     <p className="text-2xl text-black mb-[33px]">
-                        {selectedDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                        {displayDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                     </p>
                     {(activeView === 'home' || activeView === 'todo') && (
                         <>
