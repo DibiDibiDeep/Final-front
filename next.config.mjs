@@ -29,20 +29,20 @@ const nextConfig = {
     pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'mdx'],
     trailingSlash: false,
     
-    // CSP 헤더 추가
-    async headers() {
-        return [
-            {
-                source: '/:path*',
-                headers: [
-                    {
-                        key: 'Content-Security-Policy',
-                        value: "upgrade-insecure-requests; default-src 'self' https://mongeul.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mongeul.com; style-src 'self' 'unsafe-inline' https://mongeul.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://mongeul.com;"
-                    },
-                ],
-            },
-        ];
-    },
+    // // CSP 헤더 추가
+    // async headers() {
+    //     return [
+    //         {
+    //             source: '/:path*',
+    //             headers: [
+    //                 {
+    //                     key: 'Content-Security-Policy',
+    //                     value: "upgrade-insecure-requests; default-src 'self' https://mongeul.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mongeul.com; style-src 'self' 'unsafe-inline' https://mongeul.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://mongeul.com;"
+    //                 },
+    //             ],
+    //         },
+    //     ];
+    // },
 };
 
 const pwaConfig = {

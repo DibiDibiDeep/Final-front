@@ -14,10 +14,10 @@ class MyDocument extends Document {
           <meta name="theme-color" content="#ffc211" />
           <link rel="apple-touch-icon" href="/img/mg-logoback.png" />
           <meta name="description" content="아이의 하루를 기록하세요." />
-          <meta
+          {/* <meta
             httpEquiv="Content-Security-Policy"
             content="upgrade-insecure-requests; default-src 'self' https://mongeul.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mongeul.com; style-src 'self' 'unsafe-inline' https://mongeul.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://mongeul.com;"
-          />
+          /> */}
         </Head>
         <body>
           <Main />
