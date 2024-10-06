@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import StoryCard from './StoryCard';
 import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -50,53 +52,63 @@ function LoginRequired() {
     );
 }
 
-async function getUserBooks(userId: number): Promise<Book[]> {
-    const token = getAuthToken();
+async function getUserBooks(userId: number, token: string): Promise<Book[]> {
     if (!token) {
         throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
     }
 
     try {
-        const response = await fetch(`${BACKEND_API_URL}/api/books/user/${userId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const books = await fetchWithAuth(`${BACKEND_API_URL}/api/books/user/${userId}`, token, {
+            method: 'GET'
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!books) {
+            throw new Error('Failed to fetch books');
         }
-        return response.json();
-    } catch (error) {
-        console.error('Failed to fetch books:', error);
+        return books;
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+            console.error('Request timed out');
+        } else if (error.message) {
+            console.error('Failed to fetch books:', error.message);
+        } else {
+            console.error('Unknown error:', error);
+        }
         throw error;
     }
 }
 
-async function deleteUserBook(bookId: number): Promise<void> {
+
+async function deleteUserBook(bookId: number, token: string): Promise<void> {
+    if (!token) {
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해 주세요.');
+    }
+
     try {
-        const response = await fetch(`${BACKEND_API_URL}/api/books/${bookId}`, {
-            method: 'DELETE',
+        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${bookId}`, token, {
+            method: 'DELETE'
         });
 
-        if (!response.ok) {
+        if (!response) {
             throw new Error('Failed to delete the book.');
         }
-    } catch (error) {
-        console.error('Failed to delete book:', error);
-        throw error;
+    } catch (error: any) {
+        console.error('error:', error);
     }
 }
+
 
 export default function StoryCardGrid() {
     const [books, setBooks] = useState<Book[] | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
+    const { token, userId, error: authError } = useAuth();
+
 
     useEffect(() => {
-        const user = getCurrentUser();
-        if (user) {
-            getUserBooks(user.userId)
+        // const user = getCurrentUser();
+        if (userId && token) {
+            getUserBooks(userId, token)
                 .then((fetchedBooks) => {
                     setBooks(fetchedBooks);
                     setLoading(false);
@@ -108,16 +120,19 @@ export default function StoryCardGrid() {
         } else {
             setLoading(false);
         }
-    }, []);
+    }, [userId]);
 
     const handleDelete = async (bookId: number) => {
+        console.log('Deleting book with id:', bookId); // 추가
+        if (!token) return;
         try {
-            await deleteUserBook(bookId);
+            await deleteUserBook(bookId, token);
             setBooks((prevBooks) => prevBooks?.filter((book) => book.bookId !== bookId) || null);
         } catch (error) {
             setError(error as Error);
         }
     };
+
 
     if (loading) {
         return (
@@ -135,7 +150,7 @@ export default function StoryCardGrid() {
     }
 
     const user = getCurrentUser();
-    if (!user || !books) {
+    if (!userId || !books) {
         return <LoginRequired />;
     }
 

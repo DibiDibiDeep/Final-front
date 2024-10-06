@@ -9,6 +9,7 @@ import Select from '@/components/Select';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
@@ -42,6 +43,7 @@ const InitialSettings: React.FC = () => {
     const router = useRouter();
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
+    const { setActiveView } = useBottomContainer();
 
     useEffect(() => {
         const storedUserId = localStorage.getItem('userId');
@@ -187,6 +189,7 @@ const InitialSettings: React.FC = () => {
 
             console.log('Baby information and photo saved successfully');
             router.push('/home');
+            setActiveView('home')
         } catch (err) {
             if (axios.isAxiosError(err) && err.response) {
                 setError(`Error: ${err.response.data.message || 'Unknown error occurred'}`);

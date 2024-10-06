@@ -67,7 +67,12 @@ const BottomContainer: React.FC = () => {
 
     const getButtonStyle = useCallback((buttonName: string): string => {
         if (buttonName === 'action') {
-            return `p-4 rounded-full bg-purple-600 absolute -top-8`; // shadow-lg 제거
+            return `p-4 rounded-full bg-purple-600 absolute -top-8`;
+        }
+        if (buttonName === 'home') {
+            return activeView === 'home' || activeView === 'todo' || activeView === 'memo'
+                ? "p-2 rounded-full bg-purple-600 text-white"
+                : "p-2 text-primary";
         }
         return activeView === buttonName
             ? "p-2 rounded-full bg-purple-600 text-white"
@@ -112,7 +117,7 @@ const BottomContainer: React.FC = () => {
                 <div className="flex flex-col items-center absolute bottom-0 left-1/2 transform -translate-x-1/2">
                     <IconButton
                         icon={StickyNote}
-                        onClick={() => { handleCreateMemo(); setShowOptions(false); }} // Trigger handleCreateMemo but no navigation
+                        onClick={() => { handleCreateMemo(); setShowOptions(false); }}
                         style="p-2 rounded-full bg-purple-400 text-white"
                         size={24}
                     />
@@ -133,7 +138,6 @@ const BottomContainer: React.FC = () => {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 w-full h-[100px] z-30">
-            {/* Overlay */}
             {showOptions && (
                 <div
                     className="fixed inset-0 bg-black opacity-50 z-20"
@@ -141,7 +145,6 @@ const BottomContainer: React.FC = () => {
                 />
             )}
 
-            {/* Bottom Container */}
             <div className="relative w-full h-full bg-white bg-opacity-40 backdrop-blur-md border-t border-gray-200 shadow-md rounded-[40px] z-30">
                 <div className="w-full h-full flex items-center justify-around px-4 relative">
                     <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />

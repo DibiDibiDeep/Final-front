@@ -4,8 +4,6 @@ import Image from 'next/image';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth } from '@/hooks/useAuth';
 
-const { token, error: authError } = useAuth();
-
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface Page {
@@ -35,6 +33,7 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
     const speechSynthesis = useRef<SpeechSynthesis | null>(null);
     const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
     const [isBrowserSupported, setIsBrowserSupported] = useState(true);
+    const { token, error: authError } = useAuth();
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -59,9 +58,9 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
                     setStoryData(JSON.parse(storedData));
                 } else {
                     if (!token) return;
-                    const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, token, {method: 'GET'});
-                    setStoryData(response.data);
-                    localStorage.setItem(`storyPages_${id}`, JSON.stringify(response.data));
+                    const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, token, { method: 'GET' });
+                    setStoryData(response);
+                    localStorage.setItem(`storyPages_${id}`, JSON.stringify(response));
                 }
             } catch (error) {
                 console.error('Failed to fetch story data:', error);

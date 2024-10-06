@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/utils/api';
+import { useAuth, useBabySelection } from '@/hooks/useAuth';
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 interface CalendarData {
     calendarPhotoInfId: number;
@@ -29,43 +31,36 @@ interface InferenceResult {
 }
 
 const NoticePage: React.FC = () => {
-    const [userId, setUserId] = useState<number | null>(null);
     const [calendarData, setCalendarData] = useState<CalendarData[]>([]);
     const router = useRouter();
-
-    useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
-        if (storedUserId) {
-            setUserId(parseInt(storedUserId, 10));
-        }
-    }, []);
-
+    const { token, userId, error: authError } = useAuth();
 
     useEffect(() => {
         if (userId) {
-            // console.log('userId', userId);
             getAllCalendarData();
         }
     }, [userId]);
 
     const getAllCalendarData = async () => {
+        if (!token) return;
         try {
-            const response = await axios.get<CalendarData[]>(`${BACKEND_API_URL}/api/calendar-photo-inf/${userId}`);
-            if (response.status !== 200) {
-                throw new Error(`Failed to process image. Status: ${response.status}`);
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photo-inf/${userId}`, token, {
+                method: 'GET'
+            });
+            if (!response) {
+                throw new Error('Failed to process image. No response received.');
             }
-            console.log("response", response.data);
-            setCalendarData(response.data);
+            console.log("response", response);
+            setCalendarData(response);
         } catch (error: any) {
-            if (error.response) {
-                // 서버에서 응답을 받은 경우
-                console.error(`Response error: Status ${error.response.status} -`, error.response.data);
-            } else if (error.request) {
-                // 요청이 서버에 도달하지 못한 경우 (네트워크 문제 등)
-                console.error('Request error: No response received', error.request);
+            if (error.name === 'AbortError') {
+                console.error('Request timed out');
+            } else if (error.message) {
+                // Handle other fetch-related errors
+                console.error('Error occurred:', error.message);
             } else {
-                // 그 외의 에러 (코드 상의 문제 등)
-                console.error('Unknown error:', error.message);
+                // Catch any other unknown errors
+                console.error('Unknown error:', error);
             }
         }
     };
