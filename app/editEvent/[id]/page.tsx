@@ -32,13 +32,10 @@ export default function EditEvent({ params }: { params: { id: string } }) {
     const { token, userId, error: authError } = useAuth();
 
     useEffect(() => {
-        console.log('token', token);
-        if (!token) return;
-
         const fetchEvent = async () => {
             try {
-                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${params.id}`, token, {
-                    method: 'GET',
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${params.id}`, {
+                    method: 'GET'
                 });
                 const startTime = new Date(response.startTime);
                 const endTime = new Date(response.endTime);
@@ -105,14 +102,13 @@ export default function EditEvent({ params }: { params: { id: string } }) {
 
 
     const handleUpdateEvent = async () => {
-        if (token == null) return;
         setIsLoading(true);
         setError('');
         try {
             const updatedEventData = {
                 ...eventData,
             };
-            await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${params.id}`, token, {
+            await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${params.id}`, {
                 method: 'PUT',
                 body: updatedEventData
             });

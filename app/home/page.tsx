@@ -9,7 +9,6 @@ import Cookies from 'js-cookie';
 
 // 커스텀 컴포넌트 임포트
 import MainContainer from "@/components/MainContainer";
-import BottomContainer from '@/components/BottomContainer';
 import DetailedContainer from "@/components/DetailedContainer";
 import Calendar from '@/app/calendarapp/Calendar';
 import MemoDetail from '@/app/memo/MemoDetail';
@@ -95,23 +94,15 @@ export default function Home() {
     };
 
     const fetchBabiesInfo = async (userId: number) => {
-        if (!token) return;
-        if (isTokenExpired(token)) {
-            console.log("토큰이 만료되었습니다.");
-            // 토큰을 재발급하는 로직 추가
-        } else {
-            console.log("토큰이 유효합니다.");
-        }
-
         console.log('Fetching babies info for user:', userId);
         try {
-            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, {
                 method: 'GET',
             });
             console.log('User response:', userResponse);
             if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
-                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, {
                         method: 'GET',
                     });
                     return {
@@ -165,11 +156,11 @@ export default function Home() {
 
     // 메모 가져오기
     const fetchMemos = async () => {
-        if (!token || !userId || !selectedBaby) return;
+        if (userId || !selectedBaby) return;
         try {
             const formattedDate = formatDateForBackend(selectedDate);
             console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
                 method: 'GET',
             });
             console.log('Backend response for Memos:', response);
@@ -196,10 +187,10 @@ export default function Home() {
 
     // 이벤트 가져오기
     const fetchEvents = async () => {
-        if (!token || !userId || !selectedBaby) return;
+        if (!userId || !selectedBaby) return;
 
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, {
                 method: 'GET',
             });
             console.log('Backend response:', response);
@@ -243,7 +234,7 @@ export default function Home() {
     };
 
     const handleCreateMemo = async (content: string) => {
-        if (!token || !userId || !selectedBaby) {
+        if (!userId || !selectedBaby) {
             console.error('User ID or Selected Baby is not available');
             return;
         }
@@ -258,7 +249,7 @@ export default function Home() {
         };
 
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, {
                 method: 'POST',
                 body: JSON.stringify(newMemoData)
             });
@@ -267,7 +258,7 @@ export default function Home() {
 
             if (response && typeof response.memoId === 'number') {
                 // Fetch all memos after successful creation
-                const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, token, {
+                const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
                     method: 'GET',
                 });
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -42,9 +42,8 @@ const NoticePage: React.FC = () => {
     }, [userId]);
 
     const getAllCalendarData = async () => {
-        if (!token) return;
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photo-inf/${userId}`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photo-inf/${userId}`, {
                 method: 'GET'
             });
             if (!response) {

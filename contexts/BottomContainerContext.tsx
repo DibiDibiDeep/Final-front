@@ -55,7 +55,6 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
     };
 
     const handleScanButtonClick = useCallback(() => {
-        if (!token) return;
         if (userId && babyId) {
             const input = document.createElement('input');
             input.type = 'file';
@@ -67,7 +66,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
                 if (files && files.length > 0) {
                     const file = files[0];
                     console.log('선택된 파일:', file.name);
-                    await uploadImage(file, userId, babyId, token);
+                    await uploadImage(file, userId, babyId);
                 }
             };
             document.body.appendChild(input);
@@ -76,7 +75,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
         }
     }, [userId, babyId]);
 
-    const uploadImage = async (file: File, userId: number, babyId: number, token: string): Promise<void> => {
+    const uploadImage = async (file: File, userId: number, babyId: number): Promise<void> => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('userId', userId.toString());
@@ -89,7 +88,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
         try {
             console.log('Sending request with formData:', Object.fromEntries(formData.entries()));
 
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photos`, token, {
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photos`, {
                 method: 'POST',
                 body: formData
             });

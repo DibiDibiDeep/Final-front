@@ -24,10 +24,9 @@ export default function StoryCard({ id, title, coverPath, priority = false, onDe
 
     const handleClick = useCallback(async () => {
         console.log('click', id);
-        if (!token) return;
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, token, {
-                method: 'GET',
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, {
+                method: 'GET'
             });
             if (!response) {
                 throw new Error('Failed to fetch story data');

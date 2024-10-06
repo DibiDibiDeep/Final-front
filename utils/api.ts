@@ -1,3 +1,5 @@
+import Cookies from 'js-cookie';
+
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 interface FetchOptions extends Omit<RequestInit, 'method' | 'body'> {
@@ -6,9 +8,19 @@ interface FetchOptions extends Omit<RequestInit, 'method' | 'body'> {
     timeout?: number;
 }
 
-export async function fetchWithAuth(url: string, token: string, options: FetchOptions) {
+export async function fetchWithAuth(url: string, options: FetchOptions, req?: any) {
+    let token: string | undefined;
+
+    if (typeof window !== 'undefined') {
+        // 클라이언트 사이드
+        token = Cookies.get('authToken');
+    } else {
+        // 서버 사이드
+        token = req?.cookies?.token;
+    }
+
     if (!token) {
-        throw new Error('No JWT token provided');
+        throw new Error('No JWT token found');
     }
 
     const controller = new AbortController();
