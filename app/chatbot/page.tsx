@@ -291,14 +291,14 @@ const DummyChatInterface: React.FC = () => {
   const fetchBabiesInfo = async (userId: number) => {
     if (!token) return;
     try {
-      const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, token, {
+      const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, {
         method: 'GET',
       });
 
       if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
 
         const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
-          const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, token, {
+          const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, {
             method: 'GET',
           });
           return {
@@ -345,7 +345,7 @@ const DummyChatInterface: React.FC = () => {
     }
 
     try {
-      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/history/${userId}/${babyId}`, token, {
+      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/history/${userId}/${babyId}`, {
         method: 'GET',
       });
       const formattedMessages = response.map((msg: any) => ({
@@ -385,7 +385,7 @@ const DummyChatInterface: React.FC = () => {
 
     try {
       if (!token) return;
-      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/send`, token, {
+      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/chat/send`, {
         method: 'POST',
         body: {
           userId: userId,
@@ -486,21 +486,18 @@ const DummyChatInterface: React.FC = () => {
               className="w-full py-2 px-3 rounded-full focus:outline-none"
             />
             {searchTerm && (
-              <div className="flex items-center pr-4">
+              <div className="flex items-center">
                 {searchMatches.length > 0 && (
                   <>
-                    <button onClick={handlePrevMatch} className="p-1 mx-1" aria-label="이전 검색 결과">
+                    <button onClick={handlePrevMatch} aria-label="이전 검색 결과">
                       <ChevronUp size={16} className="text-gray-500" />
                     </button>
-                    <span className="text-sm text-gray-500">
-                      {currentMatchIndex + 1}/{searchMatches.length}
-                    </span>
-                    <button onClick={handleNextMatch} className="p-1 mx-1" aria-label="다음 검색 결과">
+                    <button onClick={handleNextMatch} aria-label="다음 검색 결과">
                       <ChevronDown size={16} className="text-gray-500" />
                     </button>
                   </>
                 )}
-                <button onClick={handleClearSearch} className="p-1 ml-2" aria-label="검색 초기화">
+                <button onClick={handleClearSearch} className="p-1 ml-2 pr-4" aria-label="검색 초기화">
                   <X size={16} className="text-gray-500" />
                 </button>
               </div>
