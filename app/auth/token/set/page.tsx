@@ -21,8 +21,7 @@ export default function SetToken() {
                 const user = decodeToken(token);
                 console.log('Decoded user:', user);
                 setAuthToken(token);
-                console.log('Token set in cookie');
-
+                console.log('Token set in cookie: ', Cookies.get('authToken'));
 
                 Cookies.set('userId', user.userId.toString(), { expires: 7, secure: true, sameSite: 'strict' });
                 Cookies.set('userEmail', user.email, { expires: 7, secure: true, sameSite: 'strict' });

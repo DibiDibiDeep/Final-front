@@ -32,27 +32,32 @@ export function decodeToken(token: string): User {
 }
 
 export const setAuthToken = (token: string) => {
-    console.log('Setting auth token in cookie');
+    console.log('Setting auth token:', token);
     Cookies.set('authToken', token, {
-        expires: 7, // 7일 후 만료
-        path: '/', // 모든 경로에서 접근 가능
+        expires: 7,
+        path: '/',
         sameSite: 'strict',
-        secure: window.location.protocol === 'https:' // HTTPS에서만 사용 (개발 환경에서는 false가 될 수 있음)
+        secure: window.location.protocol === 'https:' // 로컬 환경에서 HTTPS가 아니면 false가 됩니다.
     });
-    console.log('Auth token set:', token);
+    console.log('Auth token after set:', Cookies.get('authToken'));
+
+    // 쿠키 설정 즉시 확인
+    const setToken = Cookies.get('authToken');
+    console.log('Immediately after setting, auth token is:', setToken ? 'exists' : 'does not exist');
 };
 
-export function getAuthToken(): string | null {
-    console.log('Getting auth token from cookie');
-    return Cookies.get('authToken') || null;
-}
+export const getAuthToken = () => {
+    const token = Cookies.get('authToken');
+    console.log('Getting auth token:', token);
+    return token;
+};
 
 export function removeAuthToken() {
     console.log('Removing auth token from cookie');
     Cookies.remove('authToken');
 }
 
-export function getCurrentUser(): User | null {
+export function getCurrentUser() {
     const token = getAuthToken();
     if (token) {
         try {

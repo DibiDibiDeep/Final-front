@@ -1,80 +1,71 @@
-// 'use client'
-// import React, { createContext, useContext, useState, useEffect } from 'react';
-// import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 
-// interface DecodedToken {
-//     userId: number;
-//     email: string;
-//     name: string;
-// }
+interface AuthContextType {
+    user: any | null;
+    loading: boolean;
+    login: (userData: any) => void;
+    logout: () => void;
+}
 
-// interface SelectedBaby {
-//     userId: number;
-//     babyId: number;
-//     babyName: string;
-//     photoUrl?: string;
-// }
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// interface AuthContextType {
-//     token: string | null;
-//     userId: number | null;
-//     error: string | null;
-//     babyId: number | null;
-// }
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const [user, setUser] = useState<any | null>(null);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
-// const AuthContext = createContext<AuthContextType | undefined>(undefined);
+    useEffect(() => {
+        // 페이지 로드 시 사용자 정보 확인
+        const checkUser = async () => {
+            const token = Cookies.get('authToken');
+            if (token) {
+                try {
+                    // 여기서 토큰을 검증하고 사용자 정보를 가져오는 API 호출
+                    const response = await fetch('/api/validate-token', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const userData = await response.json();
+                        setUser(userData);
+                    } else {
+                        // 토큰이 유효하지 않으면 로그아웃
+                        logout();
+                    }
+                } catch (error) {
+                    console.error('Failed to validate token:', error);
+                    logout();
+                }
+            }
+            setLoading(false);
+        };
 
-// export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-//     const [token, setToken] = useState<string | null>(null);
-//     const [userId, setUserId] = useState<number | null>(null);
-//     const [error, setError] = useState<string | null>(null);
-//     const [babyId, setBabyId] = useState<number | null>(null);
+        checkUser();
+    }, []);
 
-//     // 토큰과 userId를 가져오는 useEffect
-//     useEffect(() => {
-//         const storedToken = localStorage.getItem('authToken');
-//         if (storedToken) {
-//             try {
-//                 const decodedToken = jwtDecode<DecodedToken>(storedToken);
-//                 setToken(storedToken);
-//                 setUserId(decodedToken.userId);
-//                 console.log('Stored token:', storedToken);
-//             } catch (error) {
-//                 console.error('Error decoding token:', error);
-//                 setError('토큰을 디코딩하는 데 실패했습니다. 다시 로그인하세요.');
-//             }
-//         } else {
-//             setError('인증 토큰이 없습니다. 로그인이 필요합니다.');
-//         }
-//     }, []);
+    const login = (userData: any) => {
+        setUser(userData);
+        Cookies.set('authToken', userData.token, { secure: true, sameSite: 'strict' });
+    };
 
-//     // 선택된 아기를 가져오는 useEffect
-//     useEffect(() => {
-//         const storedSelectedBaby = localStorage.getItem('selectedBaby');
-//         if (storedSelectedBaby) {
-//             const selectedBaby: SelectedBaby | null = JSON.parse(storedSelectedBaby);
-//             if (selectedBaby != null) {
-//                 setBabyId(selectedBaby.babyId);
-//                 console.log("Selected baby:", selectedBaby);
-//             } else {
-//                 console.log("아기 정보가 없습니다.");
-//             }
-//         } else {
-//             console.log("저장된 아기 정보가 없습니다.");
-//         }
-//     }, []);
+    const logout = () => {
+        setUser(null);
+        Cookies.remove('authToken');
+        router.push('/login');
+    };
 
-//     return (
-//         <AuthContext.Provider value={{ token, userId, error, babyId }}>
-//             {children}
-//         </AuthContext.Provider>
-//     );
-// };
+    return (
+        <AuthContext.Provider value={{ user, loading, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
 
-// export const useAuthContext = () => {
-//     const context = useContext(AuthContext);
-//     if (!context) {
-//         throw new Error('useAuthContext는 AuthProvider 내에서만 사용해야 합니다.');
-//     }
-//     return context;
-// };
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

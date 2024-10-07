@@ -6,8 +6,9 @@ import { LogOut, ChevronLeft, ChevronRight, Minus } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { removeAuthToken } from '@/utils/authUtils';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import DeleteBabyModal from '@/app/modal/DeleteBaby';
+import Cookies from 'js-cookie';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -128,8 +129,13 @@ const MyPage: React.FC = () => {
 
     const handleLogout = () => {
         removeAuthToken();
-        // localStorage.removeItem('userId');
+
         localStorage.clear();
+
+        const allCookies = Cookies.get();
+        Object.keys(allCookies).forEach(cookieName => {
+            Cookies.remove(cookieName);
+        });
         router.push('/login');
     };
 
