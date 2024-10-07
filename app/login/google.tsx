@@ -1,33 +1,65 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuthToken, getCurrentUser } from '@/utils/authUtils';
+import { getAuthToken, setAuthToken } from '@/utils/authUtils';
 import Image from 'next/image';
+import { fetchWithAuth } from '@/utils/api';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 export default function GoogleAuthLogin(): JSX.Element {
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<{ userId: number; email: string; name: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    console.log('GoogleAuthLogin: useEffect triggered');
-    checkCurrentUser();
-  }, [router]);
+  const [token, setToken] = useState<string | undefined>(undefined);
 
-  const checkCurrentUser = () => {
-    const currentUser = getCurrentUser();
-    console.log('Current user:', currentUser);
+  const checkAuthStatus = async (token: string | undefined) => {
+    console.log('Auth token:', token ? 'exists' : 'does not exist');
 
-    if (currentUser) {
-      setUser(currentUser);
-      router.push('/home'); // 로그인된 사용자가 있을 경우 홈으로 리다이렉션
+    if (token) {
+      try {
+        const response = await fetchWithAuth(
+          `${BACKEND_API_URL}/api/auth/validate-token`,
+          {
+            method: 'POST',
+            body: { token },
+          }
+        );
+
+        if (response.isValid) {
+          console.log('Token valid, redirecting to /home');
+          setIsRedirecting(true);
+        } else {
+          console.log('Token invalid, clearing and staying on login page');
+          setAuthToken('');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error validating token:', error);
+        setAuthToken('');
+        setIsLoading(false);
+      }
     } else {
-      setIsLoading(false); // 사용자가 없으면 로딩 상태를 해제
+      console.log('No token found, setting isLoading to false');
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    console.log('Component mounted, checking auth status');
+    const storedToken = getAuthToken();
+    setToken(storedToken);
+    checkAuthStatus(storedToken);
+  }, []);
+
+  useEffect(() => {
+    if (isRedirecting) {
+      console.log('Redirection to /home initiated');
+      router.push('/home');
+    }
+  }, [isRedirecting, router]);
 
   const handleGoogleLogin = async () => {
     console.log('Initiating Google login');
@@ -37,6 +69,9 @@ export default function GoogleAuthLogin(): JSX.Element {
         throw new Error(`Failed to get Google Auth URL. status: ${response.status}`);
       }
       const data = await response.json();
+
+      setAuthToken(data.token);
+      setToken(data.token); // 여기서도 토큰 상태를 업데이트
       console.log('Received Google Auth URL:', data.url);
       window.location.href = data.url;
     } catch (err) {
@@ -46,15 +81,15 @@ export default function GoogleAuthLogin(): JSX.Element {
     }
   };
 
-  const checkAuthState = () => {
-    const token = getAuthToken();
-    if (!token) {
-      setUser(null); // Explicitly set user to null if there's no token
-    }
-  };
-
   useEffect(() => {
-    checkAuthState(); // Check auth state whenever this component mounts
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+    if (tokenFromUrl) {
+      console.log('Token received from OAuth callback');
+      setAuthToken(tokenFromUrl);
+      setToken(tokenFromUrl); // 토큰 상태 업데이트
+      checkAuthStatus(tokenFromUrl); // 새 토큰으로 체크
+    }
   }, []);
 
   if (error) {
@@ -66,11 +101,7 @@ export default function GoogleAuthLogin(): JSX.Element {
     );
   }
 
-  if (user) {
-    return <div>로그인 성공! 홈 페이지로 이동 중...</div>;
-  }
-
-  if (isLoading) {
+  if (isLoading || isRedirecting) {
     return <div>로딩 중...</div>;
   }
 
@@ -79,7 +110,7 @@ export default function GoogleAuthLogin(): JSX.Element {
       <button onClick={handleGoogleLogin}>
         <Image
           src="/img/google.png"
-          alt='Back'
+          alt='Google Login'
           width={180}
           height={120}
         />

@@ -33,7 +33,7 @@ const BottomContainer: React.FC = () => {
     const [showOptions, setShowOptions] = useState(false);
 
     const handleButtonClick = useCallback((buttonName: string, path: string) => {
-        setActiveView(buttonName as 'home' | 'dairy' | 'story' | 'profile');
+        setActiveView(buttonName as 'home' | 'diary' | 'story' | 'profile');
         router.push(path);
     }, [router, setActiveView]);
 
@@ -148,7 +148,7 @@ const BottomContainer: React.FC = () => {
             <div className="relative w-full h-full bg-white bg-opacity-40 backdrop-blur-md border-t border-gray-200 shadow-md rounded-[40px] z-30">
                 <div className="w-full h-full flex items-center justify-around px-4 relative">
                     <IconButton icon={Home} onClick={() => handleButtonClick('home', '/home')} style={getButtonStyle('home')} />
-                    <IconButton icon={ClipboardList} onClick={() => handleButtonClick('dairy', '/diary')} style={getButtonStyle('dairy')} />
+                    <IconButton icon={ClipboardList} onClick={() => handleButtonClick('diary', '/diary')} style={getButtonStyle('diary')} />
                     {renderActionButton()}
                     {showOptions && renderOptions()}
                     <IconButton icon={BookHeart} onClick={() => handleButtonClick('story', '/story')} style={getButtonStyle('story')} />

@@ -8,23 +8,26 @@ interface FetchOptions extends Omit<RequestInit, 'method' | 'body'> {
     timeout?: number;
 }
 
-export async function fetchWithAuth(url: string, options: FetchOptions, req?: any) {
+export async function fetchWithAuth(url: string, options: FetchOptions, req?: any): Promise<any> {
+    console.log('fetchWithAuth called with URL:', url);
     let token: string | undefined;
 
+    // 토큰 가져오기
     if (typeof window !== 'undefined') {
         // 클라이언트 사이드
         token = Cookies.get('authToken');
     } else {
         // 서버 사이드
-        token = req?.cookies?.token;
+        token = req?.cookies?.get('authToken')?.value;
     }
 
     if (!token) {
-        throw new Error('No JWT token found');
+        console.error('No JWT token found');
+        throw new Error('Authentication required');
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 100000);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${token}`);
@@ -56,11 +59,18 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
 
     try {
         const response = await fetch(url, fetchOptions);
+
         if (!response.ok) {
-            const errorMessage = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorMessage}`);
+            const errorBody = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
         }
-        return await response.json();
+
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        } else {
+            return await response.text();
+        }
     } catch (error) {
         if (error instanceof Error) {
             if (error.name === 'AbortError') {

@@ -10,6 +10,7 @@ import DiaryDetailModal from '../modal/DiaryDetailModal';
 import axios from 'axios';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -122,6 +123,11 @@ export default function DiaryPage() {
     const [error, setError] = useState<string | null>(null);
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
+    const { setActiveView } = useBottomContainer();
+
+    useEffect(() => {
+        setActiveView('diary');
+    }, []);
 
     useEffect(() => {
         if (!token) return;

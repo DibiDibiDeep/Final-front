@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
 import { fetchWithAuth } from '@/utils/api';
 
-type ActiveView = 'home' | 'todo' | 'memo' | 'dairy' | 'story' | 'profile';
+type ActiveView = 'home' | 'todo' | 'memo' | 'diary' | 'story' | 'profile';
 
 interface BottomContainerContextType {
     activeView: ActiveView;
