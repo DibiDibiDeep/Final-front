@@ -14,6 +14,8 @@ import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
+type ActiveView = 'home' | 'todo' | 'memo' | 'diary' | 'story' | 'profile';
+
 interface CreateDiaryModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -123,18 +125,12 @@ export default function DiaryPage() {
     const [error, setError] = useState<string | null>(null);
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
-    const { setActiveView } = useBottomContainer();
+    const { setActiveView, activeView } = useBottomContainer();
 
     useEffect(() => {
         setActiveView('diary');
+        localStorage.setItem('activeView', 'diary');
     }, []);
-
-    useEffect(() => {
-        if (!token) return;
-        console.log('chatbot page token: ', token);
-        console.log('chatbot page userId: ', userId);
-        console.log('chatbot page babyId:', babyId);
-    }, [token]);
 
     useEffect(() => {
         if (userId) {
@@ -249,14 +245,11 @@ export default function DiaryPage() {
                 method: 'DELETE'
             });
 
-            setEntries(prevEntries => prevEntries.filter(entry => entry.alimId !== alimId));
-            if (entries.length === 1) {
-                localStorage.removeItem('diaryData');
-            }
+            // 항목 삭제 후 즉시 데이터를 다시 불러오기
+            await fetchUserDiaries(userId);
         } catch (error) {
             console.error('Failed to delete diary entry:', error);
         }
-        window.location.reload();
     };
 
     const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {

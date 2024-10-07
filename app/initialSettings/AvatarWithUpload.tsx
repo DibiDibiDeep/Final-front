@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar } from '@nextui-org/react';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AvatarWithUploadProps {
     onImageSelect: (file: File | null, imageSrc: string, token: string) => void;
+    initialAvatarSrc: string;
 }
 
-const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageSelect }) => {
-    const [avatarSrc, setAvatarSrc] = useState<string>("/img/mg-logoback.png");
+const AvatarWithUpload: React.FC<AvatarWithUploadProps> = ({ onImageSelect, initialAvatarSrc }) => {
+    const [avatarSrc, setAvatarSrc] = useState<string>(initialAvatarSrc);
     const { token } = useAuth();
+
+    useEffect(() => {
+        setAvatarSrc(initialAvatarSrc);
+    }, [initialAvatarSrc]);
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!token) return;
