@@ -31,13 +31,13 @@ const ResetChatModal: React.FC<ResetChatModalProps> = ({ isOpen, onClose, onRese
                 <ModalContent className="m-auto">
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1 text-gray-700">채팅 내역 초기화</ModalHeader>
+                            <ModalHeader className="flex flex-col gap-1 text-gray-700">채팅 내용 삭제</ModalHeader>
                             <ModalBody className="flex flex-col items-center text-center">
                                 <p className="text-black">
-                                    모든 채팅을 초기화하시겠습니까?
+                                    모든 채팅을 삭제하시겠습니까?
                                 </p>
                                 <p className="text-gray-600">
-                                    초기화된 채팅은 복구할 수 없습니다.
+                                    삭제된 채팅은 복구할 수 없습니다.
                                 </p>
                             </ModalBody>
                             <ModalFooter className="justify-center">
@@ -45,7 +45,7 @@ const ResetChatModal: React.FC<ResetChatModalProps> = ({ isOpen, onClose, onRese
                                     취소
                                 </Button>
                                 <Button color="danger" onPress={handleReset}>
-                                    초기화
+                                    삭제
                                 </Button>
                             </ModalFooter>
                         </>

@@ -24,7 +24,7 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 100000);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${token}`);
@@ -57,7 +57,8 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
     try {
         const response = await fetch(url, fetchOptions);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorMessage = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorMessage}`);
         }
         return await response.json();
     } catch (error) {
