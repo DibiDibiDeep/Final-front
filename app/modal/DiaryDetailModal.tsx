@@ -171,7 +171,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
 
             await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, {
                 method: 'PUT',
-                body: newData,
+                body: JSON.stringify(newData),
             });
 
             updateEntries({ ...data!, content: content });
