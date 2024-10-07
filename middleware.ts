@@ -30,8 +30,7 @@ function getAuthTokenFromRequest(request: NextRequest): string | undefined {
 
 export async function middleware(request: NextRequest) {
     const token = getAuthTokenFromRequest(request);
-    const protectedPaths = ['/home', '/diary', '/story', '/profile', '/chatbot', '/initialSettings'];
-    // const protectedPaths = [''];
+    const protectedPaths = ['/home', '/diary', '/story', '/profile', '/chatbot', '/initialSettings', '/addEvent', '/calendarapp', '/editEvent', '/editMemo', '/notice'];
     const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
 
     // 로그인 페이지 처리
