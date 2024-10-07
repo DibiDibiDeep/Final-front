@@ -189,21 +189,35 @@ const DummyChatInterface: React.FC = () => {
   //   }
   // };
 
-  const confirmResetChat = () => {
-    // 화면에 표시된 메시지 초기화
-    setMessages([]);
-    
-    // 로컬 스토리지에서 채팅 캐시 삭제
-    if (userId !== null && babyId !== null) {
-      localStorage.removeItem(`chatCache_${userId}_${babyId}`);
+  const confirmResetChat = async () => {
+    if (userId === null || babyId === null) {
+        console.error('User ID or Baby ID is not available');
+        return;
     }
-    
-    // 모달 닫기
-    // setIsResetModalOpen(false);
-    
-    // 사용자에게 초기화 완료 메시지 표시 (선택사항)
-    setError('채팅 내역이 삭제되었습니다.');
-    setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
+
+    try {
+        // 서버에 채팅 히스토리 리셋 요청 보내기
+        await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {
+            method: 'POST',
+        });
+
+        // 화면에 표시된 메시지 초기화
+        setMessages([]);
+        
+        // 로컬 스토리지에서 채팅 캐시 삭제
+        localStorage.removeItem(`chatCache_${userId}_${babyId}`);
+        
+        // 사용자에게 초기화 완료 메시지 표시
+        setError('채팅 내역이 삭제되었습니다.');
+        setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
+
+        // 모달 닫기
+        setIsResetModalOpen(false);
+    } catch (error) {
+        console.error('Failed to reset chat history:', error);
+        setError('채팅 내역 삭제에 실패했습니다.');
+        setTimeout(() => setError(null), 3000);
+    }
   };
 
   useEffect(() => {
@@ -627,6 +641,8 @@ const DummyChatInterface: React.FC = () => {
           isOpen={isResetModalOpen}
           onClose={() => setIsResetModalOpen(false)}
           onReset={confirmResetChat}
+          userId={userId}
+          babyId={babyId}
         />
       </div>
       <div className="fixed bottom-32 left-5 right-5 p-4 flex items-center">

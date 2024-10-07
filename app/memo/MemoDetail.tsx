@@ -65,7 +65,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
     }
 
     try {
-      await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoId}`, token, {
+      await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoId}`, {
         method: 'DELETE'
       });
       onMemoDeleted(memoId);
@@ -95,7 +95,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
         content: editedContent
       };
 
-      const updatedMemo: Memo = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoId}`, token, {
+      const updatedMemo: Memo = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoId}`,{
         method: 'PUT',
         body: updatedMemoData
       });
