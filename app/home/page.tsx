@@ -82,7 +82,7 @@ export default function Home() {
             fetchEvents();
             fetchMemos();
         }
-    }, [userId, token, selectedBaby]);
+    }, [userId, selectedBaby]);
 
     useEffect(() => {
         console.log('cookie', Cookies.get('selectedBaby'));
@@ -157,7 +157,7 @@ export default function Home() {
 
     // 메모 가져오기
     const fetchMemos = async () => {
-        if (userId || !selectedBaby) return;
+        if (!userId || !selectedBaby) return;
         try {
             const formattedDate = formatDateForBackend(selectedDate);
             console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
@@ -165,7 +165,6 @@ export default function Home() {
                 method: 'GET',
             });
             console.log('Backend response for Memos:', response);
-            if (Array.isArray(response)) {
                 const fetchedMemos: Memo[] = response.map((memo: any) => ({
                     memoId: memo.memoId,
                     userId: memo.userId,
@@ -175,14 +174,9 @@ export default function Home() {
                     date: memo.date,
                     content: memo.content
                 }));
-                setMemos(fetchedMemos);
-            } else {
-                console.error('Unexpected response format for memos:', response);
-                setMemos([]);
-            }
+                setMemos(fetchedMemos); 
         } catch (error) {
             console.error('Failed to fetch memos:', error);
-            setMemos([]);
         }
     };
 
@@ -256,13 +250,15 @@ export default function Home() {
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify(newMemoData)
             });
 
             console.log('Server response for creating memo:', response);
 
             if (response && typeof response.memoId === 'number') {
-                // Fetch all memos after successful creation
                 const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
                     method: 'GET',
                 });
@@ -383,7 +379,6 @@ export default function Home() {
         console.log('Audio recorded:', audioBlob);
         console.log('userId', userId, 'babyId', babyId);
         setIsVoiceRecordModalOpen(false);
-        // 저장 로직 구현 필요
     };
 
     // UI 관련 효과

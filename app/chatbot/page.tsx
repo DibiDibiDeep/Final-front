@@ -42,7 +42,7 @@ const DummyChatInterface: React.FC = () => {
   const [botMessages, setBotMessages] = useState<Message[]>([]);
   const { token, userId, error: authError } = useAuth();
   const { babyId } = useBabySelection();
-
+  
   const router = useRouter();
 
   const handleSearchFocus = () => setIsSearchFocused(true);
@@ -189,21 +189,35 @@ const DummyChatInterface: React.FC = () => {
   //   }
   // };
 
-  const confirmResetChat = () => {
-    // 화면에 표시된 메시지 초기화
-    setMessages([]);
-
-    // 로컬 스토리지에서 채팅 캐시 삭제
-    if (userId !== null && babyId !== null) {
-      localStorage.removeItem(`chatCache_${userId}_${babyId}`);
+  const confirmResetChat = async () => {
+    if (userId === null || babyId === null) {
+        console.error('User ID or Baby ID is not available');
+        return;
     }
 
-    // 모달 닫기
-    // setIsResetModalOpen(false);
+    try {
+        // 서버에 채팅 히스토리 리셋 요청 보내기
+        await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {
+            method: 'POST',
+        });
 
-    // 사용자에게 초기화 완료 메시지 표시 (선택사항)
-    setError('채팅 내역이 삭제되었습니다.');
-    setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
+        // 화면에 표시된 메시지 초기화
+        setMessages([]);
+        
+        // 로컬 스토리지에서 채팅 캐시 삭제
+        localStorage.removeItem(`chatCache_${userId}_${babyId}`);
+        
+        // 사용자에게 초기화 완료 메시지 표시
+        setError('채팅 내역이 삭제되었습니다.');
+        setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
+
+        // 모달 닫기
+        setIsResetModalOpen(false);
+    } catch (error) {
+        console.error('Failed to reset chat history:', error);
+        setError('채팅 내역 삭제에 실패했습니다.');
+        setTimeout(() => setError(null), 3000);
+    }
   };
 
   useEffect(() => {
@@ -420,14 +434,18 @@ const DummyChatInterface: React.FC = () => {
         setMessages(prevMessages => [...prevMessages, botResponse]);
         setBotMessages(prevBotMessages => [...prevBotMessages, botResponse]);
 
-        // 유저의 응답에 "일기를 저장" 또는 유사한 문구가 포함되어 있는지 확인
-        if (inputMessage.toLowerCase().includes("일기 저장")) {
-          const penultimateBotMessage = botMessages[botMessages.length - 1];
-          if (penultimateBotMessage) {
-            handleSaveDiary(penultimateBotMessage.text);
-          } else {
-            toast.error('저장할 일기 내용이 없습니다.');
-          }
+        // ML 서버에서 일기 저장이 완료되면 메시지를 표시
+        if (response.diarySaved) {
+          const successMessage: Message = {
+            userId: userId,
+            babyId: babyId,
+            id: Date.now(),
+            text: "일기가 저장되었습니다.",
+            sender: 'bot',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages(prevMessages => [...prevMessages, successMessage]);
+          toast.success('일기가 성공적으로 저장되었습니다.');
         }
       } else {
         console.error('Unexpected response format:', response);
@@ -436,66 +454,62 @@ const DummyChatInterface: React.FC = () => {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      if (axios.isAxiosError(error)) {
-        console.error('Response data:', error.response);
-        console.error('Response status:', error.response?.status);
-      }
       setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
     }
 
     setTimeout(scrollToBottom, 100);
   };
 
-  const handleSaveDiary = async (content: any) => {
-    if (!userId || !babyId || isProcessingSave) {
-      console.error('User ID or Baby ID is not available or save is already in progress');
-      return;
-    }
-
-    setIsProcessingSave(true);
-
-    const currentDate = new Date().toISOString().split('T')[0];
-
-    try {
-      const response = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: userId,
-          babyId: babyId,
-          content: content, // 챗봇의 응답 내용을 저장
-          date: currentDate,
-        }),
-      });
-
-      if (response.status === 200) {
-        console.log('Diary saved successfully');
-
-        // 성공 메시지를 채팅 메시지로 추가
-        const successMessage: Message = {
-          userId: userId,
-          babyId: babyId,
-          id: Date.now(),
-          text: "일기가 저장되었습니다.",
-          sender: 'bot',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prevMessages => [...prevMessages, successMessage]);
-
-        // 토스트 메시지 표시
-        toast.success('일기가 성공적으로 저장되었습니다.');
-      } else {
-        console.error('Invalid server response:', response);
-        throw new Error('일기 저장에 실패했습니다. 다시 시도해주세요.');
+    const handleSaveDiary = async (content: any) => {
+      if (!userId || !babyId || isProcessingSave) {
+          console.error('User ID or Baby ID is not available or save is already in progress');
+          return;
       }
-    } catch (error) {
-      console.error('Failed to save diary:', error);
-      toast.error('일기 저장에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsProcessingSave(false);
-    }
+
+      setIsProcessingSave(true);
+
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      try {
+        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: userId,
+                babyId: babyId,
+                content: content, // 챗봇의 응답 내용을 저장
+                date: currentDate,
+            }),
+        });
+
+          if (response.status === 200) {
+              console.log('Diary saved successfully');
+              
+              // 성공 메시지를 채팅 메시지로 추가
+              const successMessage: Message = {
+                  userId: userId,
+                  babyId: babyId,
+                  id: Date.now(),
+                  text: "일기가 저장되었습니다.",
+                  sender: 'bot',
+                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              };
+              setMessages(prevMessages => [...prevMessages, successMessage]);
+
+              // 토스트 메시지 표시
+              toast.success('일기가 성공적으로 저장되었습니다.');
+          } else {
+              console.error('Invalid server response:', response);
+              throw new Error('일기 저장에 실패했습니다. 다시 시도해주세요.');
+          }
+      } catch (error) {
+          console.error('Failed to save diary:', error);
+          toast.error('일기 저장에 실패했습니다. 다시 시도해주세요.');
+      } finally {
+          setIsProcessingSave(false);
+      }
   };
 
 
@@ -514,9 +528,9 @@ const DummyChatInterface: React.FC = () => {
               height={40}
             />
           </button>
-          <Dropdown>
+          {/* <Dropdown>
             <DropdownTrigger>
-              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
+              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center ml-4">
                 <Image
                   src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
                   alt="Baby Photo"
@@ -542,46 +556,46 @@ const DummyChatInterface: React.FC = () => {
                 </DropdownItem>
               ))}
             </DropdownMenu>
-          </Dropdown>
+          </Dropdown> */}
         </div>
-        <div className="w-full max-w-md px-4">
-          <div className="relative">
-            <div className={`flex items-center bg-white rounded-full transition-all duration-300 ${isSearchFocused ? 'shadow-lg' : 'shadow'}`}>
-              <div className="pl-4">
-                <Search className="text-gray-400" size={20} />
-              </div>
-              <input
-                type="text"
-                placeholder="검색"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={handleSearchFocus}
-                onBlur={handleSearchBlur}
-                className="w-full py-2 px-3 rounded-full focus:outline-none"
-              />
-              {searchTerm && (
-                <div className="flex items-center">
-                  {searchMatches.length > 0 && (
-                    <>
-                      <button onClick={handlePrevMatch} aria-label="이전 검색 결과">
-                        <ChevronUp size={16} className="text-gray-500" />
-                      </button>
-                      <button onClick={handleNextMatch} aria-label="다음 검색 결과">
-                        <ChevronDown size={16} className="text-gray-500" />
-                      </button>
-                    </>
-                  )}
-                  <button onClick={handleClearSearch} className="p-1 ml-2 pr-4" aria-label="검색 초기화">
-                    <X size={16} className="text-gray-500" />
-                  </button>
-                </div>
-              )}
+         <div className="w-full max-w-md">
+        <div className="relative">
+          <div className={`flex items-center bg-white rounded-full transition-all duration-300 ${isSearchFocused ? 'shadow-lg' : 'shadow'}`}>
+            <div className="pl-4">
+              <Search className="text-gray-400" size={20} />
             </div>
+            <input
+              type="text"
+              placeholder="검색"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+              className="w-full py-2 px-3 rounded-full focus:outline-none"
+            />
+            {searchTerm && (
+              <div className="flex items-center">
+                {searchMatches.length > 0 && (
+                  <>
+                    <button onClick={handlePrevMatch} aria-label="이전 검색 결과">
+                      <ChevronUp size={16} className="text-gray-500" />
+                    </button>
+                    <button onClick={handleNextMatch} aria-label="다음 검색 결과">
+                      <ChevronDown size={16} className="text-gray-500" />
+                    </button>
+                  </>
+                )}
+                <button onClick={handleClearSearch} className="p-1 ml-2 pr-4" aria-label="검색 초기화">
+                  <X size={16} className="text-gray-500" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
+      </div>
         <button
           onClick={handleResetChat}
-          className="p-2 rounded-full hover:bg-gray-200 transition duration-200"
+          className="rounded-full hover:bg-gray-200 transition duration-200 mr-4"
           aria-label="채팅 초기화"
         >
           <RotateCcw size={20} color="#6B46C1" />
@@ -620,13 +634,15 @@ const DummyChatInterface: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500">메시지가 없습니다.</div>
+          <div className="text-center text-gray-500 mt-60">메시지가 없습니다.</div>
         )}
         <div ref={messagesEndRef} />
         <ResetChatModal
           isOpen={isResetModalOpen}
           onClose={() => setIsResetModalOpen(false)}
           onReset={confirmResetChat}
+          userId={userId}
+          babyId={babyId}
         />
       </div>
       <div className="fixed bottom-32 left-5 right-5 p-4 flex items-center">
