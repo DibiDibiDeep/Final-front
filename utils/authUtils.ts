@@ -69,3 +69,9 @@ export function getCurrentUser() {
     }
     return null;
 }
+
+// 로그아웃 함수
+export const logout = () => {
+    Cookies.remove('authToken');
+    Cookies.remove('selectedBaby');
+};

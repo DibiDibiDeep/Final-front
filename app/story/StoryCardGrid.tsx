@@ -5,8 +5,8 @@ import { DropdownMenu, Dropdown, DropdownItem, DropdownTrigger } from '@nextui-o
 import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '@/hooks/useAuth';
-import { Menu } from 'lucide-react'; 
+import { useAuth } from '@/hooks/authHooks';
+import { Menu } from 'lucide-react';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -198,7 +198,7 @@ export default function StoryCardGrid() {
             <div className="flex justify-between items-center mb-8">
                 <Dropdown>
                     <DropdownTrigger className="flex justify-center items-center px-4 py-2 bg-white/20 backdrop-blur-xl rounded-[20px] shadow-lg border-2 border-white">
-                        <h1 className="text-2xl font-bold text-gray-700">내 콘텐츠</h1> 
+                        <h1 className="text-2xl font-bold text-gray-700">내 콘텐츠</h1>
                     </DropdownTrigger>
                     <DropdownMenu>
                         <DropdownItem onClick={() => setContentType('books')}>

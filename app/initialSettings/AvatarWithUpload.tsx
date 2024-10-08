@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar } from '@nextui-org/react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
 
 interface AvatarWithUploadProps {
     onImageSelect: (file: File | null, imageSrc: string, token: string) => void;

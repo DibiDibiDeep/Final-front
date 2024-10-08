@@ -1,27 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Button } from '@nextui-org/button';
 import { Input } from '@nextui-org/input';
 import { Calendar } from 'lucide-react';
-import CreateDiaryModal from '../modal/CreateDiaryModal';
-import DiaryDetailModal from '../modal/DiaryDetailModal';
-import axios from 'axios';
+import CreateDiaryModal from '@/app/modal/CreateDiaryModal';
+import DiaryDetailModal from '@/app/modal/DiaryDetailModal';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-
-type ActiveView = 'home' | 'todo' | 'memo' | 'diary' | 'story' | 'profile';
-
-interface CreateDiaryModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onCreateDiary: (content: string) => Promise<void>;
-    selectedDate: string;
-}
 
 
 interface NoticeData {
@@ -36,31 +26,6 @@ interface DiaryEntry {
     date: string;
     content: string;
     alimId: number;
-}
-
-// activities, special이 Null이면 동화 생성 불가
-interface DiaryData {
-    alimInfId: number;
-    name: string;
-    emotion: string;
-    health: string;
-    nutrition: string;
-    activities: string[] | string;
-    social: string;
-    special: string;
-    keywords: string[] | string;
-    diary: string;
-    user_id: number;
-    baby_id: number;
-    role: string;
-}
-
-interface FairyTale {
-    title: string;
-    pages: {
-        text: string;
-        image_url: string;
-    }[];
 }
 
 const getFormattedDate = (date: Date): string => {
@@ -229,9 +194,6 @@ export default function DiaryPage() {
             setIsModalOpen(false);
         } catch (error) {
             console.error('Failed to create diary entry:', error);
-            if (axios.isAxiosError(error) && error.response) {
-                console.error('Error response:', error.response);
-            }
         }
     };
 

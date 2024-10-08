@@ -14,7 +14,7 @@ export interface Event {
 export interface Memo {
     memoId: number;
     userId: number;
-    babyId : number;
+    babyId: number;
     todayId: number | null;
     bookId: number | null;
     date: string;
@@ -25,5 +25,7 @@ export interface Baby {
     userId: number;
     babyId: number;
     babyName: string;
+    gender: string;
+    birth: string;
     photoUrl?: string;
 }

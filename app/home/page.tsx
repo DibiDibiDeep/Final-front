@@ -6,8 +6,9 @@ import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import { Search, MessageCircle } from 'lucide-react';
 import Cookies from 'js-cookie';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 
-// 커스텀 컴포넌트 임포트
+// 커스텀 컴포넌트 및 훅 임포트
 import MainContainer from "@/components/MainContainer";
 import DetailedContainer from "@/components/DetailedContainer";
 import Calendar from '@/app/calendarapp/Calendar';
@@ -15,26 +16,22 @@ import MemoDetail from '@/app/memo/MemoDetail';
 import CreateMemoModal from '@/app/modal/CreateModal';
 import RecordModal from '@/app/modal/RecordModal';
 import EventCard from "./EventCard";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Event, Memo, Baby } from '@/types/index';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
-
-// 유틸리티 함수
-const formatDateForBackend = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
 
 // 환경 변수
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
-export default function Home() {
-    const [selectedDate, setSelectedDate] = useState(() => new Date());
+// 유틸리티 함수
+const formatDateForBackend = (date: Date) => {
+    return date.toISOString().split('T')[0];
+};
 
+export default function Home() {
+    // 상태 관리
+    const [selectedDate, setSelectedDate] = useState(() => new Date());
     const [memos, setMemos] = useState<Memo[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
     const [isExpanded, setIsExpanded] = useState(true);
@@ -44,151 +41,81 @@ export default function Home() {
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
-    const { token, userId, error: authError } = useAuth();
-    const { babyId } = useBabySelection();
 
+    // 훅 사용
     const router = useRouter();
-
+    const { token, userId } = useAuth();
+    const { babyId } = useBabySelection();
     const {
         activeView,
         setActiveView,
         isCreateMemoModalOpen,
         setIsCreateMemoModalOpen,
         isVoiceRecordModalOpen,
-        setIsVoiceRecordModalOpen,
-        handleAddSchedule: contextHandleAddSchedule,
-        handleCreateMemo: contextHandleCreateMemo,
-        handleVoiceRecord: contextHandleVoiceRecord,
-        handleScanButtonClick
+        setIsVoiceRecordModalOpen
     } = useBottomContainer();
 
-    // 아이 정보 가져오기
-    useEffect(() => {
-        if (!token) return;
-        console.log('homepage token: ', token);
-        console.log('homepage userId: ', userId);
-        if (userId) {
-            fetchBabiesInfo(userId).then(() => {
-                console.log('Babies fetched and set');
-            });
-        }
-    }, [token]);
-
-    // selectedBaby가 변경될 때마다 fetchEvents 호출
-    useEffect(() => {
-        console.log('selectedBaby', selectedBaby);
-        if (!token) return;
-        if (userId) {
-            fetchEvents();
-            fetchMemos();
-        }
-    }, [userId, selectedBaby]);
-
-    useEffect(() => {
-        console.log('cookie', Cookies.get('selectedBaby'));
-    }, [selectedBaby])
-
-    const isTokenExpired = (token: string) => {
-        const payload = JSON.parse(atob(token.split('.')[1])); // 토큰의 payload 부분을 디코딩
-        const currentTime = Math.floor(Date.now() / 1000); // 현재 시간(초 단위)
-        return payload.exp < currentTime; // 만료 시간이 현재 시간보다 과거인지 확인
-    };
-
+    // API 호출 함수
     const fetchBabiesInfo = async (userId: number) => {
-        console.log('Fetching babies info for user:', userId);
         try {
-            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, {
-                method: 'GET',
-            });
-            console.log('User response:', userResponse);
+            const userResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby/user/${userId}`, { method: 'GET' });
             if (userResponse && Array.isArray(userResponse) && userResponse.length > 0) {
                 const fetchedBabies: Baby[] = await Promise.all(userResponse.map(async (baby: any) => {
-                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, {
-                        method: 'GET',
-                    });
+                    const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${baby.babyId}`, { method: 'GET' });
                     return {
                         userId: baby.userId,
                         babyId: baby.babyId,
                         babyName: baby.babyName,
-                        photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
+                        photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png",
+                        gender: baby.gender,
+                        birth: baby.birth
                     };
                 }));
 
                 setBabies(fetchedBabies);
 
-                if (fetchedBabies.length > 0) {
-                    setSelectedBaby(fetchedBabies[0]);
-                    setBabyPhoto(fetchedBabies[0].photoUrl);
-                    Cookies.set('selectedBaby', JSON.stringify(fetchedBabies[0]), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
-                    console.log('Baby information saved:', fetchedBabies[0]);
-                }
-
-                // 쿠키에서 저장된 선택된 아이 정보 확인
+                // 저장된 선택 아이 정보 확인
                 if (babyId) {
                     const foundBaby = fetchedBabies.find(baby => baby.babyId === babyId);
                     if (foundBaby) {
                         setSelectedBaby(foundBaby);
                         setBabyPhoto(foundBaby.photoUrl);
                     } else {
-                        // 저장된 아이가 현재 목록에 없으면 첫 번째 아이 선택
-                        setSelectedBaby(fetchedBabies[0]);
-                        setBabyPhoto(fetchedBabies[0].photoUrl);
-                        Cookies.set('selectedBaby', JSON.stringify(fetchedBabies[0]), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
+                        handleBabySelect(fetchedBabies[0]);
                     }
                 } else {
-                    // 저장된 선택 정보가 없으면 첫 번째 아이 선택
-                    setSelectedBaby(fetchedBabies[0]);
-                    setBabyPhoto(fetchedBabies[0].photoUrl);
-                    Cookies.set('selectedBaby', JSON.stringify(fetchedBabies[0]), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
+                    handleBabySelect(fetchedBabies[0]);
                 }
-            } else {
-                console.log("No baby information found for this user.");
-                Cookies.remove('selectedBaby');
             }
         } catch (error) {
             console.error('Failed to fetch baby information:', error);
-            if (error instanceof TypeError) {
-                console.error('Network error:', error.message);
-            } else if (error instanceof Response) {
-                console.error('HTTP error:', error.status, error.statusText);
-            }
         }
     };
 
-    // 메모 가져오기
     const fetchMemos = async () => {
         if (!userId || !selectedBaby) return;
         try {
             const formattedDate = formatDateForBackend(selectedDate);
-            console.log('Fetching memos for date:', formattedDate, 'userId:', userId, 'babyId:', selectedBaby.babyId);
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
-                method: 'GET',
-            });
-            console.log('Backend response for Memos:', response);
-                const fetchedMemos: Memo[] = response.map((memo: any) => ({
-                    memoId: memo.memoId,
-                    userId: memo.userId,
-                    babyId: selectedBaby.babyId,
-                    todayId: memo.todayId,
-                    bookId: memo.bookId,
-                    date: memo.date,
-                    content: memo.content
-                }));
-                setMemos(fetchedMemos); 
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, { method: 'GET' });
+            const fetchedMemos: Memo[] = response.map((memo: any) => ({
+                memoId: memo.memoId,
+                userId: memo.userId,
+                babyId: selectedBaby.babyId,
+                todayId: memo.todayId,
+                bookId: memo.bookId,
+                date: memo.date,
+                content: memo.content
+            }));
+            setMemos(fetchedMemos);
         } catch (error) {
             console.error('Failed to fetch memos:', error);
         }
     };
 
-    // 이벤트 가져오기
     const fetchEvents = async () => {
         if (!userId || !selectedBaby) return;
-
         try {
-            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, {
-                method: 'GET',
-            });
-            console.log('Backend response:', response);
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/user/${userId}/baby/${selectedBaby.babyId}`, { method: 'GET' });
             const fetchedEvents: Event[] = response.map((event: any) => ({
                 id: event.calendarId,
                 babyId: selectedBaby.babyId,
@@ -208,16 +135,16 @@ export default function Home() {
     }
 
     // 이벤트 핸들러
-    const handleCheckNotice = () => {
-        router.push('/notice');
-    };
-
-    const handleChatbotClick = () => {
-        router.push('/chatbot');
-    };
-
-    const handleBackClick = () => {
-        router.back();
+    const handleBabySelection = (fetchedBabies: Baby[], storedBabyId: number | null) => {
+        let selectedBaby: Baby;
+        if (storedBabyId) {
+            selectedBaby = fetchedBabies.find(baby => baby.babyId === storedBabyId) || fetchedBabies[0];
+        } else {
+            selectedBaby = fetchedBabies[0];
+        }
+        setSelectedBaby(selectedBaby);
+        setBabyPhoto(selectedBaby.photoUrl);
+        Cookies.set('selectedBaby', JSON.stringify(selectedBaby), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
     };
 
     const handleDateSelect = (date: Date) => {
@@ -229,8 +156,15 @@ export default function Home() {
     const handleBabySelect = (baby: Baby) => {
         setSelectedBaby(baby);
         setBabyPhoto(baby.photoUrl || "/img/mg-logoback.png");
-        Cookies.set('selectedBaby', JSON.stringify(baby), { expires: 7, secure: true, sameSite: 'strict' });
+        Cookies.set('selectedBaby', JSON.stringify({
+            babyId: baby.babyId,
+            babyName: baby.babyName,
+            userId: baby.userId,
+            gender: baby.gender,
+            birth: baby.birth
+        }), { expires: 7, path: '/', sameSite: 'strict', secure: window.location.protocol === 'https:' });
     };
+
 
     const handleCreateMemo = async (content: string) => {
         if (!userId || !selectedBaby) {
@@ -250,37 +184,12 @@ export default function Home() {
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newMemoData)
             });
 
-            console.log('Server response for creating memo:', response);
-
             if (response && typeof response.memoId === 'number') {
-                const fetchResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/user/${userId}/baby/${selectedBaby.babyId}`, {
-                    method: 'GET',
-                });
-
-                console.log('Backend response for fetching Memos:', fetchResponse);
-
-                if (Array.isArray(fetchResponse)) {
-                    const fetchedMemos: Memo[] = fetchResponse.map((memo: any) => ({
-                        memoId: memo.memoId,
-                        userId: memo.userId,
-                        babyId: selectedBaby.babyId,
-                        todayId: memo.todayId,
-                        bookId: memo.bookId,
-                        date: memo.date,
-                        content: memo.content
-                    }));
-                    setMemos(fetchedMemos);
-                } else {
-                    console.error('Unexpected response format for memos:', fetchResponse);
-                    setMemos([]);
-                }
-
+                await fetchMemos();
                 setIsCreateMemoModalOpen(false);
             } else {
                 console.error('Invalid response from server when creating memo:', response);
@@ -304,18 +213,17 @@ export default function Home() {
         fetchEvents();
     };
 
+    const handleSearch = (term: string) => {
+        setSearchTerm(term);
+        if (term === '') {
+            setDisplayDate(selectedDate);
+        }
+    };
+
     // 스와이프 핸들러
     const handlers = useSwipeable({
-        onSwipedUp: () => {
-            if (isExpanded) {
-                setIsExpanded(false);
-            }
-        },
-        onSwipedDown: () => {
-            if (!isExpanded) {
-                setIsExpanded(true);
-            }
-        },
+        onSwipedUp: () => setIsExpanded(false),
+        onSwipedDown: () => setIsExpanded(true),
         trackMouse: true,
         delta: 150,
         preventScrollOnSwipe: isExpanded,
@@ -324,39 +232,42 @@ export default function Home() {
     // 필터링 로직
     const filteredMemos = memos.filter(memo => {
         const memoDate = new Date(memo.date);
-        const selectedDateStart = new Date(selectedDate);
-        selectedDateStart.setHours(0, 0, 0, 0);
-        const selectedDateEnd = new Date(selectedDate);
-        selectedDateEnd.setHours(23, 59, 59, 999);
-
+        const selectedDateStart = new Date(selectedDate.setHours(0, 0, 0, 0));
+        const selectedDateEnd = new Date(selectedDate.setHours(23, 59, 59, 999));
         const isSameDate = memoDate >= selectedDateStart && memoDate <= selectedDateEnd;
         const matchesSearch = memo.content.toLowerCase().includes(searchTerm.toLowerCase());
-
         return (isSameDate || searchTerm !== '') && matchesSearch;
     });
 
     const filteredEvents = events.filter(event => {
         const eventStart = new Date(event.startTime);
         const eventEnd = new Date(event.endTime);
-        const selectedDateStart = new Date(selectedDate);
-        selectedDateStart.setHours(0, 0, 0, 0);
-        const selectedDateEnd = new Date(selectedDate);
-        selectedDateEnd.setHours(23, 59, 59, 999);
-
+        const selectedDateStart = new Date(selectedDate.setHours(0, 0, 0, 0));
+        const selectedDateEnd = new Date(selectedDate.setHours(23, 59, 59, 999));
         const isOverlapping = (eventStart <= selectedDateEnd && eventEnd >= selectedDateStart);
         const matchesSearch =
             (event.title?.toLowerCase().includes(searchTerm.toLowerCase()) || '') ||
             (event.location?.toLowerCase().includes(searchTerm.toLowerCase()) || '');
-
         return (isOverlapping || searchTerm !== '') && matchesSearch;
     });
 
-    const handleSearch = (term: string) => {
-        setSearchTerm(term);
-        if (term === '') {
-            setDisplayDate(selectedDate);
+    // 부수 효과
+    useEffect(() => {
+        if (token && userId) {
+            fetchBabiesInfo(userId);
         }
-    };
+    }, [token, userId, babyId]);
+
+    useEffect(() => {
+        if (userId && selectedBaby) {
+            fetchEvents();
+            fetchMemos();
+        }
+    }, [userId, selectedBaby]);
+
+    useEffect(() => {
+        setCalendarVisible(isExpanded);
+    }, [isExpanded]);
 
     useEffect(() => {
         if (searchTerm) {
@@ -375,56 +286,43 @@ export default function Home() {
         }
     }, [searchTerm, filteredEvents, filteredMemos, selectedDate]);
 
-    const saveVoiceRecord = (audioBlob: Blob) => {
-        console.log('Audio recorded:', audioBlob);
-        console.log('userId', userId, 'babyId', babyId);
-        setIsVoiceRecordModalOpen(false);
-    };
-
-    // UI 관련 효과
-    useEffect(() => {
-        setCalendarVisible(isExpanded);
-    }, [isExpanded]);
-
-    const topMargin = isExpanded ? 450 : 115;
-
     // 렌더링
     return (
         <div className="h-screen flex flex-col items-center">
+            {/* 헤더 부분 */}
             <div className="w-full max-w-md mt-8 flex justify-between items-center px-4 gap-4">
-                <div className="w-[45px] h-[45px] rounded-full overflow-hidden">
-                    <Dropdown>
-                        <DropdownTrigger>
-                            <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
-                                <Image
-                                    src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
-                                    alt="Baby Photo"
-                                    width={45}
-                                    height={45}
-                                    className="rounded-full object-cover object-center w-[45px] h-[45px]"
-                                />
-                            </button>
-                        </DropdownTrigger>
+                {/* 아기 선택 드롭다운 */}
+                <Dropdown>
+                    <DropdownTrigger>
+                        <button className="w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center focus:outline-none focus:ring-0">
+                            <Image
+                                src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
+                                alt="Baby Photo"
+                                width={45}
+                                height={45}
+                                className="rounded-full object-cover object-center w-[45px] h-[45px]"
+                            />
+                        </button>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Baby Selection">
+                        {babies.map((baby) => (
+                            <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
+                                <div className="flex items-center">
+                                    <Image
+                                        src={baby.photoUrl || "/img/mg-logoback.png"}
+                                        alt={`Baby ${baby.babyId}`}
+                                        width={30}
+                                        height={30}
+                                        className="rounded-full mr-2 object-cover w-8 h-8"
+                                    />
+                                    <span className="text-gray-700">{baby.babyName}</span>
+                                </div>
+                            </DropdownItem>
+                        ))}
+                    </DropdownMenu>
+                </Dropdown>
 
-                        <DropdownMenu aria-label="Baby Selection">
-                            {babies.map((baby) => (
-                                <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
-                                    <div className="flex items-center">
-                                        <Image
-                                            src={baby.photoUrl || "/img/mg-logoback.png"}
-                                            alt={`Baby ${baby.babyId}`}
-                                            width={30}
-                                            height={30}
-                                            className="rounded-full mr-2 object-cover w-8 h-8"
-                                        />
-                                        <span className="text-gray-700">{baby.babyName}</span>
-                                    </div>
-                                </DropdownItem>
-                            ))}
-                        </DropdownMenu>
-                    </Dropdown>
-                </div>
-
+                {/* 검색 입력 필드 */}
                 <div className="flex justify-center items-center">
                     <div className="relative w-full max-w-md">
                         <input
@@ -438,13 +336,16 @@ export default function Home() {
                     </div>
                 </div>
 
+                {/* 공지 확인 버튼 */}
                 <button
                     className="w-[45px] h-[45px] rounded-full overflow-hidden"
-                    onClick={handleCheckNotice}
+                    onClick={() => router.push('/notice')}
                 >
                     <Image src="/img/button/notice.png" alt="공지 확인" width={45} height={45} className="w-full h-full object-cover" />
                 </button>
             </div>
+
+            {/* 캘린더 컴포넌트 */}
             {calendarVisible && (
                 <div className="fixed top-[110px] left-0 right-0 z-20 transition-opacity duration-300">
                     <Calendar
@@ -453,19 +354,22 @@ export default function Home() {
                         events={events}
                     />
                     <button
-                        onClick={handleChatbotClick}
+                        onClick={() => router.push('/chatbot')}
                         className="fixed bottom-100 right-4 w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center shadow-lg hover:bg-purple-600 transition-colors duration-200 z-40"
                     >
                         <MessageCircle size={24} />
                     </button>
                 </div>
             )}
+
+            {/* 메인 컨테이너 */}
             <MainContainer
                 className='pb-6'
-                topMargin={topMargin}
+                topMargin={isExpanded ? 450 : 115}
                 {...(isExpanded ? handlers : {})}
             >
                 <div className="w-full max-w-[76vw]">
+                    {/* 네비게이션 버튼 */}
                     <div className="text-4xl text-black mb-[15px] flex space-x-4">
                         <button
                             onClick={() => setActiveView('todo')}
@@ -480,9 +384,13 @@ export default function Home() {
                             메모
                         </button>
                     </div>
+
+                    {/* 날짜 표시 */}
                     <p className="text-2xl text-black mb-[33px]">
                         {displayDate.toLocaleDateString('default', { year: 'numeric', month: 'numeric', day: 'numeric' })}
                     </p>
+
+                    {/* 일정 목록 */}
                     {(activeView === 'home' || activeView === 'todo') && (
                         <>
                             {filteredEvents.length > 0 ? (
@@ -509,9 +417,10 @@ export default function Home() {
                             )}
                         </>
                     )}
+
+                    {/* 메모 목록 */}
                     {activeView === 'memo' && (
                         <>
-                            {console.log('Filtered Memos:', filteredMemos)}
                             {filteredMemos.length > 0 ? (
                                 filteredMemos.map((memo) => (
                                     <DetailedContainer key={memo.memoId} className="mb-[33px]">
@@ -536,6 +445,8 @@ export default function Home() {
                     )}
                 </div>
             </MainContainer>
+
+            {/* 모달 컴포넌트 */}
             <CreateMemoModal
                 isOpen={isCreateMemoModalOpen}
                 onClose={() => setIsCreateMemoModalOpen(false)}
@@ -544,7 +455,10 @@ export default function Home() {
             <RecordModal
                 isOpen={isVoiceRecordModalOpen}
                 onClose={() => setIsVoiceRecordModalOpen(false)}
-                onSave={saveVoiceRecord}
+                onSave={(audioBlob: Blob) => {
+                    console.log('Audio recorded:', audioBlob);
+                    setIsVoiceRecordModalOpen(false);
+                }}
             />
         </div>
     );

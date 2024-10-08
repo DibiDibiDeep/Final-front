@@ -7,7 +7,7 @@ import Input from '@/components/Input';
 import Calendar from '@/components/Calendar';
 import { debounce } from 'lodash';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 
@@ -27,7 +27,7 @@ export default function AddPage() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    const { token, userId, error: authError } = useAuth();
+    const { userId } = useAuth();
     const { babyId } = useBabySelection();
     const { setActiveView } = useBottomContainer();
 

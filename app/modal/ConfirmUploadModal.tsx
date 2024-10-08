@@ -31,11 +31,6 @@ const ConfirmUploadModal: React.FC<ConfirmUploadModalProps> = ({ isOpen, onClose
                                     사진 업로드가 완료되었습니다.
                                 </p>
                             </ModalBody>
-                            {/* <ModalFooter className="justify-center">
-                                <Button color="primary" variant="light" onPress={onClose}>
-                                    확인
-                                </Button>
-                            </ModalFooter> */}
                         </>
                     )}
                 </ModalContent>

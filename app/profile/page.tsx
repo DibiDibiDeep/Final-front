@@ -6,7 +6,7 @@ import { LogOut, ChevronLeft, ChevronRight, Minus } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import { removeAuthToken } from '@/utils/authUtils';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
 import DeleteBabyModal from '@/app/modal/DeleteBaby';
 import Cookies from 'js-cookie';
 
