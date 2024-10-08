@@ -51,9 +51,8 @@ const EventCard: React.FC<EventCardProps> = ({
   }
 
   const handleDelete = async () => {
-    if (!token) return;
     try {
-      await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${id}`, token, {
+      await fetchWithAuth(`${BACKEND_API_URL}/api/calendars/${id}`, {
         method: 'DELETE'
       });
       onEventDeleted();
