@@ -43,6 +43,7 @@ export default function Home() {
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
@@ -61,6 +62,27 @@ export default function Home() {
         handleVoiceRecord: contextHandleVoiceRecord,
         handleScanButtonClick
     } = useBottomContainer();
+
+    // 키보드 높이 변화 감지
+    useEffect(() => {
+        const resizeHandler = () => {
+            if (typeof window !== 'undefined' && window.visualViewport) {
+                const keyboardHeight = window.innerHeight - window.visualViewport.height;
+                setKeyboardHeight(keyboardHeight);
+            }
+        };
+
+        if (typeof window !== 'undefined' && window.visualViewport) {
+            window.visualViewport.addEventListener('resize', resizeHandler);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined' && window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', resizeHandler);
+            }
+        };
+    }, []);
+
 
     // 아이 정보 가져오기
     useEffect(() => {
@@ -87,6 +109,12 @@ export default function Home() {
     useEffect(() => {
         console.log('cookie', Cookies.get('selectedBaby'));
     }, [selectedBaby])
+
+    // MainContainer의 스타일을 동적으로 조정
+    const mainContainerStyle = {
+        transform: `translateY(-${keyboardHeight}px)`,
+        transition: 'transform 0.3s ease-out',
+    };
 
     const isTokenExpired = (token: string) => {
         const payload = JSON.parse(atob(token.split('.')[1])); // 토큰의 payload 부분을 디코딩
@@ -463,6 +491,7 @@ export default function Home() {
             <MainContainer
                 className='pb-6'
                 topMargin={topMargin}
+                style={mainContainerStyle}
                 {...(isExpanded ? handlers : {})}
             >
                 <div className="w-full max-w-[76vw]">

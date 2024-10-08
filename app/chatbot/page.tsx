@@ -4,9 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import ResetChatModal from '../modal/ResetChatModal';
 import { Search, RotateCcw, ChevronUp, ChevronDown, X } from 'lucide-react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import { Baby } from '@/types/index';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
@@ -39,6 +37,7 @@ const DummyChatInterface: React.FC = () => {
   const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(-1);
   const [composing, setComposing] = useState(false);
   const [isProcessingSave, setIsProcessingSave] = useState(false);
+  const [isWaitingForBot, setIsWaitingForBot] = useState(false);
   const [botMessages, setBotMessages] = useState<Message[]>([]);
   const { token, userId, error: authError } = useAuth();
   const { babyId } = useBabySelection();
@@ -386,7 +385,7 @@ const DummyChatInterface: React.FC = () => {
       setError('메시지를 전송할 수 없습니다. 모든 정보가 올바르게 설정되었는지 확인해 주세요.');
       return;
     }
-
+    setIsWaitingForBot(true);
     console.log('Sending token:', token);
 
     const newMessage: Message = {
@@ -434,83 +433,82 @@ const DummyChatInterface: React.FC = () => {
         setMessages(prevMessages => [...prevMessages, botResponse]);
         setBotMessages(prevBotMessages => [...prevBotMessages, botResponse]);
 
-        // ML 서버에서 일기 저장이 완료되면 메시지를 표시
+        // ML 서버에서 일기 저장 완료시
         if (response.diarySaved) {
-          const successMessage: Message = {
-            userId: userId,
-            babyId: babyId,
-            id: Date.now(),
-            text: "일기가 저장되었습니다.",
-            sender: 'bot',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
-          setMessages(prevMessages => [...prevMessages, successMessage]);
-          toast.success('일기가 성공적으로 저장되었습니다.');
+          toast.success('일기가 성공적으로 저장되었습니다.', {
+            duration: 3000,
+            position: 'top-center',
+          });
         }
       } else {
         console.error('Unexpected response format:', response);
-        throw new Error('Unexpected response format from server');
+        throw new Error('서버로부터 유효한 응답을 받지 못했습니다.');
       }
 
     } catch (error) {
       console.error('Error sending message:', error);
       setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      toast.error('메시지 전송에 실패했습니다.', {
+        duration: 3000,
+        position: 'top-center',
+      });
+    } finally {
+      setIsWaitingForBot(false);
     }
-
     setTimeout(scrollToBottom, 100);
   };
 
-    const handleSaveDiary = async (content: any) => {
-      if (!userId || !babyId || isProcessingSave) {
-          console.error('User ID or Baby ID is not available or save is already in progress');
-          return;
-      }
+  //   const handleSaveDiary = async (content: any) => {
+  //     if (!userId || !babyId || isProcessingSave) {
+  //         console.error('User ID or Baby ID is not available or save is already in progress');
+  //         return;
+  //     }
 
-      setIsProcessingSave(true);
+  //     setIsProcessingSave(true);
 
-      const currentDate = new Date().toISOString().split('T')[0];
+  //     const currentDate = new Date().toISOString().split('T')[0];
 
-      try {
-        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: userId,
-                babyId: babyId,
-                content: content, // 챗봇의 응답 내용을 저장
-                date: currentDate,
-            }),
-        });
+  //     try {
+  //       const response = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum`, {
+  //           method: 'POST',
+  //           headers: {
+  //               'Content-Type': 'application/json',
+  //           },
+  //           body: JSON.stringify({
+  //               userId: userId,
+  //               babyId: babyId,
+  //               content: content, // 챗봇의 응답 내용을 저장
+  //               date: currentDate,
+  //           }),
+  //       });
 
-          if (response.status === 200) {
-              console.log('Diary saved successfully');
+  //         if (response.status === 200) {
+  //             console.log('Diary saved successfully');
               
-              // 성공 메시지를 채팅 메시지로 추가
-              const successMessage: Message = {
-                  userId: userId,
-                  babyId: babyId,
-                  id: Date.now(),
-                  text: "일기가 저장되었습니다.",
-                  sender: 'bot',
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              };
-              setMessages(prevMessages => [...prevMessages, successMessage]);
+  //             // 성공 메시지를 채팅 메시지로 추가
+  //             const successMessage: Message = {
+  //                 userId: userId,
+  //                 babyId: babyId,
+  //                 id: Date.now(),
+  //                 text: "일기가 저장되었습니다.",
+  //                 sender: 'bot',
+  //                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  //             };
+  //             setMessages(prevMessages => [...prevMessages, successMessage]);
 
-              // 토스트 메시지 표시
-              toast.success('일기가 성공적으로 저장되었습니다.');
-          } else {
-              console.error('Invalid server response:', response);
-              throw new Error('일기 저장에 실패했습니다. 다시 시도해주세요.');
-          }
-      } catch (error) {
-          console.error('Failed to save diary:', error);
-          toast.error('일기 저장에 실패했습니다. 다시 시도해주세요.');
-      } finally {
-          setIsProcessingSave(false);
-      }
-  };
+  //             // 토스트 메시지 표시
+  //             toast.success('일기가 성공적으로 저장되었습니다.');
+  //         } else {
+  //             console.error('Invalid server response:', response);
+  //             throw new Error('일기 저장에 실패했습니다. 다시 시도해주세요.');
+  //         }
+  //     } catch (error) {
+  //         console.error('Failed to save diary:', error);
+  //         toast.error('일기 저장에 실패했습니다. 다시 시도해주세요.');
+  //     } finally {
+  //         setIsProcessingSave(false);
+  //     }
+  // };
 
 
   return (
@@ -602,7 +600,7 @@ const DummyChatInterface: React.FC = () => {
         </button>
       </div>
       {error && (
-        <div className="text-red-500 text-center my-2">
+        <div className="absolute text-red-500 text-center pt-64">
           {error}
         </div>
       )}
@@ -655,13 +653,19 @@ const DummyChatInterface: React.FC = () => {
             onCompositionStart={handleCompositionStart}
             onCompositionEnd={handleCompositionEnd}
             placeholder="메시지를 입력하세요..."
+            disabled={isWaitingForBot}
             className="flex-1 py-2 px-4 rounded-full border-2 border-purple-300 focus:outline-none focus:border-purple-500 text-gray-700"
           />
           <button
             onClick={handleSendMessage}
-            className="ml-2 bg-purple-600 text-white px-4 py-2 rounded-full font-bold hover:bg-purple-700 transition duration-200"
+            className={`ml-2 bg-purple-600 text-white px-4 py-2 rounded-full font-bold transition duration-200 ${
+              isWaitingForBot
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-purple-700'
+            }`}
+            disabled={isWaitingForBot}
           >
-            전송
+            {isWaitingForBot ? '전송' : '전송'}
           </button>
         </div>
       </div>
