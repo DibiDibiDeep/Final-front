@@ -86,6 +86,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
     const fetchDiaryData = async (alimId: number) => {
         setLoading(true);
         setError(null);
+        checkFairyTaleStatus(alimId);
 
         try {
             const diaryResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alim-inf/alim-id/${alimId}`, {
@@ -134,8 +135,6 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         } finally {
             setLoading(false);
         }
-
-        checkFairyTaleStatus(alimId);
     };
 
 
@@ -144,6 +143,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, {
                 method: 'GET'
             });
+            console.log('동화 생성 여부', response.status);
             setFairyTaleGenerated(response.status === "COMPLETED");
         } catch (error) {
             console.error('Failed to check fairy tale status:', error);
@@ -169,9 +169,11 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                 date: formattedDate
             };
 
+            // console.log(`${BACKEND_API_URL}/api/alims/${data!.alimId}`);
+
             await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${data!.alimId}`, {
                 method: 'PUT',
-                body: JSON.stringify(newData),
+                body: newData,
             });
 
             updateEntries({ ...data!, content: content });

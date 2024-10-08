@@ -46,58 +46,45 @@ const InitialSettings: React.FC = () => {
     const { setActiveView } = useBottomContainer();
 
     useEffect(() => {
-        const storedUserId = localStorage.getItem('userId');
         const storedSelectedBaby = localStorage.getItem('selectedBaby');
 
         if (storedSelectedBaby) {
-            // console.log("storedSelectedBaby", JSON.stringify(storedSelectedBaby));
-
             try {
                 const selectedBabyObj = JSON.parse(storedSelectedBaby);
-                setSelectedBaby(selectedBabyObj); // Ensure selectedBaby is set
+                setSelectedBaby(selectedBabyObj);
 
-                // Set babyInfo based on selected baby object
                 const updatedBabyInfo = {
-                    userId: parseInt(storedUserId!, 10),
+                    userId: parseInt(localStorage.getItem('userId')!, 10),
                     babyId: selectedBabyObj.babyId,
                     babyName: selectedBabyObj.babyName,
                     birth: new Date(selectedBabyObj.birth).toISOString().split('T')[0],
                     gender: selectedBabyObj.gender,
-                    photoUrl: selectedBabyObj.photoUrl // Use the photoUrl directly from selectedBabyObj
+                    photoUrl: selectedBabyObj.photoUrl
                 };
 
                 setBabyInfo(updatedBabyInfo);
+                setAvatarSrc(selectedBabyObj.photoUrl || '/img/mg-logoback.png');
 
-                const photoUrl = selectedBabyObj.photoUrl;
-                setAvatarSrc(photoUrl || '/img/mg-logoback.png'); // Fallback to default image if photoUrl is not available
-                console.log(photoUrl);
                 // Fetch baby photo if needed
-                fetchBabyPhoto(selectedBabyObj.babyId);
+                if (selectedBabyObj.babyId) {
+                    fetchBabyPhoto(selectedBabyObj.babyId);
+                }
             } catch (error) {
                 console.error('Error parsing selectedBaby:', error);
                 setError('Error loading baby information. Please try again.');
             }
         }
     }, []);
-
     const fetchBabyPhoto = async (babyId: number) => {
         try {
-            // const response = await axios.get(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`);
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/baby/${babyId}`, {
                 method: 'GET'
             });
-            console.log('fetch Photo:', response);
 
             if (response && Array.isArray(response) && response.length > 0 && response[0].photoUrl) {
-                // Update avatar source with the fetched photo URL
-                setAvatarSrc(response[0].filePath);
-
-                // Update babyInfo state
-                const updatedBabyInfo = {
-                    ...babyInfo,
-                    photoUrl: response[response.length - 1].filePath
-                };
-                setBabyInfo(updatedBabyInfo);
+                const photoUrl = response[response.length - 1].filePath;
+                setAvatarSrc(photoUrl);
+                setBabyInfo(prev => ({ ...prev, photoUrl }));
             } else {
                 console.warn('No photo found or photoUrl is missing.');
             }
@@ -116,6 +103,7 @@ const InitialSettings: React.FC = () => {
         setSelectedFile(file);
         setAvatarSrc(imageSrc);
     };
+
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -150,21 +138,23 @@ const InitialSettings: React.FC = () => {
 
             const babyId = response.babyId;
 
-            // 항상 사진 업로드 로직 실행
-            const formData = new FormData();
+            let newPhotoUrl = babyInfo.photoUrl; // 기존 사진 URL 유지
+
+            // 새로운 파일이 선택된 경우에만 사진 업로드 로직 실행
             if (selectedFile) {
+                const formData = new FormData();
                 formData.append("file", selectedFile);
+                formData.append("babyId", babyId.toString());
+                formData.append("userId", userId.toString());
+
+                const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/${babyId}`, {
+                    method: 'PUT',
+                    body: formData,
+                });
+
+                console.log('Baby photo uploaded successfully:', photoResponse);
+                newPhotoUrl = photoResponse.filePath;
             }
-            formData.append("babyId", babyId.toString());
-            formData.append("userId", userId.toString());
-
-            const photoResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/baby-photos/${babyId}`, {
-                method: 'PUT',
-                body: formData,
-            });
-
-            console.log('Baby photo uploaded successfully:', photoResponse);
-            const newPhotoUrl = photoResponse.filePath;
 
             // 상태 업데이트
             setBabyInfo(prevState => ({
@@ -181,14 +171,14 @@ const InitialSettings: React.FC = () => {
 
             console.log('Baby information and photo saved successfully');
             router.push('/home');
-            setActiveView('home')
+            setActiveView('home');
         } catch (err) {
+            console.error('Error saving baby info:', err);
             if (axios.isAxiosError(err) && err.response) {
                 setError(`Error: ${err.response.data.message || 'Unknown error occurred'}`);
             } else {
-                setError(`An error occurred while saving the information. Please try again. ${err}`);
+                setError(`An error occurred while saving the information. Please try again.`);
             }
-            console.error('Error saving baby info:', err);
         } finally {
             setIsLoading(false);
         }
@@ -214,7 +204,10 @@ const InitialSettings: React.FC = () => {
             <CommonContainer>
                 <div className="flex flex-col items-center justify-between pt-[20px] pb-6">
                     <div className="flex flex-col items-center w-full max-w-[90%] sm:max-w-md">
-                        <AvatarWithUpload onImageSelect={handleImageSelect} />
+                        <AvatarWithUpload
+                            onImageSelect={handleImageSelect}
+                            initialAvatarSrc={avatarSrc}
+                        />
                         <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-5 w-full mt-16 sm:mt-24 md:mt-28">
                             <div className="w-full flex items-center space-x-2 sm:space-x-4">
                                 <label htmlFor="babyName" className="text-sm font-medium text-gray-700 whitespace-nowrap w-20 sm:w-24">

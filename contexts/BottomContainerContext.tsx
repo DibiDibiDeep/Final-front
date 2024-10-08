@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext, useCallback, Rea
 import { useRouter } from 'next/navigation';
 import { useAuth, useBabySelection } from '@/hooks/useAuth';
 import { fetchWithAuth } from '@/utils/api';
+import ConfirmUploadModal from '@/app/modal/ConfirmUploadModal';
 
 type ActiveView = 'home' | 'todo' | 'memo' | 'diary' | 'story' | 'profile';
 
@@ -38,6 +39,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
     const [activeView, setActiveView] = useState<ActiveView>('home');
     const [isCreateMemoModalOpen, setIsCreateMemoModalOpen] = useState(false);
     const [isVoiceRecordModalOpen, setIsVoiceRecordModalOpen] = useState(false);
+    const [isConfirmUploadModalOpen, setIsConfirmUploadModalOpen] = useState(false);
     const { token, userId, error: authError } = useAuth();
     const { babyId } = useBabySelection();
     const router = useRouter();
@@ -99,6 +101,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
                 console.log('이미지 업로드 성공:', response);
                 const imageUrl = response.filePath;
                 console.log('이미지 URL:', imageUrl);
+                setIsConfirmUploadModalOpen(true);
 
                 // 결과를 로컬 스토리지에 저장
                 localStorage.setItem('calendarData', JSON.stringify(imageUrl));
@@ -134,6 +137,10 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
             }}
         >
             {children}
+            <ConfirmUploadModal
+                isOpen={isConfirmUploadModalOpen}
+                onClose={() => setIsConfirmUploadModalOpen(false)}
+            />
         </BottomContainerContext.Provider>
     );
 };
