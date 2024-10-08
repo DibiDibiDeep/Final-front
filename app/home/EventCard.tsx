@@ -5,7 +5,7 @@ import { CalendarIcon, MapPinIcon, EllipsisVerticalIcon, FaceSmileIcon, Informat
 import DeleteModal from '../modal/DeleteModal';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 

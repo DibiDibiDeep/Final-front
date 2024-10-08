@@ -7,7 +7,7 @@ import Image from 'next/image';
 import EditContainer from '@/components/EditContainer';
 import { Input } from '@nextui-org/react';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection  } from '@/hooks/useAuth';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 
 const { token, error: authError } = useAuth();
 
@@ -28,8 +28,7 @@ export default function EditEvent({ params }: { params: { memoId: string } }) {
     useEffect(() => {
         const fetchMemo = async () => {
             try {
-                if (!token) return;
-                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${params.memoId}`, token, {method: 'GET'});
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${params.memoId}`, { method: 'GET' });
                 setMemoData(response.data);
             } catch (error) {
                 console.error('Failed to fetch memo:', error);
@@ -50,8 +49,7 @@ export default function EditEvent({ params }: { params: { memoId: string } }) {
         setIsLoading(true);
         setError('');
         try {
-            if (!token) return;
-            await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoData.memoId}`, token, {method: 'PUT', body: memoData});
+            await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoData.memoId}`, { method: 'PUT', body: memoData });
             router.push('/home');
         } catch (error) {
             console.error('Failed to update memo:', error);

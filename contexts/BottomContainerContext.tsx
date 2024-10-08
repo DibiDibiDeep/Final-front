@@ -1,9 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 import { fetchWithAuth } from '@/utils/api';
 import ConfirmUploadModal from '@/app/modal/ConfirmUploadModal';
-
 type ActiveView = 'home' | 'todo' | 'memo' | 'diary' | 'story' | 'profile';
 
 interface BottomContainerContextType {
@@ -139,7 +138,10 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
             {children}
             <ConfirmUploadModal
                 isOpen={isConfirmUploadModalOpen}
-                onClose={() => setIsConfirmUploadModalOpen(false)}
+                onClose={() => {
+                    setIsConfirmUploadModalOpen(false)
+                    window.location.reload();
+                }}
             />
         </BottomContainerContext.Provider>
     );

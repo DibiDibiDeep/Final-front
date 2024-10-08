@@ -7,8 +7,8 @@ import { Search, RotateCcw, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Baby } from '@/types/index';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
-import toast, { Toaster } from 'react-hot-toast';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
+import toast from 'react-hot-toast';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -41,7 +41,7 @@ const DummyChatInterface: React.FC = () => {
   const [botMessages, setBotMessages] = useState<Message[]>([]);
   const { token, userId, error: authError } = useAuth();
   const { babyId } = useBabySelection();
-  
+
   const router = useRouter();
 
   const handleSearchFocus = () => setIsSearchFocused(true);
@@ -190,32 +190,32 @@ const DummyChatInterface: React.FC = () => {
 
   const confirmResetChat = async () => {
     if (userId === null || babyId === null) {
-        console.error('User ID or Baby ID is not available');
-        return;
+      console.error('User ID or Baby ID is not available');
+      return;
     }
 
     try {
-        // 서버에 채팅 히스토리 리셋 요청 보내기
-        await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {
-            method: 'POST',
-        });
+      // 서버에 채팅 히스토리 리셋 요청 보내기
+      await fetchWithAuth(`${BACKEND_API_URL}/api/chat/reset/${userId}/${babyId}`, {
+        method: 'POST',
+      });
 
-        // 화면에 표시된 메시지 초기화
-        setMessages([]);
-        
-        // 로컬 스토리지에서 채팅 캐시 삭제
-        localStorage.removeItem(`chatCache_${userId}_${babyId}`);
-        
-        // 사용자에게 초기화 완료 메시지 표시
-        setError('채팅 내역이 삭제되었습니다.');
-        setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
+      // 화면에 표시된 메시지 초기화
+      setMessages([]);
 
-        // 모달 닫기
-        setIsResetModalOpen(false);
+      // 로컬 스토리지에서 채팅 캐시 삭제
+      localStorage.removeItem(`chatCache_${userId}_${babyId}`);
+
+      // 사용자에게 초기화 완료 메시지 표시
+      setError('채팅 내역이 삭제되었습니다.');
+      setTimeout(() => setError(null), 3000); // 3초 후 메시지 제거
+
+      // 모달 닫기
+      setIsResetModalOpen(false);
     } catch (error) {
-        console.error('Failed to reset chat history:', error);
-        setError('채팅 내역 삭제에 실패했습니다.');
-        setTimeout(() => setError(null), 3000);
+      console.error('Failed to reset chat history:', error);
+      setError('채팅 내역 삭제에 실패했습니다.');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -321,6 +321,8 @@ const DummyChatInterface: React.FC = () => {
             userId: baby.userId,
             babyId: baby.babyId,
             babyName: baby.babyName,
+            gender: baby.gender,
+            birth: baby.birth,
             photoUrl: photoResponse[0]?.filePath || "/img/mg-logoback.png"
           };
         }));
@@ -510,7 +512,6 @@ const DummyChatInterface: React.FC = () => {
   //     }
   // };
 
-
   return (
     <div className="h-screen flex flex-col items-center">
       <div className="w-full max-w-md mt-8 flex justify-between items-center px-4 gap-4">
@@ -526,71 +527,42 @@ const DummyChatInterface: React.FC = () => {
               height={40}
             />
           </button>
-          {/* <Dropdown>
-            <DropdownTrigger>
-              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center ml-4">
-                <Image
-                  src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
-                  alt="Baby Photo"
-                  width={45}
-                  height={45}
-                  className="rounded-full object-cover object-center w-[45px] h-[45px]"
-                />
-              </button>
-            </DropdownTrigger>
-            <DropdownMenu aria-label="Baby Selection">
-              {babies.map((baby) => (
-                <DropdownItem key={baby.babyId} onPress={() => handleBabySelect(baby)}>
-                  <div className="flex items-center">
-                    <Image
-                      src={baby.photoUrl || "/img/mg-logoback.png"}
-                      alt={`Baby ${baby.babyId}`}
-                      width={30}
-                      height={30}
-                      className="rounded-full mr-2 object-cover w-8 h-8"
-                    />
-                    <span className="text-gray-700">{baby.babyName}</span>
-                  </div>
-                </DropdownItem>
-              ))}
-            </DropdownMenu>
-          </Dropdown> */}
         </div>
-         <div className="w-full max-w-md">
-        <div className="relative">
-          <div className={`flex items-center bg-white rounded-full transition-all duration-300 ${isSearchFocused ? 'shadow-lg' : 'shadow'}`}>
-            <div className="pl-4">
-              <Search className="text-gray-400" size={20} />
-            </div>
-            <input
-              type="text"
-              placeholder="검색"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={handleSearchFocus}
-              onBlur={handleSearchBlur}
-              className="w-full py-2 px-3 rounded-full focus:outline-none"
-            />
-            {searchTerm && (
-              <div className="flex items-center">
-                {searchMatches.length > 0 && (
-                  <>
-                    <button onClick={handlePrevMatch} aria-label="이전 검색 결과">
-                      <ChevronUp size={16} className="text-gray-500" />
-                    </button>
-                    <button onClick={handleNextMatch} aria-label="다음 검색 결과">
-                      <ChevronDown size={16} className="text-gray-500" />
-                    </button>
-                  </>
-                )}
-                <button onClick={handleClearSearch} className="p-1 ml-2 pr-4" aria-label="검색 초기화">
-                  <X size={16} className="text-gray-500" />
-                </button>
+        <div className="w-full max-w-md">
+          <div className="relative">
+            <div className={`flex items-center bg-white rounded-full transition-all duration-300 ${isSearchFocused ? 'shadow-lg' : 'shadow'}`}>
+              <div className="pl-4">
+                <Search className="text-gray-400" size={20} />
               </div>
-            )}
+              <input
+                type="text"
+                placeholder="검색"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
+                className="w-full py-2 px-3 rounded-full focus:outline-none"
+              />
+              {searchTerm && (
+                <div className="flex items-center">
+                  {searchMatches.length > 0 && (
+                    <>
+                      <button onClick={handlePrevMatch} aria-label="이전 검색 결과">
+                        <ChevronUp size={16} className="text-gray-500" />
+                      </button>
+                      <button onClick={handleNextMatch} aria-label="다음 검색 결과">
+                        <ChevronDown size={16} className="text-gray-500" />
+                      </button>
+                    </>
+                  )}
+                  <button onClick={handleClearSearch} className="p-1 ml-2 pr-4" aria-label="검색 초기화">
+                    <X size={16} className="text-gray-500" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
         <button
           onClick={handleResetChat}
           className="rounded-full hover:bg-gray-200 transition duration-200 mr-4"

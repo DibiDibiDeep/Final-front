@@ -13,7 +13,7 @@ export default function GoogleAuthLogin(): JSX.Element {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
 
-  const [token, setToken] = useState<string | undefined>(undefined);
+  const [token, setToken] = useState<string | undefined>(undefined); // 작업 중인 현재 인증 토큰의 값
 
   const checkAuthStatus = async (token: string | undefined) => {
     console.log('Auth token:', token ? 'exists' : 'does not exist');

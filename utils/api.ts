@@ -27,7 +27,7 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000000);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 300000);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${token}`);
@@ -62,8 +62,12 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
 
         if (!response.ok) {
             const errorBody = await response.text();
+            if (response.status === 401) {
+                throw new Error('Unauthorized access - please login again.');
+            }
             throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
         }
+
 
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {

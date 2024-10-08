@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -151,6 +151,9 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
                                 src={currentPageData.imagePath}
                                 alt={`페이지 ${currentPageData.pageNum}의 삽화`}
                                 fill
+                                // layout="responsive"
+                                // width={1}  // 예시로 설정한 너비 (비율 유지에 사용)
+                                // height={1} // 예시로 설정한 높이 (비율 유지에 사용)
                                 sizes="100vw"
                                 style={{ objectFit: 'cover' }}
                             />

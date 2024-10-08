@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
 import { fetchWithAuth } from '@/utils/api';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:8080';
@@ -36,28 +36,25 @@ interface CalendarData {
 const NoticeDetailPage: React.FC = () => {
     const router = useRouter();
     const params = useParams();
-    const month = params?.month as string;
+    const calendarPhotoInfId = params?.calendarPhotoInfId as string;
     const [inferenceResult, setInferenceResult] = useState<InferenceResult | null>(null);
-    const { token, userId, error: authError } = useAuth();
+    const { userId } = useAuth();
 
     useEffect(() => {
         const fetchCalendarData = async () => {
             try {
-                if (!token) return;
-                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photo-inf`, token, {
+                const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photo-inf/${userId}`, {
                     method: 'GET'
                 });
 
-                // Assuming the response is an array of CalendarData
-                const relevantData = response.find((data: CalendarData) => {
-                    const parsedResult: InferenceResult = JSON.parse(data.inferenceResult);
-                    return parsedResult.month === month;
-                });
+                const relevantData = response.find(
+                    (data: CalendarData) => data.calendarPhotoInfId === parseInt(calendarPhotoInfId)
+                );
 
                 if (relevantData) {
                     setInferenceResult(JSON.parse(relevantData.inferenceResult));
                 } else {
-                    console.error('No data found for the specified month');
+                    console.error('No data found for the specified ID');
                 }
             } catch (error) {
                 console.error('Error fetching calendar data:', error);
@@ -65,7 +62,7 @@ const NoticeDetailPage: React.FC = () => {
         };
 
         fetchCalendarData();
-    }, [month, token]); // Add token to the dependency array if it's used within the effect
+    }, [calendarPhotoInfId, userId]);
 
     if (!inferenceResult) {
         return <div>Loading...</div>;
@@ -73,17 +70,12 @@ const NoticeDetailPage: React.FC = () => {
 
     return (
         <div className="min-h-screen p-4 mb-[120px]">
-            <div className="flex items-center mb-6 h-12"> {/* Set a specific height for vertical alignment */}
+            <div className="flex items-center mb-6 h-12">
                 <Link href="/notice" className="absolute top-9 left-4 w-10 h-10 flex items-center justify-center">
-                    <Image
-                        src="/img/button/back.png"
-                        alt='Back'
-                        width={50}
-                        height={50}
-                    />
+                    <Image src="/img/button/back.png" alt='Back' width={50} height={50} />
                 </Link>
                 <div className="flex-grow text-center">
-                    <h1 className="text-2xl text-gray-700 font-bold leading-10">{`${inferenceResult.month}월 상세 일정`}</h1> {/* Adjust leading for vertical alignment */}
+                    <h1 className="text-2xl text-gray-700 font-bold leading-10">{`${inferenceResult.month}월 상세 일정`}</h1>
                 </div>
             </div>
             <div className="space-y-4">
@@ -104,10 +96,6 @@ const NoticeDetailPage: React.FC = () => {
             </div>
         </div>
     );
-
-
-
-
 };
 
 export default NoticeDetailPage;

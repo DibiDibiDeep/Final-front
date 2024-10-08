@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Calendar from '@/components/Calendar';
 import EditContainer from '@/components/EditContainer';
 import Input from '@/components/Input';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
 import { fetchWithAuth } from '@/utils/api';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;

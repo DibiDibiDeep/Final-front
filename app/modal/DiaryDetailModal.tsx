@@ -3,7 +3,8 @@ import { X } from 'lucide-react';
 import axios from 'axios';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Textarea } from "@nextui-org/react";
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/authHooks';
+import { debounce } from 'lodash';
 
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
@@ -238,6 +239,9 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
         }
     };
 
+    const debouncedCreateDiary = debounce(handleCreateDiary, 500);
+    const debouncedCreateFairyTale = debounce(handleCreateFairyTale, 500);
+
     if (!isOpen) return null;
 
     return (
@@ -278,7 +282,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                             <Button color="default" variant="light" onPress={handleTempSave} isDisabled={loading}>
                                 임시 저장
                             </Button>
-                            <Button color="primary" onPress={handleCreateDiary} isDisabled={loading}>
+                            <Button color="primary" onPress={debouncedCreateDiary} isDisabled={loading}>
                                 일기 생성
                             </Button>
                         </>
@@ -289,7 +293,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                                 동화 생성됨
                             </Button>
                         ) : (
-                            <Button color="primary" onPress={handleCreateFairyTale} isDisabled={loading}>
+                            <Button color="primary" onPress={debouncedCreateFairyTale} isDisabled={loading}>
                                 동화 생성
                             </Button>
                         )

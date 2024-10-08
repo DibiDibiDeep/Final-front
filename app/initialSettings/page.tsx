@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Select from '@/components/Select';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth, useBabySelection } from '@/hooks/useAuth';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 import { useBottomContainer } from '@/contexts/BottomContainerContext';
 
 
