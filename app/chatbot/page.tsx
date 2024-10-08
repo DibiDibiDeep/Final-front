@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import ResetChatModal from '../modal/ResetChatModal';
-import { Search, Trash2, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Search, RotateCcw, ChevronUp, ChevronDown, X } from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
@@ -434,31 +434,31 @@ const DummyChatInterface: React.FC = () => {
         setMessages(prevMessages => [...prevMessages, botResponse]);
         setBotMessages(prevBotMessages => [...prevBotMessages, botResponse]);
 
-        // 유저의 응답에 "일기를 저장" 또는 유사한 문구가 포함되어 있는지 확인
-        if (inputMessage.toLowerCase().includes("일기 저장")) {
-          const penultimateBotMessage = botMessages[botMessages.length - 1];
-          if (penultimateBotMessage) {
-              handleSaveDiary(penultimateBotMessage.text);
-          } else {
-              toast.error('저장할 일기 내용이 없습니다.');
-          }
+        // ML 서버에서 일기 저장이 완료되면 메시지를 표시
+        if (response.diarySaved) {
+          const successMessage: Message = {
+            userId: userId,
+            babyId: babyId,
+            id: Date.now(),
+            text: "일기가 저장되었습니다.",
+            sender: 'bot',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages(prevMessages => [...prevMessages, successMessage]);
+          toast.success('일기가 성공적으로 저장되었습니다.');
         }
       } else {
-          console.error('Unexpected response format:', response);
-          throw new Error('Unexpected response format from server');
+        console.error('Unexpected response format:', response);
+        throw new Error('Unexpected response format from server');
       }
 
     } catch (error) {
       console.error('Error sending message:', error);
-      if (axios.isAxiosError(error)) {
-          console.error('Response data:', error.response);
-          console.error('Response status:', error.response?.status);
-      }
       setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
     }
 
     setTimeout(scrollToBottom, 100);
-    };
+  };
 
     const handleSaveDiary = async (content: any) => {
       if (!userId || !babyId || isProcessingSave) {
@@ -528,9 +528,9 @@ const DummyChatInterface: React.FC = () => {
               height={40}
             />
           </button>
-          <Dropdown>
+          {/* <Dropdown>
             <DropdownTrigger>
-              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center">
+              <button className="focus:outline-none focus:ring-0 w-[45px] h-[45px] rounded-full overflow-hidden flex items-center justify-center ml-4">
                 <Image
                   src={selectedBaby?.photoUrl || "/img/mg-logoback.png"}
                   alt="Baby Photo"
@@ -556,9 +556,9 @@ const DummyChatInterface: React.FC = () => {
                 </DropdownItem>
               ))}
             </DropdownMenu>
-          </Dropdown>
+          </Dropdown> */}
         </div>
-         <div className="w-full max-w-md px-4">
+         <div className="w-full max-w-md">
         <div className="relative">
           <div className={`flex items-center bg-white rounded-full transition-all duration-300 ${isSearchFocused ? 'shadow-lg' : 'shadow'}`}>
             <div className="pl-4">
@@ -595,10 +595,10 @@ const DummyChatInterface: React.FC = () => {
       </div>
         <button
           onClick={handleResetChat}
-          className="p-2 rounded-full hover:bg-gray-200 transition duration-200"
+          className="rounded-full hover:bg-gray-200 transition duration-200 mr-4"
           aria-label="채팅 초기화"
         >
-          <Trash2 size={20} color="#6B46C1" />
+          <RotateCcw size={20} color="#6B46C1" />
         </button>
       </div>
       {error && (
@@ -634,7 +634,7 @@ const DummyChatInterface: React.FC = () => {
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500">메시지가 없습니다.</div>
+          <div className="text-center text-gray-500 mt-60">메시지가 없습니다.</div>
         )}
         <div ref={messagesEndRef} />
         <ResetChatModal
