@@ -27,7 +27,7 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 10000);
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || 300000);
 
     const headers = new Headers(options.headers);
     headers.set('Authorization', `Bearer ${token}`);
