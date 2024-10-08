@@ -25,13 +25,13 @@ export interface TodaySumModalProps {
 export const TodaySumModal: React.FC<TodaySumModalProps> = ({ todaySum, isOpen, onClose }) => {
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
-            <ModalContent>
+            <ModalContent className='text-gray-700'>
                 <ModalHeader>{new Date(todaySum.date).toLocaleDateString()}</ModalHeader>
                 <ModalBody>
                     <p>{todaySum.content}</p>
                 </ModalBody>
                 <ModalFooter>
-                    <Button onClick={onClose}>Close</Button>
+                    <Button onClick={onClose} color="primary" variant="light">닫기</Button>
                 </ModalFooter>
             </ModalContent>
         </Modal>
@@ -63,15 +63,15 @@ export const TodaySumList: React.FC<TodaySumProps> = ({ todaySums, onDelete }) =
     return (
         <>
             {todaySums.map((todaySum) => (
-                <div 
-                    key={todaySum.todayId} 
-                    className="bg-white p-4 rounded-lg shadow cursor-pointer hover:bg-gray-50 transition-colors"
+                <div
+                    key={todaySum.todayId}
+                    className="bg-white/70 p-4 rounded-lg shadow cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => handleTodaySumClick(todaySum)}
                 >
-                    <h3 className="text-lg font-semibold">내 일기</h3>
+                    <h3 className="text-lg font-semibold text-gray-700">내 일기</h3>
                     <p className="text-sm text-gray-600">{new Date(todaySum.date).toLocaleDateString()}</p>
-                    <p className="mt-2">{truncateContent(todaySum.content)}</p>
-                    <p 
+                    <p className="mt-2 text-gray-700">{truncateContent(todaySum.content)}</p>
+                    <p
                         className="mt-2 text-red-500 hover:underline"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -83,9 +83,9 @@ export const TodaySumList: React.FC<TodaySumProps> = ({ todaySums, onDelete }) =
                 </div>
             ))}
             {selectedTodaySum && (
-                <TodaySumModal 
-                    todaySum={selectedTodaySum} 
-                    isOpen={isOpen} 
+                <TodaySumModal
+                    todaySum={selectedTodaySum}
+                    isOpen={isOpen}
                     onClose={onClose}
                 />
             )}

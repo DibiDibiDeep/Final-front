@@ -146,14 +146,13 @@ export default function StoryDetailPage({ params }: { params: { id: string } }) 
             <div className="flex-grow flex flex-col justify-center items-center">
                 <div className={`transition-opacity duration-500 ${fadeIn ? 'opacity-100' : 'opacity-0'}`}>
                     <div className="bg-white rounded-lg shadow-md overflow-hidden max-w-md w-full mb-4">
-                        <div className="relative w-full" style={{ paddingTop: '75%' }}>
+                        <div className="relative w-full">
                             <Image
                                 src={currentPageData.imagePath}
                                 alt={`페이지 ${currentPageData.pageNum}의 삽화`}
-                                fill
-                                // layout="responsive"
-                                // width={1}  // 예시로 설정한 너비 (비율 유지에 사용)
-                                // height={1} // 예시로 설정한 높이 (비율 유지에 사용)
+                                // layout="responsive"  // 비율 유지
+                                width={512}          // 원하는 비율의 너비
+                                height={512}         // 원하는 비율의 높이
                                 sizes="100vw"
                                 style={{ objectFit: 'cover' }}
                             />
