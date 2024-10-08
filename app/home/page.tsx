@@ -40,6 +40,7 @@ export default function Home() {
     const [babies, setBabies] = useState<Baby[]>([]);
     const [selectedBaby, setSelectedBaby] = useState<Baby | null>(null);
     const [babyPhoto, setBabyPhoto] = useState<string | undefined>("/img/mg-logoback.png");
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [displayDate, setDisplayDate] = useState<Date>(() => new Date());
 
     // 훅 사용
@@ -55,6 +56,32 @@ export default function Home() {
         setIsVoiceRecordModalOpen
     } = useBottomContainer();
 
+    // 키보드 높이 변화 감지
+    useEffect(() => {
+        const resizeHandler = () => {
+            if (typeof window !== 'undefined' && window.visualViewport) {
+                const keyboardHeight = window.innerHeight - window.visualViewport.height;
+                setKeyboardHeight(keyboardHeight);
+            }
+        };
+
+        if (typeof window !== 'undefined' && window.visualViewport) {
+            window.visualViewport.addEventListener('resize', resizeHandler);
+        }
+
+        return () => {
+            if (typeof window !== 'undefined' && window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', resizeHandler);
+            }
+        };
+    }, []);
+
+    // MainContainer의 스타일을 동적으로 조정
+    const mainContainerStyle = {
+        transform: `translateY(-${keyboardHeight}px)`,
+        transition: 'transform 0.3s ease-out',
+    };
+  
     // API 호출 함수
     const fetchBabiesInfo = async (userId: number) => {
         try {
@@ -366,6 +393,7 @@ export default function Home() {
             <MainContainer
                 className='pb-6'
                 topMargin={isExpanded ? 450 : 115}
+                style={mainContainerStyle}
                 {...(isExpanded ? handlers : {})}
             >
                 <div className="w-full max-w-[76vw]">

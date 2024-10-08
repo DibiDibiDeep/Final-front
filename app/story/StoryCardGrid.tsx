@@ -1,12 +1,14 @@
 'use client';
+
 import React, { useEffect, useState } from 'react';
 import StoryCard from './StoryCard';
+import { TodaySum, TodaySumProps, TodaySumModalProps, TodaySumModal, TodaySumList } from './TodaySumCard';
 import { DropdownMenu, Dropdown, DropdownItem, DropdownTrigger } from '@nextui-org/dropdown';
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDisclosure } from "@nextui-org/react";
 import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth } from '@/hooks/authHooks';
-import { Menu } from 'lucide-react';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -16,14 +18,6 @@ interface Book {
     bookId: number;
     title: string;
     coverPath: string;
-}
-
-interface TodaySum {
-    todayId: number;
-    userId: number;
-    babyId: number;
-    content: string;
-    date: string;
 }
 
 function BookSkeleton() {
@@ -42,20 +36,6 @@ function StoryCardList({ books, onDelete }: { books: Book[]; onDelete: (id: numb
                     priority={index < 4}
                     onDelete={onDelete}
                 />
-            ))}
-        </>
-    );
-}
-
-function TodaySumList({ todaySums }: { todaySums: TodaySum[] }) {
-    return (
-        <>
-            {todaySums.map((todaySum) => (
-                <div key={todaySum.todayId} className="bg-white p-4 rounded-lg shadow">
-                    <h3 className="text-lg font-semibold">내 일기</h3>
-                    <p className="text-sm text-gray-600">{new Date(todaySum.date).toLocaleDateString()}</p>
-                    <p className="mt-2">{todaySum.content}</p>
-                </div>
             ))}
         </>
     );
@@ -114,7 +94,6 @@ async function getUserTodaySums(userId: number, token: string): Promise<TodaySum
     }
 }
 
-
 async function deleteUserBook(bookId: number, token: string): Promise<void> {
     try {
         const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${bookId}`, {
@@ -123,6 +102,20 @@ async function deleteUserBook(bookId: number, token: string): Promise<void> {
 
         if (!response) {
             throw new Error('Failed to delete the book.');
+        }
+    } catch (error: any) {
+        console.error('error:', error);
+    }
+}
+
+async function deleteUserTodaySum(todayId: number): Promise<void> {
+    try{
+        const response = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum/${todayId}`, {
+            method: 'DELETE'
+        });
+
+        if(!response) {
+            throw new Error('일기 삭제를 실패하였습니다.');
         }
     } catch (error: any) {
         console.error('error:', error);
@@ -172,6 +165,16 @@ export default function StoryCardGrid() {
         }
     };
 
+    const handleDeleteTodaySum = async (todayId: number) => {
+        if (!token) return;
+        try {
+            await deleteUserTodaySum(todayId);
+            setTodaySums((prevTodaySums) => prevTodaySums?.filter((sum) => sum.todayId !== todayId) || null);
+        } catch (error) {
+            setError(error as Error);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -195,25 +198,31 @@ export default function StoryCardGrid() {
 
     return (
         <main className="container mx-auto px-4 py-8 sm:py-12 md:py-16 mb-[100px]">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-center items-center mb-8">
                 <Dropdown>
                     <DropdownTrigger className="flex justify-center items-center px-4 py-2 bg-white/20 backdrop-blur-xl rounded-[20px] shadow-lg border-2 border-white">
                         <h1 className="text-2xl font-bold text-gray-700">내 콘텐츠</h1>
                     </DropdownTrigger>
                     <DropdownMenu>
-                        <DropdownItem onClick={() => setContentType('books')}>
+                        <DropdownItem onClick={() => setContentType('books')} className="text-gray-700">
                             내 동화
                         </DropdownItem>
-                        <DropdownItem onClick={() => setContentType('todaySums')}>
+                        <DropdownItem onClick={() => setContentType('todaySums')} className="text-gray-700">
                             내 일기
                         </DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
-                {contentType === 'books' && books && <StoryCardList books={books} onDelete={handleDelete} />}
-                {contentType === 'todaySums' && todaySums && <TodaySumList todaySums={todaySums} />}
-            </div>
+            {contentType === 'books' && books && (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:gap-6">
+                    <StoryCardList books={books} onDelete={handleDelete} />
+                </div>
+            )}
+            {contentType === 'todaySums' && todaySums && (
+                <div className="w-full space-y-4">
+                    <TodaySumList todaySums={todaySums} onDelete={handleDeleteTodaySum} />
+                </div>
+            )}
         </main>
     );
 }
