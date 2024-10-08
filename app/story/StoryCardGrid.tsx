@@ -8,7 +8,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, useDi
 import { getCurrentUser, getAuthToken } from '@/utils/authUtils';
 import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from '@/utils/api';
-import { useAuth } from '@/hooks/authHooks';
+import { useAuth, useBabySelection } from '@/hooks/authHooks';
 
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
@@ -58,9 +58,9 @@ function LoginRequired() {
     );
 }
 
-async function getUserBooks(userId: number, token: string): Promise<Book[]> {
+async function getUserBooks(userId: number, babyId: number): Promise<Book[]> {
     try {
-        const books = await fetchWithAuth(`${BACKEND_API_URL}/api/books/user/${userId}`, {
+        const books = await fetchWithAuth(`${BACKEND_API_URL}/api/books/user/${userId}/baby/${babyId}`, {
             method: 'GET'
         });
         if (!books) {
@@ -79,9 +79,9 @@ async function getUserBooks(userId: number, token: string): Promise<Book[]> {
     }
 }
 
-async function getUserTodaySums(userId: number, token: string): Promise<TodaySum[]> {
+async function getUserTodaySums(userId: number, babyId: number): Promise<TodaySum[]> {
     try {
-        const todaySums = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum/user/${userId}`, {
+        const todaySums = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum/user/${userId}/baby/${babyId}`, {
             method: 'GET'
         });
         if (!todaySums) {
@@ -109,12 +109,12 @@ async function deleteUserBook(bookId: number, token: string): Promise<void> {
 }
 
 async function deleteUserTodaySum(todayId: number): Promise<void> {
-    try{
+    try {
         const response = await fetchWithAuth(`${BACKEND_API_URL}/api/today-sum/${todayId}`, {
             method: 'DELETE'
         });
 
-        if(!response) {
+        if (!response) {
             throw new Error('일기 삭제를 실패하였습니다.');
         }
     } catch (error: any) {
@@ -129,16 +129,17 @@ export default function StoryCardGrid() {
     const [loading, setLoading] = useState(true);
     const [contentType, setContentType] = useState<'books' | 'todaySums'>('books');
     const router = useRouter();
-    const { token, userId, error: authError } = useAuth();
+    const { token, userId } = useAuth();
+    const { babyId } = useBabySelection();
 
 
     useEffect(() => {
-        if (userId && token) {
+        if (userId && babyId) {
             const fetchData = async () => {
                 try {
                     const [fetchedBooks, fetchedTodaySums] = await Promise.all([
-                        getUserBooks(userId, token),
-                        getUserTodaySums(userId, token)
+                        getUserBooks(userId, babyId),
+                        getUserTodaySums(userId, babyId)
                     ]);
                     setBooks(fetchedBooks);
                     setTodaySums(fetchedTodaySums);

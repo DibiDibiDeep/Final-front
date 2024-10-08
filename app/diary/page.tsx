@@ -122,21 +122,9 @@ export default function DiaryPage() {
         }
 
         try {
-
-            const start = getKoreanISOString(new Date(0)); // 1970년 1월 1일 00:00:00 (한국 시간)
-            const end = getKoreanISOString(new Date()); // 현재 날짜와 시간 (한국 시간)
-
-            const url = new URL(`${BACKEND_API_URL}/api/alims/user/${userIdParam}`);
-            url.searchParams.append('start', start);
-            url.searchParams.append('end', end);
-            console.log('Request URL:', url.toString()); // URL 확인을 위한 로그
-
-            const response = await fetchWithAuth(
-                url.toString(),
-                {
-                    method: 'GET'
-                }
-            );
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/user/${userId}/baby/${babyId}`, {
+                method: 'GET'
+            });
 
 
             console.log('Fetched diaries:', response);
