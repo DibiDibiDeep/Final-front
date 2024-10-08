@@ -121,10 +121,10 @@ const MyPage: React.FC = () => {
             });
             setDeleteBabyModalOpen(false);
         } catch (error) {
-            console.log("아이정보 삭제 실패", error);
+            console.log("아이 정보 삭제 실패", error);
             // alert('아이 정보 삭제에 실패했습니다. 다시 시도해 주세요.');
         }
-        window.location.reload();
+        fetchBabiesInfo(userId);
     }
 
     const handleLogout = () => {
