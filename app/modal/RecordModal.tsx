@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Square } from 'lucide-react';
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, Button } from "@nextui-org/react";
 
+// userId와 babyId 추가
 interface RecordModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (audioBlob: Blob) => void;
+    onSave: (audioBlob: Blob, userId: number, babyId: number) => void;
+    userId: number;
+    babyId: number;
 }
 
-const RecordModal: React.FC<RecordModalProps> = ({ isOpen, onClose, onSave }) => {
+const RecordModal: React.FC<RecordModalProps> = ({ isOpen, onClose, onSave, userId, babyId }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -37,7 +40,8 @@ const RecordModal: React.FC<RecordModalProps> = ({ isOpen, onClose, onSave }) =>
             };
             mediaRecorderRef.current.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-                onSave(audioBlob);
+                // onSave에 userId와 babyId 전달
+                onSave(audioBlob, userId, babyId);
             };
             audioChunksRef.current = [];
             mediaRecorderRef.current.start();
@@ -101,11 +105,6 @@ const RecordModal: React.FC<RecordModalProps> = ({ isOpen, onClose, onSave }) =>
                         )}
                     </div>
                 </ModalBody>
-                {/* <ModalFooter>
-                    <Button color="danger" variant="light" onPress={handleClose}>
-                        닫기
-                    </Button>
-                </ModalFooter> */}
             </ModalContent>
         </Modal>
     );
