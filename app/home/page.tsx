@@ -81,7 +81,7 @@ export default function Home() {
         transform: `translateY(-${keyboardHeight}px)`,
         transition: 'transform 0.3s ease-out',
     };
-  
+
     // API 호출 함수
     const fetchBabiesInfo = async (userId: number) => {
         try {
@@ -244,6 +244,52 @@ export default function Home() {
         setSearchTerm(term);
         if (term === '') {
             setDisplayDate(selectedDate);
+        }
+    };
+
+    // const handleSaveAudio = async (audioBlob: Blob) => {
+    //     try {
+    //         const formData = new FormData();
+    //         formData.append('audio', audioBlob, 'recorded_audio.webm'); // 파일명과 함께 추가
+
+    //         // fetchWithAuth 호출
+    //         const response = await fetchWithAuth(`${BACKEND_API_URL}/api/voice-memos`, {
+    //             method: 'POST',
+    //             body: formData,
+    //         });
+
+    //         if (response.ok) {
+    //             console.log('Audio successfully sent to the server');
+    //         } else {
+    //             console.error('Failed to send audio');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error sending audio:', error);
+    //     } finally {
+    //         setIsVoiceRecordModalOpen(false);
+    //     }
+    // };
+
+    const handleSaveAudio = async (audioBlob: Blob, userId: number, babyId: number) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'recorded_audio.webm');
+            formData.append('userId', String(userId));
+            formData.append('babyId', String(babyId));
+
+            const response = await fetchWithAuth(`${BACKEND_API_URL}/api/voice-memos`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                console.log('Audio successfully sent to the server');
+                setIsVoiceRecordModalOpen(false);
+            } else {
+                console.error('Failed to send audio');
+            }
+        } catch (error) {
+            console.error('Error sending audio:', error);
         }
     };
 
@@ -483,11 +529,11 @@ export default function Home() {
             <RecordModal
                 isOpen={isVoiceRecordModalOpen}
                 onClose={() => setIsVoiceRecordModalOpen(false)}
-                onSave={(audioBlob: Blob) => {
-                    console.log('Audio recorded:', audioBlob);
-                    setIsVoiceRecordModalOpen(false);
-                }}
+                onSave={(audioBlob: Blob) => handleSaveAudio(audioBlob, userId!, babyId!)}
+                userId={userId!}
+                babyId={babyId!}
             />
+
         </div>
     );
 }
