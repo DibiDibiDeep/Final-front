@@ -283,7 +283,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
                                 임시 저장
                             </Button>
                             <Button color="primary" onPress={debouncedCreateDiary} isDisabled={loading}>
-                                일기 생성
+                                알림장 분석
                             </Button>
                         </>
                     )}
