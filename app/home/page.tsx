@@ -247,29 +247,6 @@ export default function Home() {
         }
     };
 
-    // const handleSaveAudio = async (audioBlob: Blob) => {
-    //     try {
-    //         const formData = new FormData();
-    //         formData.append('audio', audioBlob, 'recorded_audio.webm'); // 파일명과 함께 추가
-
-    //         // fetchWithAuth 호출
-    //         const response = await fetchWithAuth(`${BACKEND_API_URL}/api/voice-memos`, {
-    //             method: 'POST',
-    //             body: formData,
-    //         });
-
-    //         if (response.ok) {
-    //             console.log('Audio successfully sent to the server');
-    //         } else {
-    //             console.error('Failed to send audio');
-    //         }
-    //     } catch (error) {
-    //         console.error('Error sending audio:', error);
-    //     } finally {
-    //         setIsVoiceRecordModalOpen(false);
-    //     }
-    // };
-
     const handleSaveAudio = async (audioBlob: Blob, userId: number, babyId: number) => {
         try {
             const formData = new FormData();
