@@ -424,11 +424,14 @@ const DummyChatInterface: React.FC = () => {
       console.log('Server response:', response);
 
       if (response && response.content) {
+        let botContent = response.content;
+        // 날짜 부분 제거
+        botContent = botContent.replace(/^\d{4}-\d{2}-\d{2}: /, '');
         const botResponse: Message = {
           userId: userId,
           babyId: babyId,
           id: Date.now(),
-          text: response.content,
+          text: botContent,
           sender: 'bot',
           timestamp: new Date(response.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };

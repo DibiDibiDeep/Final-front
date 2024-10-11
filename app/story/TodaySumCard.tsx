@@ -68,8 +68,7 @@ export const TodaySumList: React.FC<TodaySumProps> = ({ todaySums, onDelete }) =
                     className="bg-white/70 p-4 rounded-lg shadow cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => handleTodaySumClick(todaySum)}
                 >
-                    <h3 className="text-lg font-semibold text-gray-700">내 일기</h3>
-                    <p className="text-sm text-gray-600">{new Date(todaySum.date).toLocaleDateString()}</p>
+                    <h3 className="text-lg font-semibold text-gray-700">{new Date(todaySum.date).toLocaleDateString()}</h3>
                     <p className="mt-2 text-gray-700">{truncateContent(todaySum.content)}</p>
                     <p
                         className="mt-2 text-red-500 hover:underline"
