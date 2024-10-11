@@ -221,7 +221,7 @@ export default function DiaryPage() {
     return (
         <div className="max-w-md mx-auto min-h-screen flex flex-col">
             <div className="flex-grow flex flex-col justify-start items-center pt-8">
-                <div className="w-full space-y-8 text-gray-700 overflow-y-auto px-4">
+                <div className="w-full space-y-8 text-gray-700 overflow-y-auto px-4 mb-[120px]">
                     <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <Input
                             type="date"
