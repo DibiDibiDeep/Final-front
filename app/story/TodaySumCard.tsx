@@ -55,7 +55,7 @@ export const TodaySumList: React.FC<TodaySumProps> = ({ todaySums, onDelete }) =
         try {
             await onDelete(todayId);
         } catch (error) {
-            console.error('일기 삭제 중 오류 발생:', error);
+            // console.error('일기 삭제 중 오류 발생:', error);
             // Here you can add logic to show an error message to the user
         }
     };

@@ -13,20 +13,20 @@ export default function SetToken() {
     const [message, setMessage] = useState('Processing login...');
 
     useEffect(() => {
-        console.log('SetToken: useEffect triggered');
-        console.log('Token:', token);
+        // console.log('SetToken: useEffect triggered');
+        // console.log('Token:', token);
 
         if (token) {
             try {
                 const user = decodeToken(token);
-                console.log('Decoded user:', user);
+                // console.log('Decoded user:', user);
                 setAuthToken(token);
-                console.log('Token set in cookie: ', Cookies.get('authToken'));
+                // console.log('Token set in cookie: ', Cookies.get('authToken'));
 
                 Cookies.set('userId', user.userId.toString(), { expires: 7, secure: true, sameSite: 'strict' });
                 Cookies.set('userEmail', user.email, { expires: 7, secure: true, sameSite: 'strict' });
                 Cookies.set('userName', user.name, { expires: 7, secure: true, sameSite: 'strict' });
-                console.log('User info saved in cookies');
+                // console.log('User info saved in cookies');
 
                 setMessage('Login successful. Checking user data...');
 
@@ -39,27 +39,27 @@ export default function SetToken() {
                 })
                     .then(response => response.json())
                     .then(data => {
-                        console.log('data', data);
+                        // console.log('data', data);
                         if (data != null) {
-                            console.log('BabyId found. Redirecting to home page');
+                            // console.log('BabyId found. Redirecting to home page');
                             router.push('/home');
                         } else {
-                            console.log('No babyId found. Redirecting to initialSettings page');
+                            // console.log('No babyId found. Redirecting to initialSettings page');
                             router.push('/initialSettings');
                         }
                     })
                     .catch(error => {
-                        console.error('Error checking user data:', error);
+                        // console.error('Error checking user data:', error);
                         setMessage('Error occurred. Redirecting to login page...');
                         setTimeout(() => router.push('/login?error=api_error'), 1500);
                     });
             } catch (error) {
-                console.error('Failed to process token:', error);
+                // console.error('Failed to process token:', error);
                 setMessage('Login failed. Redirecting to login page...');
                 setTimeout(() => router.push('/login?error=invalid_token'), 1500);
             }
         } else {
-            console.log('No token found');
+            // console.log('No token found');
             setMessage('No token found. Redirecting to login page...');
             setTimeout(() => router.push('/login?error=no_token'), 1500);
         }

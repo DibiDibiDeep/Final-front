@@ -46,7 +46,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
                 });
                 setSelectedDate(startTime);
             } catch (error) {
-                console.error('Failed to fetch event:', error);
+                // console.error('Failed to fetch event:', error);
                 setError('Failed to load event data');
             }
         };
@@ -114,7 +114,7 @@ export default function EditEvent({ params }: { params: { id: string } }) {
             });
             router.push('/home');
         } catch (error) {
-            console.error('Failed to update event:', error);
+            // .error('Failed to update event:', error);
             setError('Failed to update event');
         } finally {
             setIsLoading(false);

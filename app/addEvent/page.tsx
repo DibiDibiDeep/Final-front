@@ -75,13 +75,13 @@ export default function AddPage() {
         setStartTime(newStartDateTime);
         setSelectedDate(new Date(newStartDateTime));
         setEndTime(updateEndTime(newStartDateTime, endTime));
-        console.log("startTime : " + newStartDateTime);
+        // console.log("startTime : " + newStartDateTime);
     };
 
     const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newDateTime = e.target.value;
         setEndTime(newDateTime);
-        console.log("endTime : " + newDateTime);
+        // console.log("endTime : " + newDateTime);
     };
 
     const handleGoToMain = () => {
@@ -110,7 +110,7 @@ export default function AddPage() {
             location,
         };
 
-        console.log("eventData", eventData);
+        // console.log("eventData", eventData);
 
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendars`, {
@@ -119,10 +119,10 @@ export default function AddPage() {
             });
 
 
-            console.log(response);  // fetchWithAuth는 이미 response.json()을 수행했으므로 .data가 필요 없습니다
+            // console.log(response);  // fetchWithAuth는 이미 response.json()을 수행했으므로 .data가 필요 없습니다
             router.push('/home');
         } catch (error) {
-            console.error('Error sending event data:', error);
+            // console.error('Error sending event data:', error);
             setError('이벤트 데이터 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
         } finally {
             setIsLoading(false);

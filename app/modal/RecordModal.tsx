@@ -47,7 +47,7 @@ const RecordModal: React.FC<RecordModalProps> = ({ isOpen, onClose, onSave, user
             mediaRecorderRef.current.start();
             setIsRecording(true);
         } catch (error) {
-            console.error('Error accessing microphone:', error);
+            // console.error('Error accessing microphone:', error);
         }
     };
 

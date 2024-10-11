@@ -19,20 +19,20 @@ const OptionButton = React.memo(({ icon: Icon, onClick, backgroundColor, iconTyp
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 // 스트림을 사용하여 비디오 요소에 출력 가능
-                console.log('Mobile camera stream:', stream);
+                // console.log('Mobile camera stream:', stream);
                 onClick();
             } catch (err) {
-                console.error("Error accessing mobile camera", err);
+                // console.error("Error accessing mobile camera", err);
             }
         } else {
             // 웹: 웹캠 실행
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 // 웹캠 스트림을 처리하는 로직
-                console.log('Webcam stream:', stream);
+                // console.log('Webcam stream:', stream);
                 onClick();
             } catch (err) {
-                console.error("Error accessing webcam", err);
+                // console.error("Error accessing webcam", err);
             }
         }
     };
@@ -47,12 +47,12 @@ const OptionButton = React.memo(({ icon: Icon, onClick, backgroundColor, iconTyp
             const files = (event.target as HTMLInputElement).files;
             if (files) {
                 // 선택한 파일들을 처리
-                console.log('Selected files:', files);
+                // console.log('Selected files:', files);
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    console.log('Selected file:', file.name);
-                    console.log('File size:', file.size);
-                    console.log('File type:', file.type);
+                    // console.log('Selected file:', file.name);
+                    // console.log('File size:', file.size);
+                    // console.log('File type:', file.type);
                 }
                 onClick();
             }

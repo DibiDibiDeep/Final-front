@@ -72,7 +72,7 @@ const MyPage: React.FC = () => {
                 setBabies(fetchedBabies);
             }
         } catch (error) {
-            console.error('Failed to fetch baby information:', error);
+            // console.error('Failed to fetch baby information:', error);
             setError('Failed to fetch baby information. Please try again.');
         } finally {
             setIsLoading(false);
@@ -104,7 +104,7 @@ const MyPage: React.FC = () => {
 
     const handleDeleteBaby = async () => {
         if (!userId || !selectedBabyForDelete) {
-            console.log('User ID or Baby ID is not available');
+            // console.log('User ID or Baby ID is not available');
             return;
         }
         try {
@@ -121,7 +121,7 @@ const MyPage: React.FC = () => {
             });
             setDeleteBabyModalOpen(false);
         } catch (error) {
-            console.log("아이 정보 삭제 실패", error);
+            // console.log("아이 정보 삭제 실패", error);
             // alert('아이 정보 삭제에 실패했습니다. 다시 시도해 주세요.');
         }
         fetchBabiesInfo(userId);

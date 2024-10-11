@@ -32,7 +32,7 @@ export const useAuth = () => {
                 setToken(storedToken);
                 setUserId(decodedToken.userId);
             } catch (error) {
-                console.error('Error decoding token:', error);
+                // console.error('Error decoding token:', error);
                 setError('토큰 디코딩에 실패했습니다. 다시 로그인해 주세요.');
                 removeAuthToken();
             }
@@ -55,11 +55,11 @@ export const useBabySelection = () => {
                     const selectedBaby: SelectedBaby = JSON.parse(storedSelectedBaby);
                     setBabyId(selectedBaby.babyId);
                 } catch (error) {
-                    console.error("Error parsing stored baby information:", error);
+                    // console.error("Error parsing stored baby information:", error);
                     Cookies.remove('selectedBaby');
                 }
             } else {
-                console.log("No stored baby information found.");
+                // console.log("No stored baby information found.");
             }
         };
 

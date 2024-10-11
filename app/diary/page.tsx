@@ -99,10 +99,10 @@ export default function DiaryPage() {
 
     useEffect(() => {
         if (userId) {
-            console.log('userId', userId);
+            // console.log('userId', userId);
             fetchUserDiaries(userId);
         } else {
-            console.error('User ID not found');
+            // console.error('User ID not found');
         }
     }, [userId]);
 
@@ -112,12 +112,12 @@ export default function DiaryPage() {
     }, [selectedDate, entries]);
 
     useEffect(() => {
-        console.log('selectedEntry updated:', selectedEntry);  // 디버깅을 위한 로그 추가
+        // console.log('selectedEntry updated:', selectedEntry);  // 디버깅을 위한 로그 추가
     }, [selectedEntry]);
 
     const fetchUserDiaries = async (userIdParam: number) => {
         if (!userId || !babyId) {
-            console.error('Token or User ID or Baby ID is not available');
+            // console.error('Token or User ID or Baby ID is not available');
             return;
         }
 
@@ -127,7 +127,7 @@ export default function DiaryPage() {
             });
 
 
-            console.log('Fetched diaries:', response);
+            // console.log('Fetched diaries:', response);
 
             const allEntries = response.map((entry: any) => ({
                 date: entry.date.split('T')[0], // 날짜 부분만 사용
@@ -142,19 +142,19 @@ export default function DiaryPage() {
 
             setEntries(allEntries);
         } catch (error) {
-            console.error('Failed to fetch user diaries:', error);
+            // console.error('Failed to fetch user diaries:', error);
         }
     };
 
 
     const handleCreateDiary = async (content: string) => {
         if (!userId || !babyId) {
-            console.error('User ID or Baby ID is not available');
+            // console.error('User ID or Baby ID is not available');
             return;
         }
 
         const formattedDate = getFormattedDateTime(selectedDate);
-        console.log('formattedDate', formattedDate);
+        // console.log('formattedDate', formattedDate);
 
         const newNoticeData: NoticeData = {
             alimId: null,
@@ -170,24 +170,24 @@ export default function DiaryPage() {
                 body: newNoticeData
             });
 
-            console.log('Server response:', response);
+            // console.log('Server response:', response);
 
             if (response && response.alimId) {
                 await fetchUserDiaries(userId);
                 setIsModalOpen(false);
             } else {
-                console.error('Invalid server response:', response);
+                // console.error('Invalid server response:', response);
             }
 
             setIsModalOpen(false);
         } catch (error) {
-            console.error('Failed to create diary entry:', error);
+            // console.error('Failed to create diary entry:', error);
         }
     };
 
     const handleDeleteDiary = async (alimId: number) => {
         if (!token || !userId || !babyId) {
-            console.error('User ID or Baby ID is not available');
+            // console.error('User ID or Baby ID is not available');
             return;
         }
         try {
@@ -198,7 +198,7 @@ export default function DiaryPage() {
             // 항목 삭제 후 즉시 데이터를 다시 불러오기
             await fetchUserDiaries(userId);
         } catch (error) {
-            console.error('Failed to delete diary entry:', error);
+            // console.error('Failed to delete diary entry:', error);
         }
     };
 
@@ -213,7 +213,7 @@ export default function DiaryPage() {
     };
 
     const openDetailModal = (entry: DiaryEntry) => {
-        console.log('Opening detail modal with entry:', entry);  // 디버깅을 위한 로그 추가
+        // console.log('Opening detail modal with entry:', entry);  // 디버깅을 위한 로그 추가
         setSelectedEntry(entry);
         setIsDetailModalOpen(true);
     };
@@ -250,7 +250,7 @@ export default function DiaryPage() {
                                     content={entry.content}
                                     alimId={entry.alimId}
                                     onClick={() => {
-                                        console.log('Card clicked:', entry);  // 디버깅을 위한 로그 추가
+                                        // console.log('Card clicked:', entry);  // 디버깅을 위한 로그 추가
                                         openDetailModal(entry);
                                     }}
                                     onDelete={() => handleDeleteDiary(entry.alimId)}

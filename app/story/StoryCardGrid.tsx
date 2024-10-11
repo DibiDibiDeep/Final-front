@@ -69,11 +69,11 @@ async function getUserBooks(userId: number, babyId: number): Promise<Book[]> {
         return books;
     } catch (error: any) {
         if (error.name === 'AbortError') {
-            console.error('Request timed out');
+            // console.error('Request timed out');
         } else if (error.message) {
-            console.error('Failed to fetch books:', error.message);
+            // console.error('Failed to fetch books:', error.message);
         } else {
-            console.error('Unknown error:', error);
+            // console.error('Unknown error:', error);
         }
         throw error;
     }
@@ -89,7 +89,7 @@ async function getUserTodaySums(userId: number, babyId: number): Promise<TodaySu
         }
         return todaySums;
     } catch (error: any) {
-        console.error('Failed to fetch today sums:', error);
+        // console.error('Failed to fetch today sums:', error);
         throw error;
     }
 }
@@ -104,7 +104,7 @@ async function deleteUserBook(bookId: number, token: string): Promise<void> {
             throw new Error('Failed to delete the book.');
         }
     } catch (error: any) {
-        console.error('error:', error);
+        // console.error('error:', error);
     }
 }
 
@@ -118,7 +118,7 @@ async function deleteUserTodaySum(todayId: number): Promise<void> {
             throw new Error('일기 삭제를 실패하였습니다.');
         }
     } catch (error: any) {
-        console.error('error:', error);
+        // console.error('error:', error);
     }
 }
 
@@ -156,7 +156,7 @@ export default function StoryCardGrid() {
     }, [userId, token]);
 
     const handleDelete = async (bookId: number) => {
-        console.log('Deleting book with id:', bookId); // 추가
+        // console.log('Deleting book with id:', bookId); // 추가
         if (!token) return;
         try {
             await deleteUserBook(bookId, token);

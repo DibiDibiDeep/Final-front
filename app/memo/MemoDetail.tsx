@@ -53,14 +53,14 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
 
   useEffect(() => {
     if (error) {
-      console.error('Auth error:', error);
+      // console.error('Auth error:', error);
     }
   }, [error]);
 
   // Memo deletion handler
   const handleDelete = async () => {
     if (!token) {
-      console.error('No authentication token available');
+      // console.error('No authentication token available');
       return;
     }
 
@@ -71,7 +71,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
       onMemoDeleted(memoId);
       onCloseDeleteModal();
     } catch (error) {
-      console.error('Failed to delete memo:', error);
+      // console.error('Failed to delete memo:', error);
     }
 
     // setActiveView('memo'); 
@@ -82,7 +82,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
   // Memo edit handler
   const handleEdit = async () => {
     if (!token) {
-      console.error('No authentication token available');
+      // console.error('No authentication token available');
       return;
     }
 
@@ -103,7 +103,7 @@ const MemoDetail: React.FC<MemoDetailProps> = ({
       onMemoUpdated(updatedMemo);
       onCloseEditModal();
     } catch (error) {
-      console.error('Failed to update memo:', error);
+      // console.error('Failed to update memo:', error);
       // TODO: Display error message to user
     }
   };

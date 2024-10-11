@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         logout();
                     }
                 } catch (error) {
-                    console.error('Failed to validate token:', error);
+                    // console.error('Failed to validate token:', error);
                     logout();
                 }
             }

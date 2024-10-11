@@ -54,10 +54,10 @@ const NoticeDetailPage: React.FC = () => {
                 if (relevantData) {
                     setInferenceResult(JSON.parse(relevantData.inferenceResult));
                 } else {
-                    console.error('No data found for the specified ID');
+                    // console.error('No data found for the specified ID');
                 }
             } catch (error) {
-                console.error('Error fetching calendar data:', error);
+                // console.error('Error fetching calendar data:', error);
             }
         };
 

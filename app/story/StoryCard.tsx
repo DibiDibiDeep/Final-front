@@ -23,7 +23,7 @@ export default function StoryCard({ id, title, coverPath, priority = false, onDe
     const { token } = useAuth();
 
     const handleClick = useCallback(async () => {
-        console.log('click', id);
+        // console.log('click', id);
         try {
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/${id}`, {
                 method: 'GET'
@@ -34,7 +34,7 @@ export default function StoryCard({ id, title, coverPath, priority = false, onDe
             localStorage.setItem(`storyPages_${id}`, JSON.stringify(response));
             router.push(`/story/${id}`);
         } catch (error) {
-            console.error('Failed to fetch story data:', error);
+            // console.error('Failed to fetch story data:', error);
         }
     }, [id, token, router]);
 

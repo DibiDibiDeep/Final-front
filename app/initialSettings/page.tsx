@@ -70,7 +70,7 @@ const InitialSettings: React.FC = () => {
                     fetchBabyPhoto(selectedBabyObj.babyId);
                 }
             } catch (error) {
-                console.error('Error parsing selectedBaby:', error);
+                // console.error('Error parsing selectedBaby:', error);
                 setError('Error loading baby information. Please try again.');
             }
         }
@@ -86,10 +86,10 @@ const InitialSettings: React.FC = () => {
                 setAvatarSrc(photoUrl);
                 setBabyInfo(prev => ({ ...prev, photoUrl }));
             } else {
-                console.warn('No photo found or photoUrl is missing.');
+                // console.warn('No photo found or photoUrl is missing.');
             }
         } catch (error) {
-            console.error('Error fetching baby photo:', error);
+            // console.error('Error fetching baby photo:', error);
             setError('아이의 사진을 로딩 중 에러가 났습니다. 다시 시도해주세요.');
         }
     };
@@ -152,7 +152,7 @@ const InitialSettings: React.FC = () => {
                     body: formData,
                 });
 
-                console.log('Baby photo uploaded successfully:', photoResponse);
+                // console.log('Baby photo uploaded successfully:', photoResponse);
                 newPhotoUrl = photoResponse.filePath;
             }
 
@@ -169,11 +169,11 @@ const InitialSettings: React.FC = () => {
                 localStorage.setItem('selectedBaby', JSON.stringify(updatedBaby));
             }
 
-            console.log('Baby information and photo saved successfully');
+            // console.log('Baby information and photo saved successfully');
             router.push('/home');
             setActiveView('home');
         } catch (err) {
-            console.error('Error saving baby info:', err);
+            // console.error('Error saving baby info:', err);
             if (axios.isAxiosError(err) && err.response) {
                 setError(`Error: ${err.response.data.message || 'Unknown error occurred'}`);
             } else {

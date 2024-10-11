@@ -15,7 +15,7 @@ const CreateDiaryModal: React.FC<CreateDiaryModalProps> = ({ isOpen, onClose, on
     const [content, setContent] = useState('');
 
     const handleSubmit = () => {
-        console.log('submit');
+        // console.log('submit');
         if (content.trim()) {
             onCreateDiary(content);
             setContent('');

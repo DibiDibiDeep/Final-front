@@ -190,7 +190,7 @@ const DummyChatInterface: React.FC = () => {
 
   const confirmResetChat = async () => {
     if (userId === null || babyId === null) {
-      console.error('User ID or Baby ID is not available');
+      // console.error('User ID or Baby ID is not available');
       return;
     }
 
@@ -213,7 +213,7 @@ const DummyChatInterface: React.FC = () => {
       // 모달 닫기
       setIsResetModalOpen(false);
     } catch (error) {
-      console.error('Failed to reset chat history:', error);
+      // console.error('Failed to reset chat history:', error);
       setError('채팅 내역 삭제에 실패했습니다.');
       setTimeout(() => setError(null), 3000);
     }
@@ -280,11 +280,11 @@ const DummyChatInterface: React.FC = () => {
 
   useEffect(() => {
     if (!token) return;
-    console.log('chatbot page token: ', token);
-    console.log('chatbot page userId: ', userId);
+    // console.log('chatbot page token: ', token);
+    // console.log('chatbot page userId: ', userId);
     if (userId) {
       fetchBabiesInfo(userId).then(() => {
-        console.log('Babies fetched and set');
+        // console.log('Babies fetched and set');
       });
     }
   }, [token]);
@@ -292,7 +292,7 @@ const DummyChatInterface: React.FC = () => {
   // userId나 babyId가 변경될 때 메시지를 가져오는 useEffect 추가
   useEffect(() => {
     if (userId && babyId && token) {
-      console.log('babyId', babyId);
+      // console.log('babyId', babyId);
       fetchMessages();
     }
   }, [userId, babyId, token]);
@@ -347,11 +347,11 @@ const DummyChatInterface: React.FC = () => {
           localStorage.setItem('selectedBaby', JSON.stringify(fetchedBabies[0]));
         }
       } else {
-        console.log("No baby information found for this user.");
+       // console.log("No baby information found for this user.");
         localStorage.removeItem('selectedBaby');
       }
     } catch (error) {
-      console.error('Failed to fetch baby information:', error);
+      // console.error('Failed to fetch baby information:', error);
       localStorage.removeItem('selectedBaby');
     }
   };
@@ -374,21 +374,21 @@ const DummyChatInterface: React.FC = () => {
       }));
       setMessages(formattedMessages);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      // console.error('Error fetching messages:', error);
       setError('메시지를 불러오는데 실패했습니다.');
     }
   };
 
   const handleSendMessage = async () => {
     setError(null); // Clear any previous errors
-    console.log('Sending message. userId:', userId, 'babyId:', babyId, 'authToken:', token, 'inputMessage:', inputMessage);
+    // console.log('Sending message. userId:', userId, 'babyId:', babyId, 'authToken:', token, 'inputMessage:', inputMessage);
 
     if (inputMessage.trim() === '' || userId === null || babyId === null) {
       setError('메시지를 전송할 수 없습니다. 모든 정보가 올바르게 설정되었는지 확인해 주세요.');
       return;
     }
     setIsWaitingForBot(true);
-    console.log('Sending token:', token);
+    // console.log('Sending token:', token);
 
     const newMessage: Message = {
       userId: userId,
@@ -421,7 +421,7 @@ const DummyChatInterface: React.FC = () => {
         body: JSON.stringify(payload),
       });
 
-      console.log('Server response:', response);
+      // console.log('Server response:', response);
 
       if (response && response.content) {
         let botContent = response.content;
@@ -446,12 +446,12 @@ const DummyChatInterface: React.FC = () => {
           });
         }
       } else {
-        console.error('Unexpected response format:', response);
+        // console.error('Unexpected response format:', response);
         throw new Error('서버로부터 유효한 응답을 받지 못했습니다.');
       }
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      // console.error('Error sending message:', error);
       setError('메시지 전송 중 오류가 발생했습니다. 다시 시도해 주세요.');
       toast.error('메시지 전송에 실패했습니다.', {
         duration: 3000,

@@ -48,15 +48,15 @@ const NoticePage: React.FC = () => {
             if (!response) {
                 throw new Error('Failed to process image. No response received.');
             }
-            console.log("response", response);
+            // console.log("response", response);
             setCalendarData(response);
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                console.error('Request timed out');
+                // console.error('Request timed out');
             } else if (error.message) {
-                console.error('Error occurred:', error.message);
+                // console.error('Error occurred:', error.message);
             } else {
-                console.error('Unknown error:', error);
+                // console.error('Unknown error:', error);
             }
         }
     };

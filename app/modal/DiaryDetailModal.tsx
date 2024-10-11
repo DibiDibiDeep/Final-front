@@ -96,40 +96,40 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             if (diaryResponse && typeof diaryResponse === 'object' &&
                 Object.keys(diaryResponse).length > 0 &&
                 (diaryResponse.alimInfId || diaryResponse.diary)) {
-                console.log('Valid diary data found');
+                // console.log('Valid diary data found');
                 setDiaryData(diaryResponse);
                 setAlimData(null);
                 return; // 유효한 데이터를 찾았으므로 함수 종료
             }
-            console.log('No valid diary data found, will attempt to fetch alim data');
+            // console.log('No valid diary data found, will attempt to fetch alim data');
         } catch (diaryError) {
-            console.error('Error fetching diary data:', diaryError);
-            console.log('Will attempt to fetch alim data instead');
+            // console.error('Error fetching diary data:', diaryError);
+            // console.log('Will attempt to fetch alim data instead');
         } finally {
             setLoading(false);
         }
 
         // Diary 데이터 fetch 실패 또는 유효하지 않은 경우 alim 데이터 fetch 시도
         try {
-            console.log('Attempting to fetch alim data');
+            // console.log('Attempting to fetch alim data');
             const alimResponse = await fetchWithAuth(`${BACKEND_API_URL}/api/alims/${alimId}`, {
                 method: 'GET'
             });
-            console.log('Alim response received');
-            console.log('Alim response:', JSON.stringify(alimResponse, null, 2));
+            // console.log('Alim response received');
+            // console.log('Alim response:', JSON.stringify(alimResponse, null, 2));
 
             if (alimResponse && typeof alimResponse === 'object' &&
                 Object.keys(alimResponse).length > 0 &&
                 (alimResponse.alimId || alimResponse.content)) {
-                console.log('Valid alim data fetched');
+                // console.log('Valid alim data fetched');
                 setAlimData(alimResponse);
                 setDiaryData(null);
             } else {
-                console.log('No valid alim data found');
+                // console.log('No valid alim data found');
                 throw new Error("유효한 데이터를 받지 못했습니다.");
             }
         } catch (alimError) {
-            console.error('Error fetching alim data:', alimError);
+            // console.error('Error fetching alim data:', alimError);
             setError('데이터를 가져오는 데 실패했습니다.');
             setDiaryData(null);
             setAlimData(null);
@@ -144,10 +144,10 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/books/fairytale-status/${alimId}`, {
                 method: 'GET'
             });
-            console.log('동화 생성 여부', response.status);
+            // console.log('동화 생성 여부', response.status);
             setFairyTaleGenerated(response.status === "COMPLETED");
         } catch (error) {
-            console.error('Failed to check fairy tale status:', error);
+            // console.error('Failed to check fairy tale status:', error);
             setFairyTaleGenerated(false);
         }
     };
@@ -180,7 +180,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             updateEntries({ ...data!, content: content });
             onClose();
         } catch (error) {
-            console.error('Failed to update diary entry:', error);
+           //  console.error('Failed to update diary entry:', error);
             setError(`알림장 업데이트에 실패했습니다.`);
         }
     };
@@ -215,7 +215,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             });
         } catch (err) {
             setError('일기 생성 중 오류가 발생했습니다.');
-            console.error('Error:', err);
+            // console.error('Error:', err);
         } finally {
             setLoading(false);
         }
@@ -233,7 +233,7 @@ const DiaryDetailModal: React.FC<DiaryDetailModalProps> = ({ isOpen, onClose, da
             setFairyTaleGenerated(true);
         } catch (err) {
             setError('동화를 생성하는 중 오류가 발생했습니다.');
-            console.error('Error:', err);
+            // console.error('Error:', err);
         } finally {
             setLoading(false);
         }

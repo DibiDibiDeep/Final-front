@@ -66,7 +66,7 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
                 const files = target.files;
                 if (files && files.length > 0) {
                     const file = files[0];
-                    console.log('선택된 파일:', file.name);
+                    // console.log('선택된 파일:', file.name);
                     await uploadImage(file, userId, babyId);
                 }
             };
@@ -87,34 +87,34 @@ export const BottomContainerProvider: React.FC<BottomContainerProviderProps> = (
         formData.append('date', currentDate);
 
         try {
-            console.log('Sending request with formData:', Object.fromEntries(formData.entries()));
+            // console.log('Sending request with formData:', Object.fromEntries(formData.entries()));
 
             const response = await fetchWithAuth(`${BACKEND_API_URL}/api/calendar-photos`, {
                 method: 'POST',
                 body: formData
             });
 
-            console.log('서버 응답:', response);
+            // console.log('서버 응답:', response);
 
             if (response && response.filePath) {
-                console.log('이미지 업로드 성공:', response);
+                // console.log('이미지 업로드 성공:', response);
                 const imageUrl = response.filePath;
-                console.log('이미지 URL:', imageUrl);
+                // console.log('이미지 URL:', imageUrl);
                 setIsConfirmUploadModalOpen(true);
 
                 // 결과를 로컬 스토리지에 저장
                 localStorage.setItem('calendarData', JSON.stringify(imageUrl));
             } else {
-                console.error('서버 응답에 filePath가 없습니다:', response);
+                // console.error('서버 응답에 filePath가 없습니다:', response);
                 throw new Error('Invalid server response');
             }
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                console.error('Request timed out');
+                // console.error('Request timed out');
             } else if (error.message) {
-                console.error('Failed to upload image:', error.message);
+                // console.error('Failed to upload image:', error.message);
             } else {
-                console.error('Unknown error:', error);
+                // console.error('Unknown error:', error);
             }
             throw error;
         }

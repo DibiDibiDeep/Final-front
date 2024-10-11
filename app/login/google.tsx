@@ -16,7 +16,7 @@ export default function GoogleAuthLogin(): JSX.Element {
   const [token, setToken] = useState<string | undefined>(undefined); // 작업 중인 현재 인증 토큰의 값
 
   const checkAuthStatus = async (token: string | undefined) => {
-    console.log('Auth token:', token ? 'exists' : 'does not exist');
+    // console.log('Auth token:', token ? 'exists' : 'does not exist');
 
     if (token) {
       try {
@@ -29,26 +29,26 @@ export default function GoogleAuthLogin(): JSX.Element {
         );
 
         if (response.isValid) {
-          console.log('Token valid, redirecting to /home');
+          // console.log('Token valid, redirecting to /home');
           setIsRedirecting(true);
         } else {
-          console.log('Token invalid, clearing and staying on login page');
+          // console.log('Token invalid, clearing and staying on login page');
           setAuthToken('');
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Error validating token:', error);
+        // console.error('Error validating token:', error);
         setAuthToken('');
         setIsLoading(false);
       }
     } else {
-      console.log('No token found, setting isLoading to false');
+      // console.log('No token found, setting isLoading to false');
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log('Component mounted, checking auth status');
+    // console.log('Component mounted, checking auth status');
     const storedToken = getAuthToken();
     setToken(storedToken);
     checkAuthStatus(storedToken);
@@ -56,13 +56,13 @@ export default function GoogleAuthLogin(): JSX.Element {
 
   useEffect(() => {
     if (isRedirecting) {
-      console.log('Redirection to /home initiated');
+      // console.log('Redirection to /home initiated');
       router.push('/home');
     }
   }, [isRedirecting, router]);
 
   const handleGoogleLogin = async () => {
-    console.log('Initiating Google login');
+    // console.log('Initiating Google login');
     try {
       const response = await fetch(`${BACKEND_API_URL}/api/auth/google-url`);
       if (!response.ok) {
@@ -72,10 +72,10 @@ export default function GoogleAuthLogin(): JSX.Element {
 
       setAuthToken(data.token);
       setToken(data.token); // 여기서도 토큰 상태를 업데이트
-      console.log('Received Google Auth URL:', data.url);
+      // console.log('Received Google Auth URL:', data.url);
       window.location.href = data.url;
     } catch (err) {
-      console.error('Error in handleGoogleLogin:', err);
+      // console.error('Error in handleGoogleLogin:', err);
       setError('Google OAuth 설정을 가져오는 데 실패했습니다.');
       setIsLoading(false);
     }
@@ -85,7 +85,7 @@ export default function GoogleAuthLogin(): JSX.Element {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromUrl = urlParams.get('token');
     if (tokenFromUrl) {
-      console.log('Token received from OAuth callback');
+      // console.log('Token received from OAuth callback');
       setAuthToken(tokenFromUrl);
       setToken(tokenFromUrl); // 토큰 상태 업데이트
       checkAuthStatus(tokenFromUrl); // 새 토큰으로 체크

@@ -58,7 +58,7 @@ const EventCard: React.FC<EventCardProps> = ({
       onEventDeleted();
       handleCloseModal();
     } catch (error) {
-      console.error('Error deleting event:', error);
+      // console.error('Error deleting event:', error);
     }
     window.location.reload();
   };

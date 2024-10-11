@@ -37,7 +37,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ onStartClick }) => {
             video.muted = true;
             video.load();
             video.play().catch(error => {
-                console.error('Auto-play was prevented:', error);
+                // console.error('Auto-play was prevented:', error);
             });
         }
         return () => video?.removeEventListener('ended', handleVideoEnd);

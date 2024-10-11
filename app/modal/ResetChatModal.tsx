@@ -17,7 +17,7 @@ const ResetChatModal: React.FC<ResetChatModalProps> = ({ isOpen, onClose, onRese
 
     const handleReset = async () => {
         if (userId === null || babyId === null) {
-            console.error('User ID or Baby ID is not available');
+            // console.error('User ID or Baby ID is not available');
             return;
         }
 
@@ -39,7 +39,7 @@ const ResetChatModal: React.FC<ResetChatModalProps> = ({ isOpen, onClose, onRese
             onReset();
             onClose();
         } catch (error) {
-            console.error('Failed to reset chat history on server:', error);
+            // console.error('Failed to reset chat history on server:', error);
             // 에러 처리 (예: 사용자에게 알림)
         }
     };

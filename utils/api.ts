@@ -9,7 +9,7 @@ interface FetchOptions extends Omit<RequestInit, 'method' | 'body'> {
 }
 
 export async function fetchWithAuth(url: string, options: FetchOptions, req?: any): Promise<any> {
-    console.log('fetchWithAuth called with URL:', url);
+    // console.log('fetchWithAuth called with URL:', url);
     let token: string | undefined;
 
     // 토큰 가져오기
@@ -22,7 +22,7 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
     }
 
     if (!token) {
-        console.error('No JWT token found');
+        // console.error('No JWT token found');
         throw new Error('Authentication required');
     }
 
@@ -78,14 +78,14 @@ export async function fetchWithAuth(url: string, options: FetchOptions, req?: an
     } catch (error) {
         if (error instanceof Error) {
             if (error.name === 'AbortError') {
-                console.error('Request timed out');
+                // console.error('Request timed out');
                 throw new Error('Request timed out');
             } else {
-                console.error('Fetch error:', error.message);
+                // console.error('Fetch error:', error.message);
                 throw error;
             }
         } else {
-            console.error('Unknown error:', error);
+            // console.error('Unknown error:', error);
             throw new Error('Unknown error occurred');
         }
     } finally {

@@ -115,7 +115,7 @@ export default function Home() {
                 }
             }
         } catch (error) {
-            console.error('Failed to fetch baby information:', error);
+            // console.error('Failed to fetch baby information:', error);
         }
     };
 
@@ -135,7 +135,7 @@ export default function Home() {
             }));
             setMemos(fetchedMemos);
         } catch (error) {
-            console.error('Failed to fetch memos:', error);
+            // console.error('Failed to fetch memos:', error);
         }
     };
 
@@ -157,7 +157,7 @@ export default function Home() {
             }));
             setEvents(fetchedEvents);
         } catch (error) {
-            console.error('Failed to fetch events:', error);
+            // console.error('Failed to fetch events:', error);
         }
     }
 
@@ -195,7 +195,7 @@ export default function Home() {
 
     const handleCreateMemo = async (content: string) => {
         if (!userId || !selectedBaby) {
-            console.error('User ID or Selected Baby is not available');
+            // console.error('User ID or Selected Baby is not available');
             return;
         }
 
@@ -219,10 +219,10 @@ export default function Home() {
                 await fetchMemos();
                 setIsCreateMemoModalOpen(false);
             } else {
-                console.error('Invalid response from server when creating memo:', response);
+                // console.error('Invalid response from server when creating memo:', response);
             }
         } catch (error) {
-            console.error('Failed to create memo or fetch memos:', error);
+            // console.error('Failed to create memo or fetch memos:', error);
         }
     };
 
@@ -260,13 +260,13 @@ export default function Home() {
             });
 
             if (response.ok) {
-                console.log('Audio successfully sent to the server');
+                // console.log('Audio successfully sent to the server');
                 setIsVoiceRecordModalOpen(false);
             } else {
-                console.error('Failed to send audio');
+                // console.error('Failed to send audio');
             }
         } catch (error) {
-            console.error('Error sending audio:', error);
+            // console.error('Error sending audio:', error);
         }
     };
 

@@ -9,7 +9,6 @@ import { Input } from '@nextui-org/react';
 import { fetchWithAuth } from '@/utils/api';
 import { useAuth, useBabySelection } from '@/hooks/authHooks';
 
-const { token, error: authError } = useAuth();
 
 type Memo = {
     memoId: number;
@@ -24,14 +23,15 @@ export default function EditEvent({ params }: { params: { memoId: string } }) {
     const [memoData, setMemoData] = useState<Memo | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-
+    const { token, error: authError } = useAuth();
+    
     useEffect(() => {
         const fetchMemo = async () => {
             try {
                 const response = await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${params.memoId}`, { method: 'GET' });
                 setMemoData(response.data);
             } catch (error) {
-                console.error('Failed to fetch memo:', error);
+                // console.error('Failed to fetch memo:', error);
                 setError('Failed to load memo data');
             }
         };
@@ -52,7 +52,7 @@ export default function EditEvent({ params }: { params: { memoId: string } }) {
             await fetchWithAuth(`${BACKEND_API_URL}/api/memos/${memoData.memoId}`, { method: 'PUT', body: memoData });
             router.push('/home');
         } catch (error) {
-            console.error('Failed to update memo:', error);
+            // console.error('Failed to update memo:', error);
             setError('Failed to update memo');
         } finally {
             setIsLoading(false);
